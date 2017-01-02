@@ -13,9 +13,9 @@ if (!is_live_copy()) {
 <html>
 <head>
 <title><?php echo $title; ?> | Autumn Sky</title>
-<script type="text/javascript" src="<?php $root_url; ?>/vwp.js"></script>
+<script type="text/javascript" src="<?php $root_url; ?>/vad/vwp.js"></script>
 <link rel="stylesheet" type="text/css" href="<?php $root_url; ?>/main.css">
-<link rel="stylesheet" type="text/css" href="<?php $root_url; ?>/vwp.css">
+<link rel="stylesheet" type="text/css" href="<?php $root_url; ?>/vad/vwp.css">
 </head>
 <body>
 <div id="main">
