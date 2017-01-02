@@ -1,6 +1,9 @@
 <?php
 
-require "utils.php";
+require "../utils.php";
+
+$root_url = root_url();
+$root_path = root_path();
 
 $title = "VWP Hodographs";
 if (!is_live_copy()) {
@@ -10,9 +13,9 @@ if (!is_live_copy()) {
 <html>
 <head>
 <title><?php echo $title; ?> | Autumn Sky</title>
-<script type="text/javascript" src="vwp.js"></script>
-<link rel="stylesheet" type="text/css" href="http://www.autumnsky.us/main.css">
-<link rel="stylesheet" type="text/css" href="vwp.css">
+<script type="text/javascript" src="<?php $root_url; ?>/vwp.js"></script>
+<link rel="stylesheet" type="text/css" href="<?php $root_url; ?>/main.css">
+<link rel="stylesheet" type="text/css" href="<?php $root_url; ?>/vwp.css">
 </head>
 <body>
 <div id="main">
