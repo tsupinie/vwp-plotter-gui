@@ -5,21 +5,17 @@ require "../utils.php";
 $root_url = root_url();
 $root_path = root_path();
 
-$title = "VWP Hodographs";
-if (!is_live_copy()) {
-    $title = $title . " (Dev Copy)";
-}
 ?>
 <html>
 <head>
-<title><?php echo $title; ?> | Autumn Sky</title>
+<title>VWP Hodographs | Autumn Sky</title>
 <script type="text/javascript" src="<?php $root_url; ?>/vad/vwp.js"></script>
 <link rel="stylesheet" type="text/css" href="<?php $root_url; ?>/main.css">
 <link rel="stylesheet" type="text/css" href="<?php $root_url; ?>/vad/vwp.css">
 </head>
 <body>
 <div id="main">
-  <h1><?php echo $title; ?></h1>
+  <h1>VWP Hodographs</h1>
   <div id="selection">
     <p>Click on the map to select a radar</p>
     <div id="mapdiv">
@@ -73,6 +69,6 @@ if (!is_live_copy()) {
   </div>
   </p>
 </div>
-<?php include "/home/autumn35/public_html/footer.php" ?>
+<?php include "$root_path/footer.php" ?>
 </body>
 </html>
