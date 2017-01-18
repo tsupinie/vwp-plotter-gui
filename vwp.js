@@ -205,9 +205,9 @@ function VWPApp() {
 function HodoPlot() {
     var _hodo = this;
     this._port_lbx = 26 * 0.64;
-    this._port_lby = 22 * 0.64;
+    this._port_lby = 28 * 0.64;
     this._port_ubx = 702 * 0.64;
-    this._port_uby = 698 * 0.64;
+    this._port_uby = 703 * 0.64;
 /*
     this._port_lbu = -40;
     this._port_lbv = -40;
@@ -237,7 +237,7 @@ function HodoPlot() {
     this.draw_hodo = function() {
         hodo = document.getElementById("hodo");
         ctx = hodo.getContext('2d');
-        ctx.drawImage(_hodo.img, -15, -10, 640, 480);
+        ctx.drawImage(_hodo.img, -15, -6, 640, 480);
     };
 
     this.set_image = function(img_src, lbu, ubu, lbv, ubv) {

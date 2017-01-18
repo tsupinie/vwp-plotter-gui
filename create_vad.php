@@ -1,6 +1,6 @@
 <?php
 
-require "utils.php";
+require "../utils.php";
 
 function get_args() {
     $radar_id = addslashes($_GET['radar']);
