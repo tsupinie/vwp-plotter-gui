@@ -51,7 +51,8 @@ $root_path = root_path();
     <p>Select vector by clicking<br>on the hodograph</p>
   </div>
   <div id="info">
-    <p>The Python script that creates the images can be found <a href="https://github.com/tsupinie/vad-plotter" target="_blank">here</a>.</p>
+    <p>Information on how to interpret the hodograph can be found <a href="https://github.com/tsupinie/vad-plotter/blob/master/README.md#interpretation">on Github</a>, 
+       along with the <a href="https://github.com/tsupinie/vad-plotter">Python script</a> that creates the images.</p>
     <p>
     <script type="text/javascript">
       function wrt() {
