@@ -59,7 +59,6 @@ div#selection ul.selectable li {
 
 div#selection ul.selectable li.selected {
     background-color: #aacccc;
-    cursor:default;
 }
 
 div#radarsel p {
