@@ -9,6 +9,7 @@ $root_path = root_path();
 <html>
 <head>
 <title>VWP Hodographs | Autumn Sky</title>
+<script type="text/javascript" src="<?php echo $root_url; ?>/map_click.js"></script>
 <script type="text/javascript" src="<?php echo $root_url; ?>/vad/vwp.js"></script>
 <link rel="stylesheet" type="text/css" href="<?php echo $root_url; ?>/main.css.php">
 <link rel="stylesheet" type="text/css" href="<?php echo $root_url; ?>/vad/vwp.css">
