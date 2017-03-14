@@ -218,9 +218,16 @@ function HodoPlot() {
     this._selecting = false;
     this._anim_timer = null;
     this.not_default = false;
+    this._dpr = window.devicePixelRatio || 1;
 
     this.init = function() {
         hodo = document.getElementById("hodo");
+
+        hodo.style.width = hodo.width + "px";
+        hodo.style.height = hodo.height + "px";
+
+        hodo.width *= _hodo._dpr;
+        hodo.height *= _hodo._dpr;
 
         _hodo.img = new Image();
         _hodo.img.onload = function() {
@@ -237,7 +244,9 @@ function HodoPlot() {
     this.draw_hodo = function() {
         hodo = document.getElementById("hodo");
         ctx = hodo.getContext('2d');
+        ctx.scale(_hodo._dpr, _hodo._dpr);
         ctx.drawImage(_hodo.img, -15, -6, 640, 480);
+        ctx.scale(1 / _hodo._dpr, 1 / _hodo._dpr);
     };
 
     this.set_image = function(img_src, lbu, ubu, lbv, ubv) {
@@ -363,6 +372,7 @@ function HodoPlot() {
             num++;
 
             _hodo.draw_hodo();
+            ctx.scale(_hodo._dpr, _hodo._dpr);
 
             ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
             ctx.fillRect(0, 0, hodo.width, hodo.height);
@@ -374,6 +384,7 @@ function HodoPlot() {
                 ctx.arc(pos_x[pos_i], pos_y[pos_i], dot_rad / 8 * i, 0, 2 * Math.PI);
                 ctx.fill();
             }
+            ctx.scale(1 / _hodo._dpr, 1 / _hodo._dpr);
         }
 
         _hodo.anim_timer = window.setInterval(anim, 100);
