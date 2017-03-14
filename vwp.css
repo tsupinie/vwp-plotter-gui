@@ -1,5 +1,5 @@
 
-div#mapradar {
+div#mapoverlay {
     position: absolute;
     visibility: hidden;
 
@@ -7,7 +7,7 @@ div#mapradar {
     background-color: white;
 }
 
-div#mapradar p {
+div#mapoverlay p {
     margin: 0px;
 }
 
@@ -61,7 +61,7 @@ div#selection ul.selectable li.selected {
     background-color: #aacccc;
 }
 
-div#radarsel p {
+div#mapsel p {
     display:inline-block;
     width:110px;
 }

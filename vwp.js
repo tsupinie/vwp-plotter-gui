@@ -30,7 +30,7 @@ function VWPApp() {
     this.prev_selection = null;
 
     this.init = function() {
-        _app.radars = new ClickableMap();
+        _app.radars = new ClickableMap('imgs/static/map.png', 'wsr88ds.json');
         _app.hodo = new HodoPlot();
 
         selectables = document.getElementsByClassName("selectable");

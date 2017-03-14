@@ -21,9 +21,9 @@ $root_path = root_path();
     <p>Click on the map to select a radar</p>
     <div id="mapdiv">
       <canvas id="map" width=400 height=247></canvas>
-      <div id="mapradar"></div>
+      <div id="mapoverlay"></div>
     </div>
-    <div id="radarsel">
+    <div id="mapsel">
       <p>Radar:</p>
     </div>
     <div id="smsel">
