@@ -47,7 +47,7 @@ function create_image($arg_str) {
         $script_path = "/home/autumn35/vad-plotter-dev/vad.py";
     }
 
-    $cmd = "/usr/bin/python $script_path $arg_str 2>&1";
+    $cmd = "/home/autumn35/miniconda3/bin/python $script_path $arg_str 2>&1";
     $output = shell_exec($cmd);
     return $output;
 }
