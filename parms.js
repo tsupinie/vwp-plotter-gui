@@ -140,8 +140,13 @@ function storm_motion(u, v, alt) {
     var lyr = 6;
     var dev = 7.5 * 1.94 // Deviation value emperically derived as 7.5 m/s
 
-    var [u_mean, v_mean] = mean_wind(u, v, alt, alt[0], lyr);
-    var [u_shr, v_shr] = wind_shear(u, v, alt, alt[0], lyr);
+    try {
+        var [u_mean, v_mean] = mean_wind(u, v, alt, alt[0], lyr);
+        var [u_shr, v_shr] = wind_shear(u, v, alt, alt[0], lyr);
+    }
+    catch (err) {
+        return {'left': [NaN, NaN], 'right': [NaN, NaN], 'mean': [NaN, NaN]};
+    }
 
     var tmp = dev / Math.hypot(u_shr, v_shr);
     var rstu = u_mean + tmp * v_shr;

@@ -1,7 +1,7 @@
 window.onload = function() {
     var app = new VWPApp();
 
-    VWP.from_server('KTLX', new Date(2015, 4, 6, 23, 0), function(vwp) { 
+    VWP.from_server('KTLX', moment.utc("2015-05-06T23:00:00Z"), null, function(vwp) { 
         console.log(vwp);
         app.hodo.draw_vwp(vwp);
     });
@@ -27,6 +27,21 @@ function _page_pos(obj) {
     return {'x':x, 'y':y};
 }
 
+function format_vector(wdir, wspd, units) {
+    if (isNaN(wdir) || isNaN(wspd)) {
+        return "--";
+    }
+
+    if (units === undefined) {
+        units = '';
+    }
+    else {
+        units = ' ' + units;
+    }
+
+    return wdir.toFixed(0).padStart(3, '0') + '/' + Math.min(99, wspd).toFixed(0).padStart(2, '0') + units;
+}
+
 function VWPApp() {
     var _app = this;
 
@@ -36,7 +51,28 @@ function VWPApp() {
     this.prev_selection = null;
 
     this.init = function() {
-        _app.radars = new ClickableMap('imgs/static/map.png', 'wsr88ds.json');
+        var mapclick = function(rad) {
+            $('#mapsel').html('<p>Radar:</p> <ul><li>' + rad.id + ' (' + rad.name + ')</li></ul>')
+
+            check_files(rad.id, function(file_times) {
+                file_times = file_times['times'];
+
+                var latest = Object.keys(file_times).reduce((e1, e2) => (file_times[e1] > file_times[e2] ? e1 : e2));
+                var time_latest = file_times[latest];
+
+                var id_latest = latest.substring(3);
+                if (id_latest == 'last') {
+                    id_latest = null;
+                }
+
+                VWP.from_server(rad.id, time_latest, id_latest, function(vwp) {
+                    console.log(vwp);
+                    _app.hodo.draw_vwp(vwp);
+                });
+            });
+        }
+
+        _app.radars = new ClickableMap('imgs/static/map.png', 'wsr88ds.json', mapclick);
         _app.hodo = new HodoPlot();
 
         selectables = document.getElementsByClassName("selectable");
@@ -88,6 +124,7 @@ function VWPApp() {
 
             vector_callback = function(wspd, wdir) {
                 if (wspd !== null && wdir !== null) {
+/*
                     wdir = Math.round(wdir)
                     if      (wdir < 10)  { wdir_str = "00" + wdir; }
                     else if (wdir < 100) { wdir_str = "0" + wdir; }
@@ -98,6 +135,8 @@ function VWPApp() {
                     else            { wspd_str = "" + wspd; }
 
                     vec_str = wdir_str + "/" + wspd_str
+*/
+                    vec_str = format_vector(wdir, wspd);
                 }
                 else {
                     vec_str = "DDD/SS";
@@ -582,6 +621,7 @@ class HodoPlot {
     }
 
     clear_and_draw_background() {
+        this._canvas.getContext('2d').clearRect(0, 0, this._canvas.width, this._canvas.height);
 /*      if (this._background_image === null) {
             
         }
@@ -791,7 +831,7 @@ class HodoPlot {
        /**********************************
         * Draw title
         **********************************/
-        var title_str = vwp.radar_id + " VWP valid " + dateFns.format(vwp.radar_dt, "DD MMM YYYY HHmm UTC");
+        var title_str = vwp.radar_id + " VWP valid " + moment.utc(vwp.radar_dt).format("DD MMM YYYY HHmm UTC");
         ctx.fillStyle = '#000000';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'alphabetic';
@@ -810,26 +850,39 @@ class HodoPlot {
         ctx.font = "10.5px Trebuchet MS";
         ctx.textAlign = 'left';
         ctx.textBaseline = 'top';
-        ctx.fillText(vwp.params['bwd01'].toFixed(0), 0.28, 8.8);
-        ctx.fillText(vwp.params['bwd03'].toFixed(0), 0.28, 7.8);
-        ctx.fillText(vwp.params['bwd06'].toFixed(0), 0.28, 6.8);
 
-        ctx.fillText(vwp.params['srh01_right'].toFixed(0), 0.63, 8.8);
-        ctx.fillText(vwp.params['srh03_right'].toFixed(0), 0.63, 7.8);
+        function format(val, units) {
+            if (isNaN(val)) {
+                return '--';
+            }
+
+            if (units === undefined) {
+                units = "";
+            }
+
+            return val.toFixed(0) + units
+        }
+
+        ctx.fillText(format(vwp.params['bwd01']), 0.28, 8.8);
+        ctx.fillText(format(vwp.params['bwd03']), 0.28, 7.8);
+        ctx.fillText(format(vwp.params['bwd06']), 0.28, 6.8);
+
+        ctx.fillText(format(vwp.params['srh01_right']), 0.63, 8.8);
+        ctx.fillText(format(vwp.params['srh03_right']), 0.63, 7.8);
 
         var [dir, spd] = comp2vec.apply(null, vwp.params['bunkers_right']);
-        ctx.fillText(dir.toFixed(0) + '/' + spd.toFixed(0) + ' kts', 0.7, 5.6);
+        ctx.fillText(format_vector(dir, spd, 'kts'), 0.7, 5.6);
 
         var [dir, spd] = comp2vec.apply(null, vwp.params['bunkers_left']);
-        ctx.fillText(dir.toFixed(0) + '/' + spd.toFixed(0) + ' kts', 0.7, 4.6);
+        ctx.fillText(format_vector(dir, spd, 'kts'), 0.7, 4.6);
 
         var [dir, spd] = comp2vec.apply(null, vwp.params['bunkers_right']);
-        ctx.fillText(dir.toFixed(0) + '/' + spd.toFixed(0) + ' kts', 0.7, 3.6);
+        ctx.fillText(format_vector(dir, spd, 'kts'), 0.7, 3.6);
 
         var [dir, spd] = comp2vec.apply(null, vwp.params['bunkers_mean']);
-        ctx.fillText(dir.toFixed(0) + '/' + spd.toFixed(0) + ' kts', 0.7, 2.6);
+        ctx.fillText(format_vector(dir, spd, 'kts'), 0.7, 2.6);
 
-        ctx.fillText(vwp.params['ca_right'].toFixed(0) + '\u{00b0}', 0.5, 1.4);
+        ctx.fillText(format(vwp.params['ca_right'], '\u{00b0}'), 0.5, 1.4);
     }
 
     _create_ctx_proxy(bbox_pixels, bbox_data) {
@@ -874,18 +927,36 @@ class VWP {
         }
 
         [1, 3, 6].forEach((function(lyr_ub) {
-            var [shr_u, shr_v] = wind_shear(this.u, this.v, this.alt, this.alt[0], lyr_ub)
+            try {
+                var [shr_u, shr_v] = wind_shear(this.u, this.v, this.alt, this.alt[0], lyr_ub);
+            }
+            catch (err) {
+                var [shr_u, shr_v] = [NaN, NaN];
+            }
+
             this.params['bwd0' + lyr_ub] = Math.hypot(shr_u, shr_v);
         }).bind(this));
 
         [1, 3].forEach((function(lyr_ub) {
-            var srh = storm_relative_helicity(this.u, this.v, this.alt, this.alt[0], lyr_ub, storm_motions);
+            try {
+                var srh = storm_relative_helicity(this.u, this.v, this.alt, this.alt[0], lyr_ub, storm_motions);
+            }
+            catch (err) {
+                var srh = Object.fromEntries(Object.keys(storm_motions).map(key => [key, NaN]));
+            }
+
             for (smv in srh) {
                 this.params['srh0' + lyr_ub + '_' + smv] = srh[smv];
             }
         }).bind(this));
 
-        var critical_angles = critical_angle(this.u, this.v, this.alt, storm_motions);
+        try {
+            var critical_angles = critical_angle(this.u, this.v, this.alt, storm_motions);
+        }
+        catch (err) {
+            var critical_angles = Object.fromEntries(Object.keys(critical_angles).map(key => [key, NaN]));
+        }
+
         for (var smv in critical_angles) {
             this.params['ca_' + smv] = critical_angles[smv];
         }
@@ -960,39 +1031,6 @@ class VWP {
         ctx.stroke();
 
        /**********************************
-        * Draw height markers
-        **********************************/
-        ctx.save()
-        var marker_fudge = 0.5
-        var marker_rad = 6;
-
-        var mkr_val = 1;
-
-        for (var i = 1; i < this.u.length; i++) {
-            while (this.alt[i - 1] < mkr_val && mkr_val <= this.alt[i]) {
-                var umkr = linear_interp(mkr_val, this.alt[i - 1], this.alt[i], this.u[i - 1], this.u[i]);
-                var vmkr = linear_interp(mkr_val, this.alt[i - 1], this.alt[i], this.v[i - 1], this.v[i]);
-
-                ctx.beginPath();
-                ctx.fillStyle = '#000000';
-                ctx.circle(umkr, vmkr, marker_rad, 'pixels');
-                ctx.fill();
-
-                ctx.fillStyle = '#ffffff';
-                ctx.font = "9px Trebuchet MS";
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-
-                var [txt_u, txt_v] = ctx.pixelOffset(umkr, vmkr, 0, marker_fudge);
-                ctx.fillText(mkr_val, txt_u, txt_v);
-
-                mkr_val++;
-            }
-        }
-
-        ctx.restore()
-
-       /**********************************
         * Draw storm motion markers
         **********************************/
         ctx.save();
@@ -1059,6 +1097,39 @@ class VWP {
         ctx.restore();
 
        /**********************************
+        * Draw height markers
+        **********************************/
+        ctx.save()
+        var marker_fudge = 0.5
+        var marker_rad = 6;
+
+        var mkr_val = 1;
+
+        for (var i = 1; i < this.u.length; i++) {
+            while (this.alt[i - 1] < mkr_val && mkr_val <= this.alt[i]) {
+                var umkr = linear_interp(mkr_val, this.alt[i - 1], this.alt[i], this.u[i - 1], this.u[i]);
+                var vmkr = linear_interp(mkr_val, this.alt[i - 1], this.alt[i], this.v[i - 1], this.v[i]);
+
+                ctx.beginPath();
+                ctx.fillStyle = '#000000';
+                ctx.circle(umkr, vmkr, marker_rad, 'pixels');
+                ctx.fill();
+
+                ctx.fillStyle = '#ffffff';
+                ctx.font = "9px Trebuchet MS";
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+
+                var [txt_u, txt_v] = ctx.pixelOffset(umkr, vmkr, 0, marker_fudge);
+                ctx.fillText(mkr_val, txt_u, txt_v);
+
+                mkr_val++;
+            }
+        }
+
+        ctx.restore()
+
+       /**********************************
         * Draw SR wind
         **********************************/
         ctx = srwind_ctx;
@@ -1079,18 +1150,34 @@ class VWP {
         ctx.restore();
     }
 
-    static from_server(radar_id, dt, callback) {
-        var dt_str = dateFns.format(dt, 'YYYYMMDD_HHmm');
-        var url = "http://www.autumnsky.us/dev/vad/" + radar_id + "_" + dt_str + ".json";
+    static from_server(radar_id, dt, file_id, callback) {
+        var dt_str = dt.format('YYYY-MM-DD[T]HH:mm:ss[Z]');
+        var root_url = $('#root_url').val();
 
-        $.getJSON(url, function(vwp_json) {
-            callback(VWP.from_json(vwp_json));
+        var url = root_url + "/vad/get_radar_json.php?radar=" + radar_id + '&time=' + dt_str;
+        if (file_id !== null) {
+            url += '&id=' + file_id;
+        }
+
+        $.getJSON(url, function(json) {
+            json['warnings'].forEach(function(warn) { console.warn(warn); });
+            callback(VWP.from_json(json['response']));
         });
     }
 
     static from_json(json) {
-        var vwp = new VWP(json['radar_id'], dateFns.parse(json['datetime']),
+        var vwp = new VWP(json['radar_id'], moment.utc(json['datetime']),
                           json['data']['wind_dir'], json['data']['wind_spd'], json['data']['altitude'], json['data']['rms_error']);
         return vwp;
     }
+}
+
+function check_files(radar_id, callback) {
+    var root_url = $('#root_url').val();
+    $.getJSON(root_url + "/vad/get_radar_times.php?radar=" + radar_id, function(json) {
+        for (fname in json['times']) {
+            json['times'][fname] = moment.utc(json['times'][fname]);
+        }
+        callback(json);
+    })
 }
