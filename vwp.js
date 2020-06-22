@@ -3,7 +3,7 @@ window.onload = function() {
 
     VWP.from_server('KTLX', moment.utc("2015-05-06T23:00:00Z"), null, function(vwp) { 
         console.log(vwp);
-        app.hodo.draw_vwp(vwp);
+        app.hodo.add_vwp(vwp);
     });
 
 }
@@ -42,19 +42,16 @@ function format_vector(wdir, wspd, units) {
     return wdir.toFixed(0).padStart(3, '0') + '/' + Math.min(99, wspd).toFixed(0).padStart(2, '0') + units;
 }
 
-function VWPApp() {
-    var _app = this;
+class VWPApp {
+    constructor() {
+        this.sfc = "None";
+        this.waiting = false;
+        this.prev_selection = null;
 
-    this.smv = "BRM";
-    this.sfc = "None";
-    this.waiting = false;
-    this.prev_selection = null;
-
-    this.init = function() {
-        var mapclick = function(rad) {
+        var mapclick = (function(rad) {
             $('#mapsel').html('<p>Radar:</p> <ul><li>' + rad.id + ' (' + rad.name + ')</li></ul>')
 
-            check_files(rad.id, function(file_times) {
+            check_files(rad.id, (function(file_times) {
                 file_times = file_times['times'];
 
                 var latest = Object.keys(file_times).reduce((e1, e2) => (file_times[e1] > file_times[e2] ? e1 : e2));
@@ -65,21 +62,21 @@ function VWPApp() {
                     id_latest = null;
                 }
 
-                VWP.from_server(rad.id, time_latest, id_latest, function(vwp) {
+                VWP.from_server(rad.id, time_latest, id_latest, (function(vwp) {
                     console.log(vwp);
-                    _app.hodo.draw_vwp(vwp);
-                });
-            });
-        }
+                    this.hodo.add_vwp(vwp);
+                }).bind(this));
+            }).bind(this));
+        }).bind(this)
 
-        _app.radars = new ClickableMap('imgs/static/map.png', 'wsr88ds.json', mapclick);
-        _app.hodo = new HodoPlot();
+        this.radars = new ClickableMap('imgs/static/map.png', 'wsr88ds.json', mapclick);
+        this.hodo = new HodoPlot();
 
-        selectables = document.getElementsByClassName("selectable");
+        var selectables = document.getElementsByClassName("selectable");
         for (var i = 0; i < selectables.length; i++) {
-            selectables[i].onmouseup = this.select;
+            selectables[i].onmouseup = this.select.bind(this);
 
-            children = selectables[i].getElementsByTagName("li");
+            var children = selectables[i].getElementsByTagName("li");
             for (var j = 0; j < children.length; j++) {
                 if (children[j].childNodes[0].textContent == "DDD/SS") {
                     children[j].vector_select = true;
@@ -90,22 +87,22 @@ function VWPApp() {
             }
         }
 
-        document.getElementById("generate").onmouseup = _app.generate;
-    };
+        document.getElementById("generate").onmouseup = this.generate.bind(this);
+    }
 
-    this.select = function(event) {
-        target = event.target;
+    select(event) {
+        var target = event.target;
 
-        if (_app.hodo.selecting) {
-            _app._abort_selection();
+        if (this.hodo.selecting) {
+            this._abort_selection();
         }
 
         if (target.vector_select) {
-            _app.prev_selection = _app._select_box(target);
-            help = document.getElementById("selecthelp");
+            this.prev_selection = this._select_box(target);
+            var help = document.getElementById("selecthelp");
 
             help.style.visibility = "visible";
-            target_pos = _page_pos(target);
+            var target_pos = _page_pos(target);
 /*
             if (target.offsetLeft !== undefined) {
                 help.offsetLeft = target.offsetLeft + 100;
@@ -116,107 +113,94 @@ function VWPApp() {
                 help.top = target.top;
             }
 */
-            console.log(target_pos);
             help.style.offsetLeft = target_pos.x + 70;
             help.style.offsetTop = target_pos.y - 17;
             help.style.left = target_pos.x + 70;
             help.style.top = target_pos.y - 17;
 
-            vector_callback = function(wspd, wdir) {
+            var vector_callback = (function(wspd, wdir) {
                 if (wspd !== null && wdir !== null) {
-/*
-                    wdir = Math.round(wdir)
-                    if      (wdir < 10)  { wdir_str = "00" + wdir; }
-                    else if (wdir < 100) { wdir_str = "0" + wdir; }
-                    else                 { wdir_str = "" + wdir; }
-
-                    wspd = Math.round(Math.min(wspd, 99));
-                    if (wspd < 10)  { wspd_str = "0" + wspd; }
-                    else            { wspd_str = "" + wspd; }
-
-                    vec_str = wdir_str + "/" + wspd_str
-*/
-                    vec_str = format_vector(wdir, wspd);
+                    var vec_str = format_vector(wdir, wspd);
                 }
                 else {
-                    vec_str = "DDD/SS";
+                    var vec_str = "DDD/SS";
                 }
 
-                txt = document.createTextNode(vec_str);
+                var txt = document.createTextNode(vec_str);
                 target.replaceChild(txt, target.childNodes[0]);
+            }).bind(this);
 
-                _app._update_state(target, vec_str);
-            }
+            var done_callback = (function(wspd, wdir) {
+                this._update_state(target, [wdir, wspd]);
 
-            done_callback = function() {
                 help.style.visibility = "hidden";
                 help.style.offsetLeft = 0;
                 help.style.offsetTop = 0;
                 help.style.left = 0;
                 help.style.top = 0;
-            }
+            }).bind(this);
 
-            _app.hodo.selection_start(vector_callback, done_callback);
+            this.hodo.selection_start(vector_callback, done_callback);
         }
         else {
-            _app._select_box(target);
-            _app._update_state(target, target.childNodes[0].textContent);
+            this._select_box(target);
+            this._update_state(target, target.childNodes[0].textContent);
         }
     };
 
-    this.generate = function() {
-        if (_app.radars.selected === null || _app.radars.selected == "") {
+    generate() {
+        if (this.radars.selected === null || this.radars.selected == "") {
             window.alert("Select a radar first!");
             return;
         }
 
-        if (_app.waiting) {
+        if (this.waiting) {
             return;
         }
 
-        if (_app.hodo.selecting) {
-            _app._abort_selection();
+        if (this.hodo.selecting) {
+            this._abort_selection();
         }
-
+/*
         req = new XMLHttpRequest();
-        path = "create_vad.php?radar=" + _app.radars.selected
+        path = "create_vad.php?radar=" + this.radars.selected
 
-        if (_app.smv != "DDD/SS") {
-            path += "&smv=" + _app.smv
+        if (this.smv != "DDD/SS") {
+            path += "&smv=" + this.smv
         }
 
-        if (_app.sfc != "None" && _app.sfc != "DDD/SS") {
-            path += "&sfc=" + _app.sfc
+        if (this.sfc != "None" && this.sfc != "DDD/SS") {
+            path += "&sfc=" + this.sfc
         }
 
         req.open("GET", path, true);
-        req.onreadystatechange = function() {
+        req.onreadystatechange = (function() {
             if (req.readyState == 4 && req.status == "200") {
-                _app.hodo.stop_loading();
+                this.hodo.stop_loading();
 
                 resp_json = JSON.parse(req.responseText);
                
                 if (!('error' in resp_json)) {
-                    _app.hodo.set_image("imgs/" + resp_json.img_name, 
+                    this.hodo.set_image("imgs/" + resp_json.img_name, 
                         resp_json.min_u, resp_json.max_u, resp_json.min_v, resp_json.max_v
                     );
                 }
                 else {
-                    _app.hodo.draw_hodo();
+                    this.hodo.draw_hodo();
                     window.alert("An error occurred!\n");
                     console.log(resp_json)
                 }
-                _app.waiting = false;
+                this.waiting = false;
     	    }
-        };
-        req.send(null);
-        _app.hodo.start_loading();
-        _app.waiting = true;
+        }).bind(this);
+        req.send(null); */
+        this.hodo.start_loading();
+        this.waiting = true;
     };
 
-    this._select_box = function(obj) {
-        was_selected = null;
-        siblings = obj.parentElement.getElementsByTagName(obj.tagName);
+    _select_box(obj) {
+        var was_selected = null;
+        var siblings = obj.parentElement.getElementsByTagName(obj.tagName);
         for (var i = 0; i < siblings.length; i++) {
             if (siblings[i].className != "") {
                 was_selected = siblings[i];
@@ -228,24 +212,22 @@ function VWPApp() {
         return was_selected;
     };
 
-    this._update_state = function(obj, val) {
+    _update_state(obj, val) {
         if (obj.parentElement.parentElement.id == "smsel") {
-            _app.smv = val;
+            this.hodo.change_storm_motion(val);
         }
         else if (obj.parentElement.parentElement.id == "sfcsel") {
-            _app.sfc = val;
+            this.hodo.change_surface_wind(val);
         }
     };
 
-    this._abort_selection = function () {
-        if (_app.prev_selection !== null) {
-            _app._select_box(_app.prev_selection)
-            _app._update_state(_app.prev_selection, _app.prev_selection.childNodes[0].textContent);
+    _abort_selection() {
+        if (this.prev_selection !== null) {
+            this._select_box(this.prev_selection)
+            this._update_state(this.prev_selection, this.prev_selection.childNodes[0].textContent);
         }
-        _app.hodo.selection_finish();
+        this.hodo.selection_finish(null, null);
     }
-
-    this.init();
 }
 
 function HodoPlotOld() {
@@ -445,9 +427,23 @@ function HodoPlotOld() {
 }
 
 
+class BBox {
+    constructor(lbx, lby, ubx, uby) {
+        this.lbx = lbx;
+        this.lby = lby;
+        this.ubx = ubx;
+        this.uby = uby;
+    }
+
+    contains(x, y) {
+        return (this.lbx <= x && x <= this.ubx && this.lby <= y && y <= this.uby);
+    }
+}
+
+
 class Context2DWrapper {
     constructor(bbox_pixels, bbox_data, dpr) {
-        this._bbox_pixels = bbox_pixels;
+        this.bbox_pixels = bbox_pixels;
         this.bbox_data = bbox_data;
         this._dpr = dpr;
     }
@@ -500,7 +496,7 @@ class Context2DWrapper {
             rad_units = 'data';
         }
 
-        var [x, y] = this.data_to_pix(x_data, y_data);
+        var [x, y] = this.data_to_pix(ctx, x_data, y_data);
 
         var canvas_rad;
 
@@ -508,7 +504,7 @@ class Context2DWrapper {
             canvas_rad = rad * this._dpr;
         }
         else if (rad_units == 'data') {
-            var [x_edge, y_edge] = this.data_to_pix(x_data + rad, y_data);
+            var [x_edge, y_edge] = this.data_to_pix(ctx, x_data + rad, y_data);
             canvas_rad = x_edge - x;
         }
         else {
@@ -519,24 +515,24 @@ class Context2DWrapper {
     }
 
     moveTo(ctx, x_data, y_data) {
-        var [x, y] = this.data_to_pix(x_data, y_data);
+        var [x, y] = this.data_to_pix(ctx, x_data, y_data);
         ctx.moveTo(x, y);
     }
 
     lineTo(ctx, x_data, y_data) {
-        var [x, y] = this.data_to_pix(x_data, y_data);
+        var [x, y] = this.data_to_pix(ctx, x_data, y_data);
         ctx.lineTo(x, y);
     }
 
     rect(ctx, x_data_lb, y_data_lb, data_width, data_height) {
-        var [lbx, lby] = this.data_to_pix(x_data_lb, y_data_lb);
-        var [ubx, uby] = this.data_to_pix(x_data_lb + data_width, y_data_lb + data_height);
+        var [lbx, lby] = this.data_to_pix(ctx, x_data_lb, y_data_lb);
+        var [ubx, uby] = this.data_to_pix(ctx, x_data_lb + data_width, y_data_lb + data_height);
 
         ctx.rect(lbx, lby, ubx - lbx, uby - lby);
     }
 
     fillText(ctx, str, x_data, y_data) {
-        var [x, y] = this.data_to_pix(x_data, y_data);
+        var [x, y] = this.data_to_pix(ctx, x_data, y_data);
         ctx.fillText(str, x, y);
     }
 
@@ -566,19 +562,19 @@ class Context2DWrapper {
         // Computes values in data coordinates with a given pixel offset from a given value
         // First argument is a dummy because the get proxy sticks the original drawing context in there. Surely there's
         //  a better way to handle that?
-        var [x, y] = this.data_to_pix(x_data, y_data);
-        return this.pix_to_data(x + x_offset * this._dpr, y + y_offset * this._dpr);
+        var [x, y] = this.data_to_pix(_, x_data, y_data);
+        return this.pix_to_data(_, x + x_offset * this._dpr, y + y_offset * this._dpr);
     }
 
-    data_to_pix(x_data, y_data) {
-        var x = linear_interp(x_data, this.bbox_data[0], this.bbox_data[2], this._bbox_pixels[0], this._bbox_pixels[2]);
-        var y = linear_interp(y_data, this.bbox_data[1], this.bbox_data[3], this._bbox_pixels[3], this._bbox_pixels[1]);
+    data_to_pix(_, x_data, y_data) {
+        var x = linear_interp(x_data, this.bbox_data.lbx, this.bbox_data.ubx, this.bbox_pixels.lbx, this.bbox_pixels.ubx);
+        var y = linear_interp(y_data, this.bbox_data.lby, this.bbox_data.uby, this.bbox_pixels.uby, this.bbox_pixels.lby);
         return [x * this._dpr, y * this._dpr];
     }
 
-    pix_to_data(x, y) {
-        var x_data = linear_interp(x / this._dpr, this._bbox_pixels[0], this._bbox_pixels[2], this.bbox_data[0], this.bbox_data[2]);
-        var y_data = linear_interp(y / this._dpr, this._bbox_pixels[1], this._bbox_pixels[3], this.bbox_data[3], this.bbox_data[1]);
+    pix_to_data(_, x, y) {
+        var x_data = linear_interp(x / this._dpr, this.bbox_pixels.lbx, this.bbox_pixels.ubx, this.bbox_data.lbx, this.bbox_data.ubx);
+        var y_data = linear_interp(y / this._dpr, this.bbox_pixels.uby, this.bbox_pixels.lby, this.bbox_data.lby, this.bbox_data.uby);
         return [x_data, y_data];
     }
 
@@ -598,19 +594,27 @@ class HodoPlot {
 
         this._background_image = null;
 
-        var hodo_bbox_pixels = [ 16.64, 17.92, 449.28, 449.92 ];
-        var hodo_bbox_uv = [-40, -40, 80, 80];
+        var hodo_bbox_pixels = new BBox(16.64, 17.92, 449.28, 449.92);
+        var hodo_bbox_uv = new BBox(-40, -40, 80, 80);
         this.hodo_ctx = this._create_ctx_proxy(hodo_bbox_pixels, hodo_bbox_uv);
 
-        var table_bbox_pixels = [ 455.92, 17.92, 608.36, 160 ];
-        var table_bbox_data = [0, 0, 1, 11];
+        var table_bbox_pixels = new BBox(455.92, 17.92, 608.36, 160);
+        var table_bbox_data = new BBox(0, 0, 1, 11);
         this.table_ctx = this._create_ctx_proxy(table_bbox_pixels, table_bbox_data);
 
-        var srwind_bbox_pixels = [ 470, 180, 608.36, 449.92 ];
-        var srwind_bbox_data = [0, 0, 70, 12];
+        var srwind_bbox_pixels = new BBox(470, 180, 608.36, 449.92);
+        var srwind_bbox_data = new BBox(0, 0, 70, 12);
         this.srwind_ctx = this._create_ctx_proxy(srwind_bbox_pixels, srwind_bbox_data);
 
-        this.clear_and_draw_background();
+        this.clear_vwps();
+
+        this._move_callback = null;
+        this._done_callback = null;
+        this.selecing = false;
+
+        this._canvas.onmousemove = this.mousemove.bind(this);
+        this._canvas.onmouseup = this.mouseclick.bind(this);
+        this._canvas.onmouseout = this.mouseleave.bind(this);
 
         var canvas_img = this._canvas.toDataURL();
 /*      var iframe = "<iframe width='100%' height='100%' src='" + String(canvas_img) + "'></iframe>"
@@ -618,6 +622,84 @@ class HodoPlot {
         x.document.open();
         x.document.write(iframe);
         x.document.close(); */
+    }
+
+    add_vwp(vwp) {
+        this._vwps.push(vwp);
+        this.draw_vwp(vwp);
+    }
+
+    clear_vwps() {
+        this._vwps = [];
+        this.clear_and_draw_background();
+    }
+
+    mousemove(event) {
+        var mx = event.pageX - this._canvas.offsetLeft;
+        var my = event.pageY - this._canvas.offsetTop;
+
+        if (this._move_callback === null) {
+            if (this.hodo_ctx.bbox_pixels.contains(mx, my)) {
+                this._canvas.style.cursor = "pointer";
+            }
+            else {
+                this._canvas.style.cursor = "default";
+            }
+        }
+        else {
+            var [u, v] = this.hodo_ctx.pix_to_data(mx * this._dpr, my * this._dpr);
+
+            if (this.hodo_ctx.bbox_data.contains(u, v)) {
+                hodo.style.cursor = "crosshair";
+                var [wdir, wspd] = comp2vec(u, v);
+                this._move_callback(wspd, wdir);
+
+            }
+            else {
+                hodo.style.cursor = "default";
+                this._move_callback(null, null);
+            }
+        }
+    }
+
+    mouseclick(event) {
+        var mx = event.pageX - hodo.offsetLeft;
+        var my = event.pageY - hodo.offsetTop;
+
+        if (this._move_callback === null) {
+            if (this.hodo_ctx.bbox_pixels.contains(mx, my)) {
+//              window.open(_hodo.img.src, '_blank');
+            }
+        }
+        else {
+            this.selection_finish(mx, my);
+        }
+    }
+
+    mouseleave(event) {
+        if (this._move_callback !== null) {
+            this._move_callback(null, null);
+        }
+    }
+
+    selection_start(move_callback, done_callback) {
+        this._move_callback = move_callback;
+        this._done_callback = done_callback;
+        this.selecting = true;
+    }
+
+    selection_finish(mx, my) {
+        if (mx !== null && my !== null) {
+            var [u, v] = this.hodo_ctx.pix_to_data(mx * this._dpr, my * this._dpr);
+            var [wdir, wspd] = comp2vec(u, v);
+            this._done_callback(wspd, wdir);
+        }
+
+        this._move_callback = null;
+        this._done_callback = null;
+
+        this._canvas.style.cursor = "pointer";
+        this.selecting = false;
     }
 
     clear_and_draw_background() {
@@ -632,7 +714,7 @@ class HodoPlot {
             **********************************/
             var ctx = this.hodo_ctx;
 
-            var [lbu, lbv, ubu, ubv] = ctx.bbox_data;
+            var [lbu, lbv, ubu, ubv] = [ctx.bbox_data.lbx, ctx.bbox_data.lby, ctx.bbox_data.ubx, ctx.bbox_data.uby];
 
             var max_u = Math.max(Math.abs(lbu), Math.abs(ubu));
             var max_v = Math.max(Math.abs(lbv), Math.abs(ubv));
@@ -754,7 +836,7 @@ class HodoPlot {
             * Draw SR wind plot background
             **********************************/
             ctx = this.srwind_ctx;
-            var [lbs, lbz, ubs, ubz] = this.srwind_ctx.bbox_data;
+            var [lbs, lbz, ubs, ubz] = [ctx.bbox_data.lbx, ctx.bbox_data.lby, ctx.bbox_data.ubx, ctx.bbox_data.uby];
 
             ctx.save();
 
@@ -836,7 +918,7 @@ class HodoPlot {
         ctx.textAlign = 'center';
         ctx.textBaseline = 'alphabetic';
 
-        var [lbu, lbv, ubu, ubv] = ctx.bbox_data;
+        var [lbu, lbv, ubu, ubv] = [ctx.bbox_data.lbx, ctx.bbox_data.lby, ctx.bbox_data.ubx, ctx.bbox_data.uby];
         var [txtu, txtv] = ctx.pixelOffset((lbu + ubu) / 2, ubv, 0, -5);
 
         ctx.font = "14px Trebuchet MS";
@@ -867,10 +949,10 @@ class HodoPlot {
         ctx.fillText(format(vwp.params['bwd03']), 0.28, 7.8);
         ctx.fillText(format(vwp.params['bwd06']), 0.28, 6.8);
 
-        ctx.fillText(format(vwp.params['srh01_right']), 0.63, 8.8);
-        ctx.fillText(format(vwp.params['srh03_right']), 0.63, 7.8);
+        ctx.fillText(format(vwp.params['srh01']), 0.63, 8.8);
+        ctx.fillText(format(vwp.params['srh03']), 0.63, 7.8);
 
-        var [dir, spd] = comp2vec.apply(null, vwp.params['bunkers_right']);
+        var [dir, spd] = comp2vec.apply(null, vwp.sm_vec);
         ctx.fillText(format_vector(dir, spd, 'kts'), 0.7, 5.6);
 
         var [dir, spd] = comp2vec.apply(null, vwp.params['bunkers_left']);
@@ -882,7 +964,27 @@ class HodoPlot {
         var [dir, spd] = comp2vec.apply(null, vwp.params['bunkers_mean']);
         ctx.fillText(format_vector(dir, spd, 'kts'), 0.7, 2.6);
 
-        ctx.fillText(format(vwp.params['ca_right'], '\u{00b0}'), 0.5, 1.4);
+        ctx.fillText(format(vwp.params['ca'], '\u{00b0}'), 0.5, 1.4);
+    }
+
+    change_surface_wind(new_vec) {
+        this._vwps.forEach(function(vwp) {
+            vwp.change_surface_wind(new_vec);
+        });
+
+        if (this._vwps.length > 0) {
+            this.draw_vwp(this._vwps[this._vwps.length - 1]);
+        }
+    }
+
+    change_storm_motion(new_vec) {
+        this._vwps.forEach(function(vwp) {
+            vwp.change_storm_motion(new_vec);
+        });
+
+        if (this._vwps.length > 0) {
+            this.draw_vwp(this._vwps[this._vwps.length - 1]);
+        }
     }
 
     _create_ctx_proxy(bbox_pixels, bbox_data) {
@@ -914,21 +1016,40 @@ class VWP {
             this.v.push(v);
         }
 
+        this.sm_vec = null;
+        this.sfc_wind = null;
+
         this._compute_parameters();
     }
 
     _compute_parameters() {
         this.params = {};
 
-        var storm_motions = storm_motion(this.u, this.v, this.alt);
+        var u = this.u;
+        var v = this.v;
+        var alt = this.alt;
+
+        if (this.sfc_wind !== null) {
+            var [usfc, vsfc] = this.sfc_wind;
+            u = [usfc].concat(u);
+            v = [vsfc].concat(v);
+            alt = [0.01].concat(alt);
+        }
+
+        var storm_motions = storm_motion(u, v, alt);
         for (var smv in storm_motions) {
             var [ustm, vstm] = storm_motions[smv];
             this.params['bunkers_' + smv] = [ustm, vstm]; //comp2vec(ustm, vstm);
         }
 
+        if (this.sm_vec === null) {
+            this.sm_vec = storm_motions['right'];
+        }
+        storm_motions['user'] = this.sm_vec;
+
         [1, 3, 6].forEach((function(lyr_ub) {
             try {
-                var [shr_u, shr_v] = wind_shear(this.u, this.v, this.alt, this.alt[0], lyr_ub);
+                var [shr_u, shr_v] = wind_shear(u, v, alt, alt[0], lyr_ub);
             }
             catch (err) {
                 var [shr_u, shr_v] = [NaN, NaN];
@@ -939,38 +1060,36 @@ class VWP {
 
         [1, 3].forEach((function(lyr_ub) {
             try {
-                var srh = storm_relative_helicity(this.u, this.v, this.alt, this.alt[0], lyr_ub, storm_motions);
+                var srh = storm_relative_helicity(u, v, alt, alt[0], lyr_ub, {'user': this.sm_vec});
             }
             catch (err) {
-                var srh = Object.fromEntries(Object.keys(storm_motions).map(key => [key, NaN]));
+                var srh = {'user': NaN};
             }
 
-            for (smv in srh) {
-                this.params['srh0' + lyr_ub + '_' + smv] = srh[smv];
-            }
+            this.params['srh0' + lyr_ub] = srh['user'];
         }).bind(this));
 
         try {
-            var critical_angles = critical_angle(this.u, this.v, this.alt, storm_motions);
+            var critical_angles = critical_angle(u, v, alt, {'user': this.sm_vec});
         }
         catch (err) {
-            var critical_angles = Object.fromEntries(Object.keys(critical_angles).map(key => [key, NaN]));
+            var critical_angles = {'user': NaN, 'lyr_ub': NaN};
         }
 
-        for (var smv in critical_angles) {
-            this.params['ca_' + smv] = critical_angles[smv];
+        this.params['ca'] = critical_angles['user'];
+        this.params['ca_lyr_ub'] = critical_angles['lyr_ub'];
+
+        this.srwind = [];
+        var [smu, smv] = this.sm_vec;
+
+        for (var i = 0; i < this.u.length; i++) {
+            this.srwind.push(Math.hypot(this.u[i] - smu, this.v[i] - smv));
         }
 
-        this.srwind = {}
-        for (var smv in storm_motions) {
-            var [bunkersu, bunkersv] = this.params['bunkers_' + smv]; 
-
-            var srwind = [];
-            for (var i = 0; i < this.u.length; i++) {
-                srwind.push(Math.hypot(this.u[i] - bunkersu, this.v[i] - bunkersv));
-            }
-
-            this.srwind[smv] = srwind;
+        this.sr_sfc_wind = null;
+        if (this.sfc_wind !== null) {
+            var [usfc, vsfc] = this.sfc_wind;
+            this.sr_sfc_wind = Math.hypot(usfc - smu, vsfc - smv);
         }
     }
 
@@ -1004,8 +1123,18 @@ class VWP {
        /**********************************
         * Draw hodograph
         **********************************/
-        ctx.beginPath();
+        if (this.sfc_wind !== null) {
+            var [usfc, vsfc] = this.sfc_wind;
+            ctx.beginPath();
+            ctx.strokeStyle = colors[0];
+            ctx.setLineDash([4, 3]);
+            ctx.moveTo(usfc, vsfc);
+            ctx.lineTo(this.u[0], this.v[0]);
+            ctx.stroke()
+        }
 
+        ctx.beginPath();
+        ctx.setLineDash([]);
         ctx.moveTo(this.u[0], this.v[0]);
 
         iseg = 0;
@@ -1068,6 +1197,32 @@ class VWP {
             ctx.fillText(smv_names[smv], txt_u, txt_v);
         }).bind(this));
 
+        var needs_user_smv = true; 
+        Object.keys(smv_names).forEach((function(smv) {
+            needs_user_smv &= !(this.params[smv][0] == this.sm_vec[0] && this.params[smv][1] == this.sm_vec[1]);
+        }).bind(this));
+
+        if (needs_user_smv) {
+            var marker_rad = 3;
+
+            var [mkru, mkrv] = this.sm_vec;
+            var [plus_lbu, plus_lbv] = ctx.pixelOffset(mkru, mkrv, -marker_rad, -marker_rad);
+            var [plus_ubu, plus_ubv] = ctx.pixelOffset(mkru, mkrv, marker_rad, marker_rad);
+
+            ctx.strokeStyle = '#000000';
+            ctx.fillStyle = '#000000';
+
+            ctx.beginPath();
+            ctx.moveTo(plus_lbu, mkrv);
+            ctx.lineTo(plus_ubu, mkrv);
+            ctx.moveTo(mkru, plus_lbv);
+            ctx.lineTo(mkru, plus_ubv);
+            ctx.stroke();
+
+            var [txt_u, txt_v] = ctx.pixelOffset(mkru, mkrv, marker_rad / Math.sqrt(2), marker_rad / Math.sqrt(2));
+            ctx.fillText('SM', txt_u, txt_v);
+        }
+
         ctx.restore();
 
        /**********************************
@@ -1079,16 +1234,21 @@ class VWP {
         ctx.beginPath();
         ctx.strokeStyle = '#00cccc';
 
-        var [rstu, rstv] = this.params['bunkers_right'];
-        ctx.moveTo(rstu, rstv);
+        var [smu, smv] = this.sm_vec;
+        ctx.moveTo(smu, smv);
 
-        ctx.lineTo(this.u[0], this.v[0]);
+        var [low_u, low_v] = [this.u[0], this.v[0]];
+        if (this.sfc_wind !== null) {
+            [low_u, low_v] = this.sfc_wind;
+        }
+
+        ctx.lineTo(low_u, low_v);
         ctx.stroke();        
 
         ctx.beginPath();
         ctx.strokeStyle = '#cc00cc';
 
-        ctx.moveTo(this.u[0], this.v[0]);
+        ctx.moveTo(low_u, low_v);
 
         var [calu, calv] = this.params['ca_lyr_ub'];
         ctx.lineTo(calu, calv);
@@ -1134,11 +1294,21 @@ class VWP {
         **********************************/
         ctx = srwind_ctx;
 
+        // Should I add the plot bounds as a clip path?
         ctx.save();
-        var srwind = this.srwind['right'];
+        var srwind = this.srwind;
         var alt = this.alt;
-        
         ctx.strokeStyle = '#ff0000';
+
+        if (this.sr_sfc_wind !== null) {
+            ctx.setLineDash([4, 3]);
+            ctx.beginPath();
+            ctx.moveTo(this.sr_sfc_wind, 0.01);
+            ctx.lineTo(srwind[0], alt[0]);
+            ctx.stroke();
+        }
+        
+        ctx.setLineDash([]);
         ctx.linewidth = 2;
         ctx.beginPath();
         ctx.moveTo(srwind[0], alt[0]);
@@ -1148,6 +1318,45 @@ class VWP {
         ctx.stroke();
 
         ctx.restore();
+    }
+
+    change_surface_wind(new_vec) {
+        if (typeof new_vec == 'string') {
+            if (new_vec.toLowerCase() == 'none') {
+                this.sfc_wind = null;
+            }
+        }
+        else{
+            var [wdir, wspd] = new_vec;
+            this.sfc_wind = vec2comp(wdir, wspd);
+        }
+
+        var has_user_smv = true; 
+        ['bunkers_left', 'bunkers_right'].forEach((function(smv) {
+            has_user_smv &= !(this.params[smv][0] == this.sm_vec[0] && this.params[smv][1] == this.sm_vec[1]);
+        }).bind(this));
+
+        if (!has_user_smv) {
+            this.sm_vec = null;
+        }
+
+        this._compute_parameters();
+    }
+
+    change_storm_motion(new_vec) {
+        if (typeof new_vec == 'string') {
+            if (new_vec.toLowerCase() == 'blm') {
+                this.sm_vec = this.params['bunkers_left'];
+            }
+            else if (new_vec.toLowerCase() == 'brm') {
+                this.sm_vec = this.params['bunkers_right'];
+            }
+        }
+        else {
+            var [wdir, wspd] = new_vec;
+            this.sm_vec = vec2comp(wdir, wspd);
+        }
+        this._compute_parameters();
     }
 
     static from_server(radar_id, dt, file_id, callback) {
