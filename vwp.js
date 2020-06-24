@@ -46,28 +46,15 @@ class VWPApp {
     constructor() {
         this.sfc = "None";
         this.waiting = false;
+        this.file_pre_download = null;
         this.prev_selection = null;
+
+        this.file_times = {};
 
         var mapclick = (function(rad) {
             $('#mapsel').html('<p>Radar:</p> <ul><li>' + rad.id + ' (' + rad.name + ')</li></ul>')
-
-            check_files(rad.id, (function(file_times) {
-                file_times = file_times['times'];
-
-                var latest = Object.keys(file_times).reduce((e1, e2) => (file_times[e1] > file_times[e2] ? e1 : e2));
-                var time_latest = file_times[latest];
-
-                var id_latest = latest.substring(3);
-                if (id_latest == 'last') {
-                    id_latest = null;
-                }
-
-                VWP.from_server(rad.id, time_latest, id_latest, (function(vwp) {
-                    console.log(vwp);
-                    this.hodo.add_vwp(vwp);
-                }).bind(this));
-            }).bind(this));
-        }).bind(this)
+            this._check_file_times(rad.id);
+        }).bind(this);
 
         this.radars = new ClickableMap('imgs/static/map.png', 'wsr88ds.json', mapclick);
         this.hodo = new HodoPlot();
@@ -131,7 +118,9 @@ class VWPApp {
             }).bind(this);
 
             var done_callback = (function(wspd, wdir) {
-                this._update_state(target, [wdir, wspd]);
+                if (wdir !== null && wspd !== null) {
+                    this._update_state(target, [wdir, wspd]);
+                }
 
                 help.style.visibility = "hidden";
                 help.style.offsetLeft = 0;
@@ -146,7 +135,7 @@ class VWPApp {
             this._select_box(target);
             this._update_state(target, target.childNodes[0].textContent);
         }
-    };
+    }
 
     generate() {
         if (this.radars.selected === null || this.radars.selected == "") {
@@ -161,42 +150,40 @@ class VWPApp {
         if (this.hodo.selecting) {
             this._abort_selection();
         }
-/*
-        req = new XMLHttpRequest();
-        path = "create_vad.php?radar=" + this.radars.selected
 
-        if (this.smv != "DDD/SS") {
-            path += "&smv=" + this.smv
+        if (this.file_pre_download !== null && this.file_pre_download.radar_id == this.radars.selected) {
+            this.hodo.add_vwp(this.file_pre_download);
         }
-
-        if (this.sfc != "None" && this.sfc != "DDD/SS") {
-            path += "&sfc=" + this.sfc
-        }
-
-        req.open("GET", path, true);
-        req.onreadystatechange = (function() {
-            if (req.readyState == 4 && req.status == "200") {
-                this.hodo.stop_loading();
-
-                resp_json = JSON.parse(req.responseText);
-               
-                if (!('error' in resp_json)) {
-                    this.hodo.set_image("imgs/" + resp_json.img_name, 
-                        resp_json.min_u, resp_json.max_u, resp_json.min_v, resp_json.max_v
-                    );
-                }
-                else {
-                    this.hodo.draw_hodo();
-                    window.alert("An error occurred!\n");
-                    console.log(resp_json)
-                }
+        else {
+            VWP.from_server(this.radars.selected, moment.utc(), null, (function(vwp) {
                 this.waiting = false;
-    	    }
-        }).bind(this);
-        req.send(null); */
-        this.hodo.start_loading();
-        this.waiting = true;
-    };
+                this.hodo.stop_loading();
+                this.hodo.add_vwp(vwp);
+            }).bind(this));
+
+            this.waiting = true;
+            this.hodo.start_loading();
+        }
+    }
+
+    _check_file_times(radar_id) {
+        check_files(radar_id, (function(file_times) {
+            file_times = file_times['times'];
+            this.file_times[radar_id] = file_times;
+
+            var latest = Object.keys(file_times).reduce((e1, e2) => (file_times[e1] > file_times[e2] ? e1 : e2));
+            var time_latest = file_times[latest];
+
+            var id_latest = latest.substring(3);
+            if (id_latest == 'last') {
+                id_latest = null;
+            }
+
+            VWP.from_server(radar_id, time_latest, id_latest, (function(vwp) {
+                this.file_pre_download = vwp;
+            }).bind(this));
+        }).bind(this));
+    }
 
     _select_box(obj) {
         var was_selected = null;
@@ -230,203 +217,6 @@ class VWPApp {
     }
 }
 
-function HodoPlotOld() {
-    var _hodo = this;
-    this._port_lbx = 26 * 0.64;
-    this._port_lby = 28 * 0.64;
-    this._port_ubx = 702 * 0.64;
-    this._port_uby = 703 * 0.64;
-/*
-    this._port_lbu = -40;
-    this._port_lbv = -40;
-    this._port_ubu = 80;
-    this._port_ubv = 80;
-*/
-    this.callback = null;
-    this._selecting = false;
-    this._anim_timer = null;
-    this.not_default = false;
-    this._dpr = window.devicePixelRatio || 1;
-
-    this.init = function() {
-        hodo = document.getElementById("hodo");
-
-        hodo.style.width = hodo.width + "px";
-        hodo.style.height = hodo.height + "px";
-
-        hodo.width *= _hodo._dpr;
-        hodo.height *= _hodo._dpr;
-
-        _hodo.img = new Image();
-        _hodo.img.onload = function() {
-            _hodo.draw_hodo();
-        }
-
-        _hodo.set_image("imgs/static/default.png", -40, 80, -40, 80);
-      
-        hodo.onmousemove = this.mousemove;
-        hodo.onmouseup = this.mouseclick;
-        hodo.onmouseout = this.mouseleave;
-    };
-
-    this.draw_hodo = function() {
-        hodo = document.getElementById("hodo");
-        ctx = hodo.getContext('2d');
-        ctx.scale(_hodo._dpr, _hodo._dpr);
-        ctx.drawImage(_hodo.img, -15, -6, 640, 480);
-        ctx.scale(1 / _hodo._dpr, 1 / _hodo._dpr);
-    };
-
-    this.set_image = function(img_src, lbu, ubu, lbv, ubv) {
-        _hodo.img.src = img_src;
-        _hodo._port_lbu = lbu;
-        _hodo._port_ubu = ubu;
-        _hodo._port_lbv = lbv;
-        _hodo._port_ubv = ubv;
-    }
-
-    this.mousemove = function(event) {
-        hodo = document.getElementById("hodo");
-        mx = event.pageX - hodo.offsetLeft;
-        my = event.pageY - hodo.offsetTop;
-
-        if (_hodo.callback === null) {
-            if (mx >= _hodo._port_lbx && mx <= _hodo._port_ubx && my >= _hodo._port_lby && my <= _hodo._port_uby && _hodo.not_default) {
-                hodo.style.cursor = "pointer";
-            }
-            else {
-                hodo.style.cursor = "default";
-            }
-        }
-        else {
-            wind = _hodo.xy2uv(mx, my);
-
-           if (wind.u !== null && wind.v !== null) {
-                hodo.style.cursor = "crosshair";
-                vec = _hodo.uv2sd(u, v);
-                _hodo.callback(wspd, wdir);
-
-            }
-            else {
-                hodo.style.cursor = "default";
-                _hodo.callback(null, null);
-            }
-        }
-    };
-
-    this.mouseclick = function(event) {
-        if (_hodo.callback === null) {
-            hodo = document.getElementById("hodo");
-            mx = event.pageX - hodo.offsetLeft;
-            my = event.pageY - hodo.offsetTop;
-
-            if (mx >= _hodo._port_lbx && mx <= _hodo._port_ubx && my >= _hodo._port_lby && my <= _hodo._port_uby && _hodo.not_default) {
-                window.open(_hodo.img.src, '_blank');
-            }
-        }
-        else {
-            _hodo.selection_finish();
-        }
-    };
-
-    this.mouseleave = function(event) {
-        if (_hodo.callback !== null) {
-            _hodo.callback(null, null);
-        }
-    };
-
-    this.xy2uv = function(x, y) {
-        u = null;
-        v = null;
-
-        if (mx >= _hodo._port_lbx && mx <= _hodo._port_ubx && my >= _hodo._port_lby && my <= _hodo._port_uby) {
-            u = _hodo._port_lbu + (_hodo._port_ubu - _hodo._port_lbu) * (mx - _hodo._port_lbx) / (_hodo._port_ubx - _hodo._port_lbx);
-            v = _hodo._port_lbv + (_hodo._port_ubv - _hodo._port_lbv) * (_hodo._port_uby - my) / (_hodo._port_uby - _hodo._port_lby);
-        }
-
-        return {'u':u,'v':v};
-    };
-
-    this.uv2sd = function(u, v) {
-        wspd = Math.sqrt(Math.pow(u, 2) + Math.pow(v, 2));
-        wdir = 90 - Math.atan2(-v, -u) * 180 / Math.PI;
-        if (wdir < 0) {
-            wdir += 360;
-        }
-        return {'wspd':wspd, 'wdir':wdir}
-    }
-
-    this.selection_start = function(callback, done_cb) {
-        hodo = document.getElementById("hodo");
-
-        _hodo.callback = callback;
-        _hodo.done_cb = done_cb;
-
-        _hodo.selecting = true;
-    };
-
-    this.selection_finish = function() {
-        hodo = document.getElementById("hodo");
-
-        _hodo.done_cb();
-
-        hodo.style.cursor = "default";
-        _hodo.callback = null;
-        _hodo.done_cb = null;
-
-        _hodo.selecting = false;
-    };
-
-    this.start_loading = function() {
-        hodo = document.getElementById("hodo");
-        ctx = hodo.getContext('2d');
-        num = 0;
-
-        ctr_x = (_hodo._port_ubx - _hodo._port_lbx) / 2;
-        ctr_y = (_hodo._port_uby - _hodo._port_lby) / 2;
-
-        circ_rad = 50;
-        dot_rad = 20;
-
-        pos_x = [];
-        pos_y = [];
-
-        for (var i = 0; i < 8; i++) {
-            pos_x[i] = ctr_x + circ_rad * Math.cos(Math.PI * i / 4);
-            pos_y[i] = ctr_y + circ_rad * Math.sin(Math.PI * i / 4);
-        }
-
-        anim = function() {
-            num++;
-
-            _hodo.draw_hodo();
-            ctx.scale(_hodo._dpr, _hodo._dpr);
-
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
-            ctx.fillRect(0, 0, hodo.width, hodo.height);
-
-            for (var i = 0; i < 8; i++) {
-                pos_i = (i + num) % 8;
-                ctx.beginPath();
-                ctx.fillStyle = 'rgba(30, 30, 30, ' + (0.1 * (i + 2)) + ')';
-                ctx.arc(pos_x[pos_i], pos_y[pos_i], dot_rad / 8 * i, 0, 2 * Math.PI);
-                ctx.fill();
-            }
-            ctx.scale(1 / _hodo._dpr, 1 / _hodo._dpr);
-        }
-
-        _hodo.anim_timer = window.setInterval(anim, 100);
-    }
-
-    this.stop_loading = function() {
-        window.clearInterval(_hodo.anim_timer);
-        _hodo.not_default = true;
-    }
-
-    this.init();
-}
-
-
 class BBox {
     constructor(lbx, lby, ubx, uby) {
         this.lbx = lbx;
@@ -439,7 +229,6 @@ class BBox {
         return (this.lbx <= x && x <= this.ubx && this.lby <= y && y <= this.uby);
     }
 }
-
 
 class Context2DWrapper {
     constructor(bbox_pixels, bbox_data, dpr) {
@@ -541,6 +330,10 @@ class Context2DWrapper {
         ctx.setLineDash(segs_dpr);
     }
 
+    __set_bbox_data(_, bbox_data) {
+        return (this.bbox_data = bbox_data);
+    }
+
     __set_lineWidth(ctx, line_width) {
         return (ctx.lineWidth = this._dpr * line_width);
     }
@@ -594,44 +387,41 @@ class HodoPlot {
 
         this._background_image = null;
 
+        this._contexts = {};
+
         var hodo_bbox_pixels = new BBox(16.64, 17.92, 449.28, 449.92);
         var hodo_bbox_uv = new BBox(-40, -40, 80, 80);
-        this.hodo_ctx = this._create_ctx_proxy(hodo_bbox_pixels, hodo_bbox_uv);
+        this._contexts['hodo'] = HodoPlot._create_ctx_proxy(this._canvas, hodo_bbox_pixels, hodo_bbox_uv, this._dpr);
 
         var table_bbox_pixels = new BBox(455.92, 17.92, 608.36, 160);
         var table_bbox_data = new BBox(0, 0, 1, 11);
-        this.table_ctx = this._create_ctx_proxy(table_bbox_pixels, table_bbox_data);
+        this._contexts['table'] = HodoPlot._create_ctx_proxy(this._canvas, table_bbox_pixels, table_bbox_data, this._dpr);
 
         var srwind_bbox_pixels = new BBox(470, 180, 608.36, 449.92);
         var srwind_bbox_data = new BBox(0, 0, 70, 12);
-        this.srwind_ctx = this._create_ctx_proxy(srwind_bbox_pixels, srwind_bbox_data);
+        this._contexts['srwind'] = HodoPlot._create_ctx_proxy(this._canvas, srwind_bbox_pixels, srwind_bbox_data, this._dpr);
 
         this.clear_vwps();
 
         this._move_callback = null;
         this._done_callback = null;
-        this.selecing = false;
+        this.selecting = false;
 
         this._canvas.onmousemove = this.mousemove.bind(this);
         this._canvas.onmouseup = this.mouseclick.bind(this);
         this._canvas.onmouseout = this.mouseleave.bind(this);
-
-        var canvas_img = this._canvas.toDataURL();
-/*      var iframe = "<iframe width='100%' height='100%' src='" + String(canvas_img) + "'></iframe>"
-        var x = window.open();
-        x.document.open();
-        x.document.write(iframe);
-        x.document.close(); */
     }
 
     add_vwp(vwp) {
-        this._vwps.push(vwp);
-        this.draw_vwp(vwp);
+//      this._vwps.push(vwp);
+        this._vwps = [vwp];
+        this._contexts['hodo'].bbox_data = vwp.get_bbox();
+        this._draw_vwp(vwp, this._canvas, this._contexts);
     }
 
     clear_vwps() {
         this._vwps = [];
-        this.clear_and_draw_background();
+        this._clear_and_draw_background(this._canvas, this._contexts);
     }
 
     mousemove(event) {
@@ -639,7 +429,7 @@ class HodoPlot {
         var my = event.pageY - this._canvas.offsetTop;
 
         if (this._move_callback === null) {
-            if (this.hodo_ctx.bbox_pixels.contains(mx, my)) {
+            if (this._contexts['hodo'].bbox_pixels.contains(mx, my)) {
                 this._canvas.style.cursor = "pointer";
             }
             else {
@@ -647,9 +437,9 @@ class HodoPlot {
             }
         }
         else {
-            var [u, v] = this.hodo_ctx.pix_to_data(mx * this._dpr, my * this._dpr);
+            var [u, v] = this._contexts['hodo'].pix_to_data(mx * this._dpr, my * this._dpr);
 
-            if (this.hodo_ctx.bbox_data.contains(u, v)) {
+            if (this._contexts['hodo'].bbox_data.contains(u, v)) {
                 hodo.style.cursor = "crosshair";
                 var [wdir, wspd] = comp2vec(u, v);
                 this._move_callback(wspd, wdir);
@@ -667,12 +457,14 @@ class HodoPlot {
         var my = event.pageY - hodo.offsetTop;
 
         if (this._move_callback === null) {
-            if (this.hodo_ctx.bbox_pixels.contains(mx, my)) {
-//              window.open(_hodo.img.src, '_blank');
+            if (this._contexts['hodo'].bbox_pixels.contains(mx, my)) {
+                this.screenshot()
             }
         }
         else {
-            this.selection_finish(mx, my);
+            if (this._contexts['hodo'].bbox_pixels.contains(mx, my)) {
+                this.selection_finish(mx, my);
+            }
         }
     }
 
@@ -690,10 +482,13 @@ class HodoPlot {
 
     selection_finish(mx, my) {
         if (mx !== null && my !== null) {
-            var [u, v] = this.hodo_ctx.pix_to_data(mx * this._dpr, my * this._dpr);
+            var [u, v] = this._contexts['hodo'].pix_to_data(mx * this._dpr, my * this._dpr);
             var [wdir, wspd] = comp2vec(u, v);
-            this._done_callback(wspd, wdir);
         }
+        else {
+            var [wdir, wspd] = [null, null];
+        }
+        this._done_callback(wspd, wdir);
 
         this._move_callback = null;
         this._done_callback = null;
@@ -702,8 +497,36 @@ class HodoPlot {
         this.selecting = false;
     }
 
-    clear_and_draw_background() {
-        this._canvas.getContext('2d').clearRect(0, 0, this._canvas.width, this._canvas.height);
+    screenshot() {
+        var dpr = 4;
+        var ss_canvas = document.createElement('canvas');
+        ss_canvas.width = this._canvas.width * dpr / this._dpr;
+        ss_canvas.height = this._canvas.height * dpr / this._dpr;
+
+        var contexts = {};
+        for (var ctx_name in this._contexts) {
+            var ctx = this._contexts[ctx_name];
+            contexts[ctx_name] = HodoPlot._create_ctx_proxy(ss_canvas, ctx.bbox_pixels, ctx.bbox_data, dpr);
+        }
+
+        this._draw_vwp(this._vwps[this._vwps.length - 1], ss_canvas, contexts);
+
+        var canvas_img = ss_canvas.toDataURL();
+        var header = "<head><title>VWP Image</title></head>";
+        var iframe = "<body><img width='100%' src='" + String(canvas_img) + "'></body>"
+        var win = window.open();
+        win.document.open();
+        win.document.write(header + iframe);
+        win.document.close();
+    }
+
+    _clear_and_draw_background(canvas, contexts) {
+        var ctx = canvas.getContext('2d');
+        ctx.beginPath();
+        ctx.rect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle='#ffffff';
+        ctx.fill();
+
 /*      if (this._background_image === null) {
             
         }
@@ -712,7 +535,7 @@ class HodoPlot {
            /**********************************
             * Draw hodograph background
             **********************************/
-            var ctx = this.hodo_ctx;
+            var ctx = contexts['hodo'];
 
             var [lbu, lbv, ubu, ubv] = [ctx.bbox_data.lbx, ctx.bbox_data.lby, ctx.bbox_data.ubx, ctx.bbox_data.uby];
 
@@ -771,10 +594,17 @@ class HodoPlot {
             ctx.rect(lbu, lbv, ubu - lbu, ubv - lbv);
             ctx.stroke();
 
+            var [txtu, txtv] = ctx.pixelOffset(ubu, lbv, 0, 2);
+            ctx.fillStyle = '#000000';
+            ctx.font = '11px Trebuchet MS';
+            ctx.textBaseline = 'top';
+            ctx.textAlign = 'right';
+            ctx.fillText("http://www.autumnsky.us/vad/", txtu, txtv);
+
            /**********************************
             * Draw table background
             **********************************/
-            ctx = this.table_ctx;
+            ctx = contexts['table'];
 
             // This is stupid. Find another way to do it.
             var row = 11;
@@ -835,7 +665,7 @@ class HodoPlot {
            /**********************************
             * Draw SR wind plot background
             **********************************/
-            ctx = this.srwind_ctx;
+            ctx = contexts['srwind'];
             var [lbs, lbz, ubs, ubz] = [ctx.bbox_data.lbx, ctx.bbox_data.lby, ctx.bbox_data.ubx, ctx.bbox_data.uby];
 
             ctx.save();
@@ -868,14 +698,14 @@ class HodoPlot {
             ctx.textAlign = 'right';
             ctx.textBaseline = 'middle';
             for (var iz = lbz; iz <= ubz; iz += srwind_z_spacing) {
-                var [txtu, txtv] = ctx.pixelOffset(lbs, iz, -1, 0);
+                var [txtu, txtv] = ctx.pixelOffset(lbs, iz, -2, 0);
                 ctx.fillText(iz, txtu, txtv);
             }
 
             ctx.textAlign = 'center';
             ctx.textBaseline = 'top';
             for (var is = lbs; is <= ubs; is += srwind_s_spacing) {
-                var [txtu, txtv] = ctx.pixelOffset(is, lbz, 0, 1);
+                var [txtu, txtv] = ctx.pixelOffset(is, lbz, 0, 2);
                 var label = is + '';
                 if (is == ubs) {
                     label = 'kts  ';
@@ -894,13 +724,13 @@ class HodoPlot {
 //      }
     }
 
-    draw_vwp(vwp) {
-        var ctx = this.hodo_ctx;
+    _draw_vwp(vwp, canvas, contexts) {
+        var ctx = contexts['hodo'];
 
        /**********************************
         * Draw background
         **********************************/
-        this.clear_and_draw_background();
+        this._clear_and_draw_background(canvas, contexts);
 
        /**********************************
         * Draw hodograph
@@ -908,7 +738,7 @@ class HodoPlot {
         ctx.lineWidth = 2;
         ctx.font = "11px Trebuchet MS";
 
-        vwp.draw(this.hodo_ctx, this.srwind_ctx);
+        vwp.draw(contexts['hodo'], contexts['srwind']);
 
        /**********************************
         * Draw title
@@ -927,7 +757,7 @@ class HodoPlot {
        /**********************************
         * Fill in parameter table
         **********************************/
-        ctx = this.table_ctx;
+        ctx = contexts['table'];
 
         ctx.font = "10.5px Trebuchet MS";
         ctx.textAlign = 'left';
@@ -973,7 +803,7 @@ class HodoPlot {
         });
 
         if (this._vwps.length > 0) {
-            this.draw_vwp(this._vwps[this._vwps.length - 1]);
+            this._draw_vwp(this._vwps[this._vwps.length - 1], this._canvas, this._contexts);
         }
     }
 
@@ -983,14 +813,56 @@ class HodoPlot {
         });
 
         if (this._vwps.length > 0) {
-            this.draw_vwp(this._vwps[this._vwps.length - 1]);
+            this._draw_vwp(this._vwps[this._vwps.length - 1], this._canvas, this._contexts);
         }
     }
 
-    _create_ctx_proxy(bbox_pixels, bbox_data) {
+    start_loading() {
+        var ctx = this._contexts['hodo'];
+        var num = 0;
+
+        var [lbu, lbv, ubu, ubv] = [ctx.bbox_data.lbx, ctx.bbox_data.lby, ctx.bbox_data.ubx, ctx.bbox_data.uby];
+        var ctr_u = (lbu + ubu) / 2;
+        var ctr_v = (lbv + ubv) / 2;
+
+        var circ_rad = 50;
+        var dot_rad = 20;
+
+        var pos_x = [];
+        var pos_y = [];
+
+        for (var i = 0; i < 8; i++) {
+            [pos_x[i], pos_y[i]] = ctx.pixelOffset(ctr_u, ctr_v, circ_rad * Math.cos(Math.PI * i / 4), circ_rad * Math.sin(Math.PI * i / 4));
+        }
+
+        function anim() {
+            num++;
+
+            this._draw_vwp(this._vwps[this._vwps.length - 1], this._canvas, this._contexts);
+
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+            ctx.fillRect(0, 0, this._canvas.width, this._canvas.height);
+
+            for (var i = 0; i < 8; i++) {
+                var pos_i = (i + num) % 8;
+                ctx.beginPath();
+                ctx.fillStyle = 'rgba(30, 30, 30, ' + (0.1 * (i + 2)) + ')';
+                ctx.circle(pos_x[pos_i], pos_y[pos_i], dot_rad / 8 * i, 'pixels');
+                ctx.fill();
+            }
+        }
+
+        this.anim_timer = window.setInterval(anim.bind(this), 100);
+    }
+
+    stop_loading() {
+        window.clearInterval(this.anim_timer);
+    }
+
+    static _create_ctx_proxy(canvas, bbox_pixels, bbox_data, dpr) {
         // Set up a wrapper for the drawing context that handles transformations and the device pixel ratio
-        var ctx = this._canvas.getContext('2d');
-        var ctx_wrapper = new Context2DWrapper(bbox_pixels, bbox_data, this._dpr);
+        var ctx = canvas.getContext('2d');
+        var ctx_wrapper = new Context2DWrapper(bbox_pixels, bbox_data, dpr);
         return new Proxy(ctx, ctx_wrapper)
     }
 }
@@ -1093,6 +965,28 @@ class VWP {
         }
     }
 
+    get_bbox() {
+        var buffer = 0.4
+
+        var min_u = Math.min(...this.u);
+        var min_v = Math.min(...this.v);
+        var max_u = Math.max(...this.u);
+        var max_v = Math.max(...this.v);
+
+        var ctr_u = (min_u + max_u) / 2;
+        var ctr_v = (min_v + max_v) / 2;
+
+        var side = Math.max(60, Math.max(max_u - min_u, max_v - min_v));
+
+        min_u = ctr_u - (1 + buffer) * side / 2;
+        min_v = ctr_v - (1 + buffer) * side / 2;
+        max_u = ctr_u + (1 + buffer) * side / 2;
+        max_v = ctr_v + (1 + buffer) * side / 2;
+
+        var bbox = new BBox(min_u, min_v, max_u, max_v);
+        return bbox;
+    }
+
     draw(hodo_ctx, srwind_ctx) {
 
         var colors = ['#ff0000', '#00ff00', '#008800', '#993399', '#00ffff'];
@@ -1103,7 +997,13 @@ class VWP {
         **********************************/
         var ctx = hodo_ctx;
 
+        var [lbu, lbv, ubu, ubv] = [ctx.bbox_data.lbx, ctx.bbox_data.lby, ctx.bbox_data.ubx, ctx.bbox_data.uby];
+
         ctx.save()
+        ctx.beginPath();
+        ctx.rect(lbu, lbv, ubu - lbu, ubv - lbv);
+        ctx.clip();
+
         ctx.globalAlpha = 0.05;
 
         var iseg = 0;
@@ -1158,6 +1058,37 @@ class VWP {
             ctx.lineTo(this.u[i], this.v[i]);
         }
         ctx.stroke();
+
+       /**********************************
+        * Draw critical angle markers
+        **********************************/
+        ctx.save()
+        ctx.lineWidth = 1;
+
+        ctx.beginPath();
+        ctx.strokeStyle = '#00cccc';
+
+        var [smu, smv] = this.sm_vec;
+        ctx.moveTo(smu, smv);
+
+        var [low_u, low_v] = [this.u[0], this.v[0]];
+        if (this.sfc_wind !== null) {
+            [low_u, low_v] = this.sfc_wind;
+        }
+
+        ctx.lineTo(low_u, low_v);
+        ctx.stroke();        
+
+        ctx.beginPath();
+        ctx.strokeStyle = '#cc00cc';
+
+        ctx.moveTo(low_u, low_v);
+
+        var [calu, calv] = this.params['ca_lyr_ub'];
+        ctx.lineTo(calu, calv);
+
+        ctx.stroke();
+        ctx.restore();
 
        /**********************************
         * Draw storm motion markers
@@ -1226,41 +1157,10 @@ class VWP {
         ctx.restore();
 
        /**********************************
-        * Draw critical angle markers
-        **********************************/
-        ctx.save()
-        ctx.lineWidth = 1;
-
-        ctx.beginPath();
-        ctx.strokeStyle = '#00cccc';
-
-        var [smu, smv] = this.sm_vec;
-        ctx.moveTo(smu, smv);
-
-        var [low_u, low_v] = [this.u[0], this.v[0]];
-        if (this.sfc_wind !== null) {
-            [low_u, low_v] = this.sfc_wind;
-        }
-
-        ctx.lineTo(low_u, low_v);
-        ctx.stroke();        
-
-        ctx.beginPath();
-        ctx.strokeStyle = '#cc00cc';
-
-        ctx.moveTo(low_u, low_v);
-
-        var [calu, calv] = this.params['ca_lyr_ub'];
-        ctx.lineTo(calu, calv);
-
-        ctx.stroke();
-        ctx.restore();
-
-       /**********************************
         * Draw height markers
         **********************************/
         ctx.save()
-        var marker_fudge = 0.5
+        var marker_fudge = 0.5 // This is unnecessary in Safari
         var marker_rad = 6;
 
         var mkr_val = 1;
@@ -1294,8 +1194,13 @@ class VWP {
         **********************************/
         ctx = srwind_ctx;
 
+        var [lbs, lbz, ubs, ubz] = [ctx.bbox_data.lbx, ctx.bbox_data.lby, ctx.bbox_data.ubx, ctx.bbox_data.uby];
+
         // Should I add the plot bounds as a clip path?
         ctx.save();
+        ctx.beginPath();
+        ctx.rect(lbs, lbz, ubs - lbs, ubz - lbz);
+        ctx.clip();
         var srwind = this.srwind;
         var alt = this.alt;
         ctx.strokeStyle = '#ff0000';
@@ -1363,6 +1268,10 @@ class VWP {
         var dt_str = dt.format('YYYY-MM-DD[T]HH:mm:ss[Z]');
         var root_url = $('#root_url').val();
 
+        if (!window.location.hostname.includes('www')) {
+            root_url = root_url.replace('www.', '');
+        }
+
         var url = root_url + "/vad/get_radar_json.php?radar=" + radar_id + '&time=' + dt_str;
         if (file_id !== null) {
             url += '&id=' + file_id;
@@ -1383,6 +1292,11 @@ class VWP {
 
 function check_files(radar_id, callback) {
     var root_url = $('#root_url').val();
+
+    if (!window.location.hostname.includes('www')) {
+        root_url = root_url.replace('www.', '');
+    }
+
     $.getJSON(root_url + "/vad/get_radar_times.php?radar=" + radar_id, function(json) {
         for (fname in json['times']) {
             json['times'][fname] = moment.utc(json['times'][fname]);
