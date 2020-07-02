@@ -44,26 +44,37 @@ div#selection ul {
     -ms-user-select: none;
 }
 
-div#selection ul li {
+.toggle-list .selectable {
     display:inline;
     padding-left:5px;
     padding-right:5px;
+}
 
+.selectable {
     border: 1px solid black;
-    cursor:default;
-}
-
-div#selection ul.selectable li {
     cursor:pointer;
+    background-color: #f3f3f3;
 }
 
-div#selection ul.selectable li.selected {
+.selectable:hover {
+    background-color: #e3e3e3;
+}
+
+.selected {
     background-color: #aacccc;
+}
+
+.selected:hover {
+    background-color: #99bbbb;
 }
 
 div#mapsel p {
     display:inline-block;
     width:110px;
+}
+
+div#mapsel ul {
+    display:inline-block;
 }
 
 div#smsel p {
@@ -76,14 +87,14 @@ div#sfcsel p {
     width:110px;
 }
 
-div#generate {
+div#generate, div#autoupdate {
     text-align:center;
-    border: 1px solid black;
-    background-color:#aacccc;
-    cursor:pointer;
-
     padding-top:5px;
     padding-bottom:5px;
+}
+
+div#generate:active {
+    background-color:#aacccc;
 }
 
 div#selecthelp {
@@ -113,4 +124,77 @@ div#hododiv {
 
 div#hododiv img {
     width:100%;
+}
+
+div#animcontrols {
+    padding-top: 5px;
+    padding-bottom: 5px;
+    height:32px;
+    width:449px;
+}
+
+div#animcontrols .selectable {
+    display: inline-block;
+
+    float: right;
+
+    padding: 0px;
+    margin: 0px;
+    margin-left: 5px;
+    line-height: 30px;
+    height: 30px;
+    width: 30px;
+    text-align: center;
+
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+}
+
+#animspdup, #animspddn {
+    font-weight: bold;
+}
+
+#animspdup:active, #animspddn:active {
+    background-color:#aacccc;
+}
+
+#playpause {
+    font-size: 0.5em;
+}
+
+#framelist {
+    float: right;
+
+    list-style-type:none;
+    display:inline;
+    margin:0px;
+    margin-right: 5px;
+    padding:0px;
+    cursor:default;
+
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+
+    height: 32px;
+    font-size: 1.8em;
+}
+
+#framelist li {
+    float: right;
+
+    height: 32px;
+    line-height: 32px;
+
+    cursor: pointer;
+}
+
+#framelist li.framenotloaded {
+    color: #888888;
+    cursor: default;
+}
+
+.frameactive {
+    color: #aacccc;
 }

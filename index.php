@@ -32,25 +32,35 @@ $root_path = root_path();
     </div>
     <div id="smsel">
       <p>Storm Motion:</p>
-      <ul class="selectable">
-        <li>BLM</li>
-        <li class="selected">BRM</li>
-        <li>DDD/SS</li>
+      <ul class="toggle-list">
+        <li class="selectable">BLM</li>
+        <li class="selectable selected">BRM</li>
+        <li class="selectable">DDD/SS</li>
       </ul>
     </div>
     <div id="sfcsel">
       <p>Surface Wind:</p>
-      <ul class="selectable">
-        <li class="selected">None</li>
-        <li>DDD/SS</li>
+      <ul class="toggle-list">
+        <li class="selectable selected">None</li>
+        <li class="selectable">DDD/SS</li>
       </ul>
     </div>
-    <div id="generate">
+    <div id="generate" class="selectable">
       <p>Generate Hodograph</p>
+    </div>
+    <div id="autoupdate" class="selectable">
+      <p>Auto-Update</p>
     </div>
   </div>
   <div id="hododiv">
     <canvas id="hodo" width=620 height=465></canvas>
+    <div id="animcontrols">
+      <p id="animspdup", class='selectable'>+</p>
+      <p id="animspddn", class='selectable'>-</p>
+      <p id="playpause", class='selectable'>&#9654;&#9616;&#9616;</p>
+      <ul id='framelist'>
+      </ul>
+    </div>
   </div>
   <div id="selecthelp">
     <p>Select vector by clicking<br>on the hodograph</p>
