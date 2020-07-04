@@ -57,6 +57,7 @@ $root_path = root_path();
     <div id="animcontrols">
       <p id="animspdup", class='selectable'>+</p>
       <p id="animspddn", class='selectable'>-</p>
+      <p id="refresh", class='selectable'>&#9711;</p>
       <p id="playpause", class='selectable'>&#9654;&#9616;&#9616;</p>
       <ul id='framelist'>
       </ul>

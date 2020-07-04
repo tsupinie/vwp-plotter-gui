@@ -55,11 +55,12 @@ class VWPApp {
 
         var mapclick = (function(rad) {
             $('#mapsel').html('<p>Radar:</p> <ul><li>' + rad.id + ' (' + rad.name + ')</li></ul>')
-            this._check_file_times(rad.id);
+            this.vwp_container.check_file_times(rad.id, false);
         }).bind(this);
 
         this.radars = new ClickableMap('imgs/static/map.png', 'wsr88ds.json', mapclick);
         this.hodo = new HodoPlot(this);
+        this.vwp_container = new VWPContainer(this, this.hodo, 1800);
 
         var toggle_lists = document.getElementsByClassName("toggle-list");
         for (var i = 0; i < toggle_lists.length; i++) {
@@ -81,6 +82,7 @@ class VWPApp {
         $('#animspdup').mouseup(this.animation_speed_up.bind(this));
         $('#animspddn').mouseup(this.animation_speed_down.bind(this));
         $('#playpause').mouseup(this.animation_play_pause.bind(this));
+        $('#refresh').mouseup(this.refresh.bind(this));
     }
 
     select(event) {
@@ -148,6 +150,31 @@ class VWPApp {
         $('#framelist li[data-datetime="' + dt.format(this._dt_fmt) + '"]').addClass('frameactive');
     }
 
+    set_frame_list(frames) {
+        var frame_list = $('#framelist');
+        frame_list.empty();
+
+        var dt_fmt = this._dt_fmt;
+
+        frames.reverse().forEach(function(frame) {
+            frame_list.append('<li data-datetime="' + frame['dt'].format(dt_fmt) + '">&bull;</li>');
+            var child = frame_list.children().last();
+
+            if (frame['status'] == 'notloaded') {
+                child.addClass('framenotloaded');
+            }
+            else {
+                child.click((function() {
+                    this.vwp_container.set_anim_time(moment.utc(child.attr('data-datetime')));
+                }).bind(this));
+            }
+
+            if (frame['status'] == 'active') {
+                child.addClass('frameactive');
+            }
+        });
+    }
+
     generate() {
         if (this.radars.selected === null || this.radars.selected == "") {
             window.alert("Select a radar first!");
@@ -182,15 +209,21 @@ class VWPApp {
     }
 
     animation_speed_up() {
-        this.hodo.animation_speed_up();
+        this.vwp_container.animation_speed_up();
     }
 
     animation_speed_down() {
-        this.hodo.animation_speed_down();
+        this.vwp_container.animation_speed_down();
     }
 
     animation_play_pause() {
-        this.hodo.toggle_animation();
+        this.vwp_container.toggle_animation();
+    }
+
+    refresh() {
+        if (this.radars.selected !== null) {
+            this.vwp_container.check_file_times(this.radars.selected, true);
+        }
     }
 
     animation_play() {
@@ -199,38 +232,6 @@ class VWPApp {
 
     animation_pause() {
         $('#playpause').removeClass('selected');
-    }
-
-    _check_file_times(radar_id) {
-        check_files(radar_id, (function(file_times) {
-            file_times = file_times['times'];
-            this.file_times[radar_id] = file_times;
-
-            var frame_list = $('#framelist');
-            frame_list.empty();
-            console.log(this.file_times[radar_id]);
-            Object.entries(this.file_times[radar_id]).reverse().forEach((function([file_name, dt]) {
-                frame_list.append('<li data-filename="' + file_name + '" data-datetime="' + dt.format(this._dt_fmt) + '">&bull;</li>');
-                frame_list.children().last().addClass('framenotloaded');
-            }).bind(this));
-
-            Object.entries(this.file_times[radar_id]).reverse().forEach((function([file_name, dt]) {
-                var id = file_name.substring(3);
-                var dt_str = dt.format(this._dt_fmt);
-
-                VWP.from_server(radar_id, dt, id, (function(vwp) {
-                    var frame_marker = $('#framelist li[data-datetime="' + dt_str + '"]');
-                    frame_marker.attr('data-datetime', vwp.radar_dt.format(this._dt_fmt))
-                    frame_marker.removeClass('framenotloaded');
-
-                    this.hodo.add_vwp(vwp);
-
-                    frame_marker.click((function() {
-                        this.hodo.set_anim_time(vwp.radar_dt);
-                    }).bind(this));
-                }).bind(this));
-            }).bind(this));
-        }).bind(this));
     }
 
     _select_box(obj) {
@@ -264,6 +265,163 @@ class VWPApp {
         this.hodo.selection_finish(null, null);
     }
 }
+
+
+class VWPContainer {
+    constructor(ui, hodo, age_limit) {
+        this._ui = ui;
+        this._hodo = hodo;
+        this._age_limit = age_limit;
+
+        this._anim_idx = null;
+        this._is_animating = false;
+        this._anim_timer = null;
+        this._anim_intv = 500;
+
+        this.frame_list = new Map();
+    }
+
+    check_file_times(radar_id, is_refresh) {
+        function compare_dt(dt1, dt2) {
+            return dt1.isBefore(dt2) ? -1 : (dt1.isSame(dt2) ? 0 : 1);
+        }
+
+        check_files(radar_id, (function(file_times) {
+            file_times = file_times['times'];
+            file_times = Object.entries(file_times).sort(([fn1, dt1], [fn2, dt2]) => compare_dt(dt1, dt2));
+
+            // Add new frames to frame list
+            file_times.forEach((function([file_name, dt]) {
+                if (!this.frame_list.has(file_name)) {
+                    this.frame_list.set(file_name, {'dt': dt, 'status': 'notloaded'});
+                }
+            }).bind(this));
+
+            // Delete frames older than 30 minutes
+            this.frame_list.forEach((function(frame, file_name) {
+                if (frame['dt'].isBefore(moment.utc().subtract(30, 'minutes'))) {
+                    this.frame_list.delete(file_name);
+                }
+            }).bind(this))
+
+            // Update the UI
+            this._update_ui_frame_list();
+
+            // Load new frames
+            Array.from(this.frame_list.entries()).reverse().forEach((function([file_name, frame]) {
+                var id = file_name.substring(3);
+                var dt_str = frame['dt'].format(this._dt_fmt);
+
+                if (frame['status'] == 'notloaded') {
+                    console.log('Downloading vwp at ' + frame['dt'].format(this._dt_format));
+                    VWP.from_server(radar_id, frame['dt'], id, (function(vwp) {
+                        var frame = this.frame_list.get(file_name);
+
+                        frame['status'] = 'loaded';
+                        frame['dt'] = vwp.radar_dt;
+                        frame['data'] = vwp;
+
+                        var bbox = Array.from(this.frame_list.values()).filter(f => f['status'] != 'notloaded').map(f => f['data'].get_bbox()).reduce(BBox.union);
+                        this._hodo.set_bbox(bbox);
+
+                        if (!is_refresh) {
+                            var [latest_fn, latest_frame] = Array.from(this.frame_list.entries()).filter(([fn, frame]) => frame['status'] != 'notloaded').reverse()[0]
+                            this._anim_idx = Array.from(this.frame_list.keys()).indexOf(latest_fn);
+                            this._hodo.draw_vwp(vwp);
+
+                            for (var f of this.frame_list.values()) {
+                                if (f['status'] != 'notloaded') {
+                                    f['status'] = 'loaded';
+                                }
+                            }
+                            latest_frame['status'] = 'active';
+                        }
+                        else {
+                            var frame = Array.from(this.frame_list.values())[this._anim_idx];
+                            this._hodo.draw_vwp(frame['data']);
+                        }
+
+                        this._update_ui_frame_list();
+                    }).bind(this));
+                }
+            }).bind(this));
+        }).bind(this));
+    }
+
+    set_anim_time(dt) {
+        this._anim_idx = Array.from(this.frame_list.values()).findIndex(f => f['dt'].isSame(dt));
+        this._ui.set_anim_marker(dt);
+        this.stop_animation();
+
+        var frame = Array.from(this.frame_list.values())[this._anim_idx];
+        this._hodo.draw_vwp(frame['data']);
+    }
+
+    toggle_animation() {
+        if (!this._is_animating) {
+            this.start_animation();
+        }
+        else {
+            this.stop_animation();
+        }
+    }
+
+    start_animation() {
+        var advance_frame = (function() {
+            var frame;
+
+            // Increment animation counter
+            // XXX: this creates an infinite loop if you refresh with a completely new set of frames.
+            do {
+                this._anim_idx = (this._anim_idx + 1) % this.frame_list.size;
+                frame = Array.from(this.frame_list.values())[this._anim_idx];
+            } while (frame['status'] == 'notloaded');
+
+            // Update UI
+            for (var f of this.frame_list.values()) {
+                if (f['status'] != 'notloaded') {
+                    f['status'] = 'loaded';
+                }
+            }
+            frame['status'] = 'active';
+            this._update_ui_frame_list();
+
+            // Draw VWP
+            this._hodo.draw_vwp(frame['data']);
+
+            // Set timer for next frame
+            var intv = this._anim_intv;
+            if (this._anim_idx == this.frame_list.size - 1) {
+                intv *= 2.5;
+            }
+
+            this._anim_timer = window.setTimeout(advance_frame, intv);
+        }).bind(this);
+
+        advance_frame();
+        this._is_animating = true;
+        this._ui.animation_play();
+    }
+
+    stop_animation() {
+        window.clearTimeout(this._anim_timer);
+        this._is_animating = false;
+        this._ui.animation_pause();
+    }
+
+    animation_speed_up() {
+        this._anim_intv /= 1.5;
+    }
+
+    animation_speed_down() {
+        this._anim_intv *= 1.5;
+    }
+
+    _update_ui_frame_list() {
+        this._ui.set_frame_list(Array.from(this.frame_list.values()));
+    }
+}
+
 
 class BBox {
     constructor(lbx, lby, ubx, uby) {
@@ -431,9 +589,7 @@ class Context2DWrapper {
 
 
 class HodoPlot {
-    constructor(parent_) {
-        this._parent = parent_;
-
+    constructor() {
         this._dpr = window.devicePixelRatio || 1;
 
         this._canvas = document.getElementById("hodo");
@@ -459,89 +615,23 @@ class HodoPlot {
         var srwind_bbox_data = new BBox(0, 0, 70, 12);
         this._contexts['srwind'] = HodoPlot._create_ctx_proxy(this._canvas, srwind_bbox_pixels, srwind_bbox_data, this._dpr);
 
-        this.clear_vwps();
+        this._clear_and_draw_background(this._canvas, this._contexts);
 
         this._move_callback = null;
         this._done_callback = null;
         this.selecting = false;
-
-        this._anim_idx = null;
-        this._is_animating = false;
-        this._anim_timer = null;
-        this._anim_intv = 500;
 
         this._canvas.onmousemove = this.mousemove.bind(this);
         this._canvas.onmouseup = this.mouseclick.bind(this);
         this._canvas.onmouseout = this.mouseleave.bind(this);
     }
 
-    add_vwp(vwp) {
-        function compare_dt(dt1, dt2) {
-            return dt1.isBefore(dt2) ? -1 : (dt1.isSame(dt2) ? 0 : 1);
-        }
-
-        this._vwps.push(vwp);
-        this._vwps.sort((vwp1, vwp2) => compare_dt(vwp1.radar_dt, vwp2.radar_dt));
-        this._anim_idx = this._vwps.length - 1;
-
-        this._parent.set_anim_marker(this._vwps[this._anim_idx].radar_dt);
-
-        this._contexts['hodo'].bbox_data = this._vwps.map(v => v.get_bbox()).reduce(BBox.union);
-        this._draw_vwp(this._vwps[this._anim_idx], this._canvas, this._contexts);
+    set_bbox(bbox) {
+        this._contexts['hodo'].bbox_data = bbox;
     }
 
-    clear_vwps() {
-        this._vwps = [];
-        this._clear_and_draw_background(this._canvas, this._contexts);
-    }
-
-    set_anim_time(dt) {
-        this._anim_idx = this._vwps.findIndex(v => v.radar_dt.isSame(dt));
-        this._parent.set_anim_marker(dt);
-        this.stop_animation();
-        this._draw_vwp(this._vwps[this._anim_idx], this._canvas, this._contexts);
-    }
-
-    toggle_animation() {
-        if (!this._is_animating) {
-            this.start_animation();
-        }
-        else {
-            this.stop_animation();
-        }
-    }
-
-    start_animation() {
-        var advance_frame = (function() {
-            this._anim_idx = (this._anim_idx + 1) % this._vwps.length;
-            this._parent.set_anim_marker(this._vwps[this._anim_idx].radar_dt);
-            this._draw_vwp(this._vwps[this._anim_idx], this._canvas, this._contexts);
-
-            var intv = this._anim_intv;
-            if (this._anim_idx == this._vwps.length - 1) {
-                intv *= 2.5;
-            }
-
-            this._anim_timer = window.setTimeout(advance_frame, intv);
-        }).bind(this);
-
-        advance_frame();
-        this._is_animating = true;
-        this._parent.animation_play();
-    }
-
-    stop_animation() {
-        window.clearTimeout(this._anim_timer);
-        this._is_animating = false;
-        this._parent.animation_pause();
-    }
-
-    animation_speed_up() {
-        this._anim_intv /= 1.5;
-    }
-
-    animation_speed_down() {
-        this._anim_intv *= 1.5;
+    draw_vwp(vwp) {
+        this._draw_vwp(vwp, this._canvas, this._contexts);
     }
 
     mousemove(event) {
@@ -1067,7 +1157,7 @@ class VWP {
             var critical_angles = critical_angle(u, v, alt, {'user': this.sm_vec});
         }
         catch (err) {
-            var critical_angles = {'user': NaN, 'lyr_ub': NaN};
+            var critical_angles = {'user': NaN, 'lyr_ub': [NaN, NaN]};
         }
 
         this.params['ca'] = critical_angles['user'];

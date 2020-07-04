@@ -151,11 +151,11 @@ div#animcontrols .selectable {
     -ms-user-select: none;
 }
 
-#animspdup, #animspddn {
+#animspdup, #animspddn, #refresh {
     font-weight: bold;
 }
 
-#animspdup:active, #animspddn:active {
+#animspdup:active, #animspddn:active, #refresh:active {
     background-color:#aacccc;
 }
 
