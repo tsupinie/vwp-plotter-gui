@@ -45,9 +45,11 @@ function format_vector(wdir, wspd, units) {
 class VWPApp {
     constructor() {
         this.sfc = "None";
-        this.waiting = false;
-        this.file_pre_download = null;
+//      this.waiting = false;
+//      this.file_pre_download = null;
         this.prev_selection = null;
+        this._refresh_timer = null
+        this._refresh_intv = 60 * 1000;
 
         this.file_times = {};
 
@@ -61,6 +63,9 @@ class VWPApp {
         this.radars = new ClickableMap('imgs/static/map.png', 'wsr88ds.json', mapclick);
         this.hodo = new HodoPlot(this);
         this.vwp_container = new VWPContainer(this, this.hodo, 1800);
+        this.hodo.add_vwp_container(this.vwp_container);
+
+        this.toggle_autoupdate();
 
         var toggle_lists = document.getElementsByClassName("toggle-list");
         for (var i = 0; i < toggle_lists.length; i++) {
@@ -77,7 +82,6 @@ class VWPApp {
             }
         }
 
-        $('#generate').mouseup(this.generate.bind(this));
         $('#autoupdate').mouseup(this.toggle_autoupdate.bind(this));
         $('#animspdup').mouseup(this.animation_speed_up.bind(this));
         $('#animspddn').mouseup(this.animation_speed_down.bind(this));
@@ -156,8 +160,8 @@ class VWPApp {
 
         var dt_fmt = this._dt_fmt;
 
-        frames.reverse().forEach(function(frame) {
-            frame_list.append('<li data-datetime="' + frame['dt'].format(dt_fmt) + '">&bull;</li>');
+        frames.reverse().forEach((function(frame) {
+            frame_list.append('<li data-datetime="' + frame['dt'].format(dt_fmt) + '">&nbsp;</li>');
             var child = frame_list.children().last();
 
             if (frame['status'] == 'notloaded') {
@@ -172,9 +176,9 @@ class VWPApp {
             if (frame['status'] == 'active') {
                 child.addClass('frameactive');
             }
-        });
+        }).bind(this));
     }
-
+/*
     generate() {
         if (this.radars.selected === null || this.radars.selected == "") {
             window.alert("Select a radar first!");
@@ -203,9 +207,18 @@ class VWPApp {
             this.hodo.start_loading();
         }
     }
-
+*/
     toggle_autoupdate() {
         $('#autoupdate').toggleClass('selected');
+        if (this._refresh_timer === null) {
+            window.setInterval(this.refresh.bind(this), this._refresh_intv);
+
+            this.refresh();
+        }
+        else {
+            window.clearInterval(this._refresh_timer);
+            this._refresh_timer = null;
+        }
     }
 
     animation_speed_up() {
@@ -224,6 +237,14 @@ class VWPApp {
         if (this.radars.selected !== null) {
             this.vwp_container.check_file_times(this.radars.selected, true);
         }
+    }
+
+    refresh_circle_start() {
+        $('#refresh > span').addClass('animate');
+    }
+
+    refresh_circle_stop() {
+        $('#refresh > span').removeClass('animate');
     }
 
     animation_play() {
@@ -250,10 +271,10 @@ class VWPApp {
 
     _update_state(obj, val) {
         if (obj.parentElement.parentElement.id == "smsel") {
-            this.hodo.change_storm_motion(val);
+            this.vwp_container.change_storm_motion(val);
         }
         else if (obj.parentElement.parentElement.id == "sfcsel") {
-            this.hodo.change_surface_wind(val);
+            this.vwp_container.change_surface_wind(val);
         }
     };
 
@@ -273,12 +294,23 @@ class VWPContainer {
         this._hodo = hodo;
         this._age_limit = age_limit;
 
+        // TODO: Probably don't need to keep track of the animation index as an instance variable (only local to start_animation). Might reduce complexity a bit.
         this._anim_idx = null;
         this._is_animating = false;
+        this._is_animation_paused = true;
         this._anim_timer = null;
         this._anim_intv = 500;
 
+        this._storm_motion = 'brm';
+        this._surface_wind = 'none';
+
+        // TODO: These might not need to be instance variables (only local to check_file_times), but I'm confused about Javascript variable scoping ...
+        this._expected_new_frames = 0;
+        this._new_frames_loaded = 0;
+        this._want_latest_frame = true;
+
         this.frame_list = new Map();
+        this._radar = null;
     }
 
     check_file_times(radar_id, is_refresh) {
@@ -286,9 +318,28 @@ class VWPContainer {
             return dt1.isBefore(dt2) ? -1 : (dt1.isSame(dt2) ? 0 : 1);
         }
 
+        this._ui.refresh_circle_start()
+
+        if (this._radar !== null && this._radar != radar_id) {
+            this.frame_list.clear();
+            this._anim_idx = null;
+        }
+        this._radar = radar_id;
+
+        this._want_latest_frame = (this._anim_idx === null || this._anim_idx == this.frame_list.size - 1);
+
         check_files(radar_id, (function(file_times) {
+            // Check to see if this is still the radar we're looking for (user might have changed it while we were waiting for data).
+            if (this._radar != file_times['radar']) {
+                return;
+            }
+
             file_times = file_times['times'];
             file_times = Object.entries(file_times).sort(([fn1, dt1], [fn2, dt2]) => compare_dt(dt1, dt2));
+
+            if (this._anim_idx !== null) {
+                var anim_fn = Array.from(this.frame_list.keys())[this._anim_idx];
+            }
 
             // Add new frames to frame list
             file_times.forEach((function([file_name, dt]) {
@@ -304,8 +355,26 @@ class VWPContainer {
                 }
             }).bind(this))
 
+            // Update the animation index to point to the same frame as it did before
+            if (this._anim_idx !== null) {
+                if (this.frame_list.has(anim_fn)) {
+                    this._anim_idx = Array.from(this.frame_list.keys()).indexOf(anim_fn);
+                }
+                else {
+                    this._anim_idx = Array.from(this.frame_list.values()).map(f => f['status'] != 'notloaded').lastIndexOf(true);
+                    this._update_frame_list();
+                    var frame = Array.from(this.frame_list.values())[this._anim_idx];
+                    this._hodo.draw_vwp(frame['data']);
+
+                    this._want_latest_frame = true;
+                }
+            }
+
             // Update the UI
             this._update_ui_frame_list();
+
+            this._new_frames_loaded = 0;
+            this._expected_new_frames = 0;
 
             // Load new frames
             Array.from(this.frame_list.entries()).reverse().forEach((function([file_name, frame]) {
@@ -313,38 +382,64 @@ class VWPContainer {
                 var dt_str = frame['dt'].format(this._dt_fmt);
 
                 if (frame['status'] == 'notloaded') {
+                    this._expected_new_frames++;
+
                     console.log('Downloading vwp at ' + frame['dt'].format(this._dt_format));
                     VWP.from_server(radar_id, frame['dt'], id, (function(vwp) {
                         var frame = this.frame_list.get(file_name);
 
+                        // Check to see if this is still the radar we're looking for (user might have changed it while we were waiting for data).
+                        if (this._radar != vwp.radar_id) {
+                            return;
+                        }
+
+                        // Set storm motion and surface wind
+                        vwp.change_storm_motion(this._storm_motion);
+                        vwp.change_surface_wind(this._surface_wind);
+
+                        // Update frame data structure
                         frame['status'] = 'loaded';
                         frame['dt'] = vwp.radar_dt;
                         frame['data'] = vwp;
 
+                        // Update hodograph bounding box
                         var bbox = Array.from(this.frame_list.values()).filter(f => f['status'] != 'notloaded').map(f => f['data'].get_bbox()).reduce(BBox.union);
                         this._hodo.set_bbox(bbox);
 
-                        if (!is_refresh) {
+                        // Update hodograph
+                        if (!is_refresh || this._want_latest_frame || this._anim_idx >= this.frame_list.size || 
+                            Array.from(this.frame_list.values())[this._anim_idx]['status'] == 'notloaded') {
                             var [latest_fn, latest_frame] = Array.from(this.frame_list.entries()).filter(([fn, frame]) => frame['status'] != 'notloaded').reverse()[0]
                             this._anim_idx = Array.from(this.frame_list.keys()).indexOf(latest_fn);
-                            this._hodo.draw_vwp(vwp);
 
-                            for (var f of this.frame_list.values()) {
-                                if (f['status'] != 'notloaded') {
-                                    f['status'] = 'loaded';
-                                }
-                            }
-                            latest_frame['status'] = 'active';
-                        }
-                        else {
-                            var frame = Array.from(this.frame_list.values())[this._anim_idx];
-                            this._hodo.draw_vwp(frame['data']);
+                            this._update_frame_list();
                         }
 
+                        var frame = Array.from(this.frame_list.values())[this._anim_idx];
+                        this._hodo.draw_vwp(frame['data']);
+
+                        // Update UI
                         this._update_ui_frame_list();
+
+                        // Restart animation if it's paused
+                        if (this._is_animating && this._is_animation_paused) {
+                            this.start_animation();
+                        }
+
+                        // Check to see if we've loaded all the frames we expect from this update and cancel the refresh animation if so.
+                        this._new_frames_loaded++;
+
+                        if (this._new_frames_loaded >= this._expected_new_frames) {
+                            this._ui.refresh_circle_stop();
+                        }
+
                     }).bind(this));
                 }
             }).bind(this));
+
+            if (this._expected_new_frames == 0) {
+                this._ui.refresh_circle_stop();
+            }
         }).bind(this));
     }
 
@@ -353,8 +448,21 @@ class VWPContainer {
         this._ui.set_anim_marker(dt);
         this.stop_animation();
 
+        this._update_frame_list();
+
         var frame = Array.from(this.frame_list.values())[this._anim_idx];
         this._hodo.draw_vwp(frame['data']);
+    }
+
+    _update_frame_list() {
+        this.frame_list.forEach(function(frame) {
+            if (frame['status'] != 'notloaded') {
+                frame['status'] = 'loaded';
+            }
+        });
+
+        var frame = Array.from(this.frame_list.values())[this._anim_idx];
+        frame['status'] = 'active';
     }
 
     toggle_animation() {
@@ -367,15 +475,24 @@ class VWPContainer {
     }
 
     start_animation() {
+        this._is_animation_paused = false;
+
         var advance_frame = (function() {
             var frame;
 
-            // Increment animation counter
-            // XXX: this creates an infinite loop if you refresh with a completely new set of frames.
-            do {
-                this._anim_idx = (this._anim_idx + 1) % this.frame_list.size;
-                frame = Array.from(this.frame_list.values())[this._anim_idx];
-            } while (frame['status'] == 'notloaded');
+            var has_some_loaded = this.frame_list.size > 0 && Array.from(this.frame_list.values()).map(f => f['status'] != 'notloaded').reduce((s1, s2) => s1 || s2);
+
+            if (has_some_loaded) {
+                // Increment animation counter
+                do {
+                    this._anim_idx = (this._anim_idx + 1) % this.frame_list.size;
+                    frame = Array.from(this.frame_list.values())[this._anim_idx];
+                } while (frame['status'] == 'notloaded');
+            }
+            else {
+                this._is_animation_paused = true;
+                return;
+            }
 
             // Update UI
             for (var f of this.frame_list.values()) {
@@ -406,6 +523,7 @@ class VWPContainer {
     stop_animation() {
         window.clearTimeout(this._anim_timer);
         this._is_animating = false;
+        this._is_animation_paused = true;
         this._ui.animation_pause();
     }
 
@@ -415,6 +533,48 @@ class VWPContainer {
 
     animation_speed_down() {
         this._anim_intv *= 1.5;
+    }
+
+    screenshot() {
+        var frame = Array.from(this.frame_list.values())[this._anim_idx];
+        var img_data_url = this._hodo.screenshot(frame['data']);
+
+        var header = "<head><title>VWP Image</title></head>";
+        var iframe = "<body><img width='100%' src='" + String(img_data_url) + "'></body>"
+        var win = window.open();
+        win.document.open();
+        win.document.write(header + iframe);
+        win.document.close();
+    }
+
+    change_surface_wind(new_vec) {
+        this.frame_list.forEach(function(frame) {
+            if (frame['status'] != 'notloaded') {
+                frame['data'].change_surface_wind(new_vec);
+            }
+        });
+
+        this._surface_wind = new_vec;
+
+        if (this.frame_list.size > 0) {
+            var frame = Array.from(this.frame_list.values())[this._anim_idx];
+            this._hodo.draw_vwp(frame['data']);
+        }
+    }
+
+    change_storm_motion(new_vec) {
+        this.frame_list.forEach(function(frame) {
+            if (frame['status'] != 'notloaded') {
+                frame['data'].change_storm_motion(new_vec);
+            }
+        });
+
+        this._storm_motion = new_vec;
+
+        if (this.frame_list.size > 0) {
+            var frame = Array.from(this.frame_list.values())[this._anim_idx];
+            this._hodo.draw_vwp(frame['data']);
+        }
     }
 
     _update_ui_frame_list() {
@@ -590,6 +750,8 @@ class Context2DWrapper {
 
 class HodoPlot {
     constructor() {
+        this._vwp_container = null;
+
         this._dpr = window.devicePixelRatio || 1;
 
         this._canvas = document.getElementById("hodo");
@@ -624,6 +786,10 @@ class HodoPlot {
         this._canvas.onmousemove = this.mousemove.bind(this);
         this._canvas.onmouseup = this.mouseclick.bind(this);
         this._canvas.onmouseout = this.mouseleave.bind(this);
+    }
+
+    add_vwp_container(vwp_container) {
+        this._vwp_container = vwp_container;
     }
 
     set_bbox(bbox) {
@@ -667,8 +833,8 @@ class HodoPlot {
         var my = event.pageY - hodo.offsetTop;
 
         if (this._move_callback === null) {
-            if (this._contexts['hodo'].bbox_pixels.contains(mx, my) && this._vwps.length > 0) {
-                this.screenshot()
+            if (this._contexts['hodo'].bbox_pixels.contains(mx, my)) {
+                this._vwp_container.screenshot()
             }
         }
         else {
@@ -707,7 +873,7 @@ class HodoPlot {
         this.selecting = false;
     }
 
-    screenshot() {
+    screenshot(vwp) {
         var dpr = 4;
         var ss_canvas = document.createElement('canvas');
         ss_canvas.width = this._canvas.width * dpr / this._dpr;
@@ -719,15 +885,9 @@ class HodoPlot {
             contexts[ctx_name] = HodoPlot._create_ctx_proxy(ss_canvas, ctx.bbox_pixels, ctx.bbox_data, dpr);
         }
 
-        this._draw_vwp(this._vwps[this._anim_idx], ss_canvas, contexts);
+        this._draw_vwp(vwp, ss_canvas, contexts);
 
-        var canvas_img = ss_canvas.toDataURL();
-        var header = "<head><title>VWP Image</title></head>";
-        var iframe = "<body><img width='100%' src='" + String(canvas_img) + "'></body>"
-        var win = window.open();
-        win.document.open();
-        win.document.write(header + iframe);
-        win.document.close();
+        return ss_canvas.toDataURL();
     }
 
     _clear_and_draw_background(canvas, contexts) {
@@ -1007,26 +1167,6 @@ class HodoPlot {
         ctx.fillText(format(vwp.params['ca'], '\u{00b0}'), 0.5, 1.4);
     }
 
-    change_surface_wind(new_vec) {
-        this._vwps.forEach(function(vwp) {
-            vwp.change_surface_wind(new_vec);
-        });
-
-        if (this._vwps.length > 0) {
-            this._draw_vwp(this._vwps[this._anim_idx], this._canvas, this._contexts);
-        }
-    }
-
-    change_storm_motion(new_vec) {
-        this._vwps.forEach(function(vwp) {
-            vwp.change_storm_motion(new_vec);
-        });
-
-        if (this._vwps.length > 0) {
-            this._draw_vwp(this._vwps[this._anim_idx], this._canvas, this._contexts);
-        }
-    }
-
     start_loading() {
         var ctx = this._contexts['hodo'];
         var num = 0;
@@ -1100,6 +1240,7 @@ class VWP {
             this.v.push(v);
         }
 
+        this.sm_vec_str = 'brm';
         this.sm_vec = null;
         this.sfc_wind = null;
 
@@ -1126,8 +1267,11 @@ class VWP {
             this.params['bunkers_' + smv] = [ustm, vstm]; //comp2vec(ustm, vstm);
         }
 
-        if (this.sm_vec === null) {
+        if (this.sm_vec_str == 'brm') {
             this.sm_vec = storm_motions['right'];
+        }
+        else if (this.sm_vec_str == 'blm') {
+            this.sm_vec = storm_motions['left'];
         }
         storm_motions['user'] = this.sm_vec;
 
@@ -1448,12 +1592,8 @@ class VWP {
             this.sfc_wind = vec2comp(wdir, wspd);
         }
 
-        var has_user_smv = true; 
-        ['bunkers_left', 'bunkers_right'].forEach((function(smv) {
-            has_user_smv &= !(this.params[smv][0] == this.sm_vec[0] && this.params[smv][1] == this.sm_vec[1]);
-        }).bind(this));
-
-        if (!has_user_smv) {
+        if (this.sm_vec_str == 'blm' || this.sm_vec_str == 'brm') {
+            // Force a recompute of the storm motion vector if the user hasn't set one
             this.sm_vec = null;
         }
 
@@ -1462,16 +1602,19 @@ class VWP {
 
     change_storm_motion(new_vec) {
         if (typeof new_vec == 'string') {
-            if (new_vec.toLowerCase() == 'blm') {
+            this.sm_vec_str = new_vec.toLowerCase();
+
+            if (this.sm_vec_str == 'blm') {
                 this.sm_vec = this.params['bunkers_left'];
             }
-            else if (new_vec.toLowerCase() == 'brm') {
+            else if (this.sm_vec_str == 'brm') {
                 this.sm_vec = this.params['bunkers_right'];
             }
         }
         else {
             var [wdir, wspd] = new_vec;
             this.sm_vec = vec2comp(wdir, wspd);
+            this.sm_vec_str = 'user';
         }
         this._compute_parameters();
     }

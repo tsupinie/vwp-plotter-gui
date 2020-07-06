@@ -151,12 +151,70 @@ div#animcontrols .selectable {
     -ms-user-select: none;
 }
 
-#animspdup, #animspddn, #refresh {
+#animspdup, #animspddn {
     font-weight: bold;
 }
 
-#animspdup:active, #animspddn:active, #refresh:active {
+#animspdup:active, #animspddn:active {
     background-color:#aacccc;
+}
+
+#refresh {
+    position: relative;
+    background: rgb(243,243,243);
+    background: radial-gradient(circle, rgba(243,243,243,1) 0%, rgba(243,243,243,1) 33%, rgba(0,0,0,1) 33%, rgba(0,0,0,1) 43%, rgba(243,243,243,1) 43%);
+}
+
+#refresh span {
+    display: inline-block;
+    position: absolute;
+    bottom: 16px;
+    left: 16px;
+
+    transform: translate(-3.9px, 0.6px) rotate(0deg) translate(7.9px, 0);
+    transform-origin: center bottom;
+
+    width: 0; 
+    height: 0; 
+    border-left: 3px solid #f3f3f3;
+    border-right: 3px solid #f3f3f3;
+    border-top: 0px solid #f3f3f3;
+  
+    border-bottom: calc(6px * 0.866) solid black;
+}
+
+@keyframes rotation {
+    0%   { transform: translate(-3.9px, 0.6px) rotate(360deg) translate(7.9px, 0); }
+    100% { transform: translate(-3.9px, 0.6px) rotate(0deg) translate(7.9px, 0); }
+}
+
+#refresh span.animate {
+    animation-name: rotation;
+    animation-duration: 2s;
+    animation-iteration-count: infinite;
+    animation-timing-function: linear;
+}
+
+#refresh:hover {
+    background: rgb(227,227,227);
+    background: radial-gradient(circle, rgba(227,227,227,1) 0%, rgba(227,227,227,1) 33%, rgba(0,0,0,1) 33%, rgba(0,0,0,1) 43%, rgba(227,227,227,1) 43%);
+}
+
+#refresh:hover span {
+    border-left-color: #e3e3e3;
+    border-right-color: #e3e3e3;
+    border-top-color: #e3e3e3;
+}
+
+#refresh:active {
+    background: rgb(170,204,204);
+    background: radial-gradient(circle, rgba(170,204,204,1) 0%, rgba(170,204,204,1) 33%, rgba(0,0,0,1) 33%, rgba(0,0,0,1) 43%, rgba(170,204,204,1) 43%);
+}
+
+#refresh:active span {
+    border-left-color: #aacccc;
+    border-right-color: #aacccc;
+    border-top-color: #aacccc;
 }
 
 #playpause {
@@ -186,15 +244,22 @@ div#animcontrols .selectable {
 
     height: 32px;
     line-height: 32px;
+    width: 15px;
 
     cursor: pointer;
+
+    background: rgb(0,0,0);
+    background: radial-gradient(circle closest-side, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 60%, rgba(255,255,255,1) 60%);
 }
 
 #framelist li.framenotloaded {
-    color: #888888;
     cursor: default;
+
+    background: rgb(136,136,136);
+    background: radial-gradient(circle closest-side, rgba(136,136,136,1) 0%, rgba(136,136,136,1) 60%, rgba(255,255,255,1) 60%);
 }
 
-.frameactive {
-    color: #aacccc;
+#framelist li.frameactive {
+    background: rgb(170,204,204);
+    background: radial-gradient(circle closest-side, rgba(170,204,204,1) 0%, rgba(170,204,204,1) 45%, rgba(0,0,0,1) 45%, rgba(0,0,0,1) 60%, rgba(255,255,255,1) 60%);
 }

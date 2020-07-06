@@ -45,9 +45,9 @@ $root_path = root_path();
         <li class="selectable">DDD/SS</li>
       </ul>
     </div>
-    <div id="generate" class="selectable">
+    <!--div id="generate" class="selectable">
       <p>Generate Hodograph</p>
-    </div>
+    </div-->
     <div id="autoupdate" class="selectable">
       <p>Auto-Update</p>
     </div>
@@ -57,7 +57,7 @@ $root_path = root_path();
     <div id="animcontrols">
       <p id="animspdup", class='selectable'>+</p>
       <p id="animspddn", class='selectable'>-</p>
-      <p id="refresh", class='selectable'>&#9711;</p>
+      <p id="refresh", class='selectable'>&nbsp;<span></span></p>
       <p id="playpause", class='selectable'>&#9654;&#9616;&#9616;</p>
       <ul id='framelist'>
       </ul>
