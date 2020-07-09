@@ -6,6 +6,7 @@ window.onload = function() {
         app.hodo.add_vwp(vwp);
     });
 */
+
 }
 
 function _page_pos(obj) {
@@ -45,11 +46,12 @@ function format_vector(wdir, wspd, units) {
 class VWPApp {
     constructor() {
         this.sfc = "None";
-//      this.waiting = false;
-//      this.file_pre_download = null;
         this.prev_selection = null;
         this._refresh_timer = null
         this._refresh_intv = 60 * 1000;
+
+        this._metar_refresh_intv = 10 * 60 * 1000;
+        this._metar_timer = window.setInterval(this.metar_refresh.bind(this), this._metar_refresh_intv);
 
         this.file_times = {};
 
@@ -102,16 +104,7 @@ class VWPApp {
 
             help.style.visibility = "visible";
             var target_pos = _page_pos(target);
-/*
-            if (target.offsetLeft !== undefined) {
-                help.offsetLeft = target.offsetLeft + 100;
-                help.offsetTop = target.offsetTop;
-            }
-            else {
-                help.left = target.left + 100;
-                help.top = target.top;
-            }
-*/
+
             help.style.offsetLeft = target_pos.x + 70;
             help.style.offsetTop = target_pos.y - 17;
             help.style.left = target_pos.x + 70;
@@ -149,11 +142,6 @@ class VWPApp {
         }
     }
 
-    set_anim_marker(dt) {
-        $('.frameactive').removeClass('frameactive');
-        $('#framelist li[data-datetime="' + dt.format(this._dt_fmt) + '"]').addClass('frameactive');
-    }
-
     set_frame_list(frames) {
         var frame_list = $('#framelist');
         frame_list.empty();
@@ -178,36 +166,7 @@ class VWPApp {
             }
         }).bind(this));
     }
-/*
-    generate() {
-        if (this.radars.selected === null || this.radars.selected == "") {
-            window.alert("Select a radar first!");
-            return;
-        }
 
-        if (this.waiting) {
-            return;
-        }
-
-        if (this.hodo.selecting) {
-            this._abort_selection();
-        }
-
-        if (this.file_pre_download !== null && this.file_pre_download.radar_id == this.radars.selected) {
-            this.hodo.add_vwp(this.file_pre_download);
-        }
-        else {
-            VWP.from_server(this.radars.selected, moment.utc(), null, (function(vwp) {
-                this.waiting = false;
-                this.hodo.stop_loading();
-                this.hodo.add_vwp(vwp);
-            }).bind(this));
-
-            this.waiting = true;
-            this.hodo.start_loading();
-        }
-    }
-*/
     toggle_autoupdate() {
         $('#autoupdate').toggleClass('selected');
         if (this._refresh_timer === null) {
@@ -255,6 +214,12 @@ class VWPApp {
         $('#playpause').removeClass('selected');
     }
 
+    metar_refresh() {
+        check_metars((function(metars) {
+            this._metars = metars;
+        }).bind(this));
+    }
+
     _select_box(obj) {
         var was_selected = null;
         var siblings = obj.parentElement.getElementsByTagName(obj.tagName);
@@ -294,8 +259,6 @@ class VWPContainer {
         this._hodo = hodo;
         this._age_limit = age_limit;
 
-        // TODO: Probably don't need to keep track of the animation index as an instance variable (only local to start_animation). Might reduce complexity a bit.
-        this._anim_idx = null;
         this._is_animating = false;
         this._is_animation_paused = true;
         this._anim_timer = null;
@@ -322,11 +285,10 @@ class VWPContainer {
 
         if (this._radar !== null && this._radar != radar_id) {
             this.frame_list.clear();
-            this._anim_idx = null;
         }
         this._radar = radar_id;
 
-        this._want_latest_frame = (this._anim_idx === null || this._anim_idx == this.frame_list.size - 1);
+        this._want_latest_frame = (this.frame_list.size == 0 || Array.from(this.frame_list.values()).findIndex(f => f['status'] == 'active') == this.frame_list.size - 1);
 
         check_files(radar_id, (function(file_times) {
             // Check to see if this is still the radar we're looking for (user might have changed it while we were waiting for data).
@@ -337,10 +299,6 @@ class VWPContainer {
             file_times = file_times['times'];
             file_times = Object.entries(file_times).sort(([fn1, dt1], [fn2, dt2]) => compare_dt(dt1, dt2));
 
-            if (this._anim_idx !== null) {
-                var anim_fn = Array.from(this.frame_list.keys())[this._anim_idx];
-            }
-
             // Add new frames to frame list
             file_times.forEach((function([file_name, dt]) {
                 if (!this.frame_list.has(file_name)) {
@@ -348,26 +306,22 @@ class VWPContainer {
                 }
             }).bind(this));
 
-            // Delete frames older than 30 minutes
+            // Delete frames older than the age limit
             this.frame_list.forEach((function(frame, file_name) {
-                if (frame['dt'].isBefore(moment.utc().subtract(30, 'minutes'))) {
+                if (frame['dt'].isBefore(moment.utc().subtract(this._age_limit, 'seconds'))) {
                     this.frame_list.delete(file_name);
                 }
             }).bind(this))
 
-            // Update the animation index to point to the same frame as it did before
-            if (this._anim_idx !== null) {
-                if (this.frame_list.has(anim_fn)) {
-                    this._anim_idx = Array.from(this.frame_list.keys()).indexOf(anim_fn);
-                }
-                else {
-                    this._anim_idx = Array.from(this.frame_list.values()).map(f => f['status'] != 'notloaded').lastIndexOf(true);
-                    this._update_frame_list();
-                    var frame = Array.from(this.frame_list.values())[this._anim_idx];
+            // If we removed the active frame, make the latest frame the new active frame
+            if (Array.from(this.frame_list.values()).findIndex(f => f['status'] == 'active') == -1) {
+                var frame = Array.from(this.frame_list.values()).reverse().find(f => f['status'] != 'notloaded');
+                if (frame !== undefined) {
+                    this._set_active_frame(frame);
                     this._hodo.draw_vwp(frame['data']);
-
-                    this._want_latest_frame = true;
                 }
+
+                this._want_latest_frame = true;
             }
 
             // Update the UI
@@ -386,8 +340,6 @@ class VWPContainer {
 
                     console.log('Downloading vwp at ' + frame['dt'].format(this._dt_format));
                     VWP.from_server(radar_id, frame['dt'], id, (function(vwp) {
-                        var frame = this.frame_list.get(file_name);
-
                         // Check to see if this is still the radar we're looking for (user might have changed it while we were waiting for data).
                         if (this._radar != vwp.radar_id) {
                             return;
@@ -398,6 +350,8 @@ class VWPContainer {
                         vwp.change_surface_wind(this._surface_wind);
 
                         // Update frame data structure
+                        var frame = this.frame_list.get(file_name);
+
                         frame['status'] = 'loaded';
                         frame['dt'] = vwp.radar_dt;
                         frame['data'] = vwp;
@@ -407,15 +361,12 @@ class VWPContainer {
                         this._hodo.set_bbox(bbox);
 
                         // Update hodograph
-                        if (!is_refresh || this._want_latest_frame || this._anim_idx >= this.frame_list.size || 
-                            Array.from(this.frame_list.values())[this._anim_idx]['status'] == 'notloaded') {
+                        if (!is_refresh || this._want_latest_frame) {
                             var [latest_fn, latest_frame] = Array.from(this.frame_list.entries()).filter(([fn, frame]) => frame['status'] != 'notloaded').reverse()[0]
-                            this._anim_idx = Array.from(this.frame_list.keys()).indexOf(latest_fn);
-
-                            this._update_frame_list();
+                            this._set_active_frame(latest_frame);
                         }
 
-                        var frame = Array.from(this.frame_list.values())[this._anim_idx];
+                        var frame = Array.from(this.frame_list.values()).find(f => f['status'] == 'active');
                         this._hodo.draw_vwp(frame['data']);
 
                         // Update UI
@@ -444,24 +395,23 @@ class VWPContainer {
     }
 
     set_anim_time(dt) {
-        this._anim_idx = Array.from(this.frame_list.values()).findIndex(f => f['dt'].isSame(dt));
-        this._ui.set_anim_marker(dt);
+        var frame = Array.from(this.frame_list.values()).find(f => (f['dt'].isSame(dt)));
+
         this.stop_animation();
 
-        this._update_frame_list();
+        this._set_active_frame(frame);
+        this._update_ui_frame_list();
 
-        var frame = Array.from(this.frame_list.values())[this._anim_idx];
         this._hodo.draw_vwp(frame['data']);
     }
 
-    _update_frame_list() {
-        this.frame_list.forEach(function(frame) {
-            if (frame['status'] != 'notloaded') {
-                frame['status'] = 'loaded';
+    _set_active_frame(frame) {
+        this.frame_list.forEach(function(f) {
+            if (f['status'] != 'notloaded') {
+                f['status'] = 'loaded';
             }
         });
 
-        var frame = Array.from(this.frame_list.values())[this._anim_idx];
         frame['status'] = 'active';
     }
 
@@ -479,14 +429,16 @@ class VWPContainer {
 
         var advance_frame = (function() {
             var frame;
+            var anim_idx;
 
             var has_some_loaded = this.frame_list.size > 0 && Array.from(this.frame_list.values()).map(f => f['status'] != 'notloaded').reduce((s1, s2) => s1 || s2);
 
             if (has_some_loaded) {
+                anim_idx = Array.from(this.frame_list.values()).findIndex(f => (f['status'] == 'active'));
                 // Increment animation counter
                 do {
-                    this._anim_idx = (this._anim_idx + 1) % this.frame_list.size;
-                    frame = Array.from(this.frame_list.values())[this._anim_idx];
+                    anim_idx = (anim_idx + 1) % this.frame_list.size;
+                    frame = Array.from(this.frame_list.values())[anim_idx];
                 } while (frame['status'] == 'notloaded');
             }
             else {
@@ -495,12 +447,7 @@ class VWPContainer {
             }
 
             // Update UI
-            for (var f of this.frame_list.values()) {
-                if (f['status'] != 'notloaded') {
-                    f['status'] = 'loaded';
-                }
-            }
-            frame['status'] = 'active';
+            this._set_active_frame(frame);
             this._update_ui_frame_list();
 
             // Draw VWP
@@ -508,7 +455,7 @@ class VWPContainer {
 
             // Set timer for next frame
             var intv = this._anim_intv;
-            if (this._anim_idx == this.frame_list.size - 1) {
+            if (anim_idx == this.frame_list.size - 1) {
                 intv *= 2.5;
             }
 
@@ -536,7 +483,7 @@ class VWPContainer {
     }
 
     screenshot() {
-        var frame = Array.from(this.frame_list.values())[this._anim_idx];
+        var frame = Array.from(this.frame_list.values()).find(f => f['status'] == 'active');
         var img_data_url = this._hodo.screenshot(frame['data']);
 
         var header = "<head><title>VWP Image</title></head>";
@@ -557,7 +504,7 @@ class VWPContainer {
         this._surface_wind = new_vec;
 
         if (this.frame_list.size > 0) {
-            var frame = Array.from(this.frame_list.values())[this._anim_idx];
+            var frame = Array.from(this.frame_list.values()).find(f => f['status'] == 'active');
             this._hodo.draw_vwp(frame['data']);
         }
     }
@@ -572,7 +519,7 @@ class VWPContainer {
         this._storm_motion = new_vec;
 
         if (this.frame_list.size > 0) {
-            var frame = Array.from(this.frame_list.values())[this._anim_idx];
+            var frame = Array.from(this.frame_list.values()).find(f => f['status'] == 'active');
             this._hodo.draw_vwp(frame['data']);
         }
     }
@@ -1167,50 +1114,6 @@ class HodoPlot {
         ctx.fillText(format(vwp.params['ca'], '\u{00b0}'), 0.5, 1.4);
     }
 
-    start_loading() {
-        var ctx = this._contexts['hodo'];
-        var num = 0;
-
-        var [lbu, lbv, ubu, ubv] = [ctx.bbox_data.lbx, ctx.bbox_data.lby, ctx.bbox_data.ubx, ctx.bbox_data.uby];
-        var ctr_u = (lbu + ubu) / 2;
-        var ctr_v = (lbv + ubv) / 2;
-
-        var circ_rad = 50;
-        var dot_rad = 20;
-
-        var pos_x = [];
-        var pos_y = [];
-
-        for (var i = 0; i < 8; i++) {
-            [pos_x[i], pos_y[i]] = ctx.pixelOffset(ctr_u, ctr_v, circ_rad * Math.cos(Math.PI * i / 4), circ_rad * Math.sin(Math.PI * i / 4));
-        }
-
-        function anim() {
-            num++;
-
-            if (this._vwps.length > 0) {
-                this._draw_vwp(this._vwps[this._vwps.length - 1], this._canvas, this._contexts);
-            }
-
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
-            ctx.fillRect(0, 0, this._canvas.width, this._canvas.height);
-
-            for (var i = 0; i < 8; i++) {
-                var pos_i = (i + num) % 8;
-                ctx.beginPath();
-                ctx.fillStyle = 'rgba(30, 30, 30, ' + (0.1 * (i + 2)) + ')';
-                ctx.circle(pos_x[pos_i], pos_y[pos_i], dot_rad / 8 * i, 'pixels');
-                ctx.fill();
-            }
-        }
-
-        this.anim_timer = window.setInterval(anim.bind(this), 100);
-    }
-
-    stop_loading() {
-        window.clearInterval(this.anim_timer);
-    }
-
     static _create_ctx_proxy(canvas, bbox_pixels, bbox_data, dpr) {
         // Set up a wrapper for the drawing context that handles transformations and the device pixel ratio
         var ctx = canvas.getContext('2d');
@@ -1658,4 +1561,21 @@ function check_files(radar_id, callback) {
         }
         callback(json);
     })
+}
+
+function check_metars(callback) {
+    var root_url = $('#root_url').val();
+
+    if (!window.location.hostname.includes('www')) {
+        root_url = root_url.replace('www.', '');
+    }
+
+    $.getJSON(root_url + '/vad/get_metar_json.php', function(json) {
+        for (stid in json) {
+            json[stid].forEach(function(ob) {
+                ob['time'] = moment.utc(ob['time']);
+            });
+        }
+        callback(json);
+    });
 }
