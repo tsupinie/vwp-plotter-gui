@@ -43,6 +43,10 @@ function format_vector(wdir, wspd, units) {
     return wdir.toFixed(0).padStart(3, '0') + '/' + Math.min(99, wspd).toFixed(0).padStart(2, '0') + units;
 }
 
+function compare_dt(dt1, dt2) {
+    return dt1.isBefore(dt2) ? -1 : (dt1.isSame(dt2) ? 0 : 1);
+}
+
 class VWPApp {
     constructor() {
         this.sfc = "None";
@@ -52,14 +56,17 @@ class VWPApp {
 
         this._metar_refresh_intv = 10 * 60 * 1000;
         this._metar_timer = window.setInterval(this.metar_refresh.bind(this), this._metar_refresh_intv);
+        this._metars = null;
+        this.metar_refresh();
 
         this.file_times = {};
 
         this._dt_fmt = "YYYY-MM-DD[T]HH:mm:ss[Z]";
 
         var mapclick = (function(rad) {
-            $('#mapsel').html('<p>Radar:</p> <ul><li>' + rad.id + ' (' + rad.name + ')</li></ul>')
+            $('#mapsel').html('<p>Radar:</p> <ul><li>' + rad.id + ' (' + rad.name + ')</li></ul>');
             this.vwp_container.check_file_times(rad.id, false);
+            this.update_asos_wind();
         }).bind(this);
 
         this.radars = new ClickableMap('imgs/static/map.png', 'wsr88ds.json', mapclick);
@@ -143,28 +150,37 @@ class VWPApp {
     }
 
     set_frame_list(frames) {
-        var frame_list = $('#framelist');
-        frame_list.empty();
+        var anim_controls = $('#animcontrols');
+        $('#framelist').remove();
+        $('#datamissing').remove();
 
-        var dt_fmt = this._dt_fmt;
+        if (frames.length == 0) {
+            anim_controls.append('<p id="datamissing">No Data</p>');
+        }
+        else {
+            anim_controls.append('<ul id="framelist"></ul>');
+            var frame_list = $('#framelist');
 
-        frames.reverse().forEach((function(frame) {
-            frame_list.append('<li data-datetime="' + frame['dt'].format(dt_fmt) + '">&nbsp;</li>');
-            var child = frame_list.children().last();
+            var dt_fmt = this._dt_fmt;
 
-            if (frame['status'] == 'notloaded') {
-                child.addClass('framenotloaded');
-            }
-            else {
-                child.click((function() {
-                    this.vwp_container.set_anim_time(moment.utc(child.attr('data-datetime')));
-                }).bind(this));
-            }
+            frames.reverse().forEach((function(frame) {
+                frame_list.append('<li data-datetime="' + frame['dt'].format(dt_fmt) + '">&nbsp;</li>');
+                var child = frame_list.children().last();
 
-            if (frame['status'] == 'active') {
-                child.addClass('frameactive');
-            }
-        }).bind(this));
+                if (frame['status'] == 'notloaded') {
+                    child.addClass('framenotloaded');
+                }
+                else {
+                    child.click((function() {
+                        this.vwp_container.set_anim_time(moment.utc(child.attr('data-datetime')));
+                    }).bind(this));
+                }
+
+                if (frame['status'] == 'active') {
+                    child.addClass('frameactive');
+                }
+            }).bind(this));
+        }
     }
 
     toggle_autoupdate() {
@@ -217,7 +233,35 @@ class VWPApp {
     metar_refresh() {
         check_metars((function(metars) {
             this._metars = metars;
+            this.update_asos_wind();
         }).bind(this));
+    }
+
+    update_asos_wind() {
+        if (this.radars.selected === null || this._metars === null) {
+            return;
+        }
+
+        var radar_info;
+        var radar_selected = this.radars.selected;
+        this.radars.points.forEach(function(rad) {
+            if (rad['id'] == radar_selected) {
+                radar_info = rad;
+            }
+        });
+
+        var metar = this._metars[radar_info['metar']];
+        if (metar === undefined) {
+            metar = [];
+        }
+        else {
+            metar.sort((m1, m2) => compare_dt(m1['time'], m2['time']));
+        }
+
+        console.log(metar);
+
+        $('#asoswind').html(radar_info['metar']);
+        this.vwp_container.set_metar_obs(metar);
     }
 
     _select_box(obj) {
@@ -239,6 +283,9 @@ class VWPApp {
             this.vwp_container.change_storm_motion(val);
         }
         else if (obj.parentElement.parentElement.id == "sfcsel") {
+            if (typeof val == 'string' && val != "None") {
+                val = 'metar';
+            }
             this.vwp_container.change_surface_wind(val);
         }
     };
@@ -265,7 +312,8 @@ class VWPContainer {
         this._anim_intv = 500;
 
         this._storm_motion = 'brm';
-        this._surface_wind = 'none';
+        this._surface_wind = 'metar';
+        this._metars = null;
 
         // TODO: These might not need to be instance variables (only local to check_file_times), but I'm confused about Javascript variable scoping ...
         this._expected_new_frames = 0;
@@ -277,10 +325,6 @@ class VWPContainer {
     }
 
     check_file_times(radar_id, is_refresh) {
-        function compare_dt(dt1, dt2) {
-            return dt1.isBefore(dt2) ? -1 : (dt1.isSame(dt2) ? 0 : 1);
-        }
-
         this._ui.refresh_circle_start()
 
         if (this._radar !== null && this._radar != radar_id) {
@@ -346,8 +390,24 @@ class VWPContainer {
                         }
 
                         // Set storm motion and surface wind
+                        if (this._surface_wind == 'metar') {
+                            if (this._metars !== null) {
+                                var metar = this._metars.slice().reverse().find(m => m['time'].isBefore(vwp.radar_dt));
+                                if (metar === undefined) {
+                                    vwp.change_surface_wind('none');
+                                }
+                                else {
+                                    vwp.change_surface_wind([metar['wdir'], metar['wspd']]);
+                                }
+                            }
+                            else {
+                                vwp.change_surface_wind('none');
+                            }
+                        }
+                        else {
+                            vwp.change_surface_wind(this._surface_wind);
+                        }
                         vwp.change_storm_motion(this._storm_motion);
-                        vwp.change_surface_wind(this._surface_wind);
 
                         // Update frame data structure
                         var frame = this.frame_list.get(file_name);
@@ -388,10 +448,24 @@ class VWPContainer {
                 }
             }).bind(this));
 
+            // If there are no new frames, stop the animation refresh
             if (this._expected_new_frames == 0) {
                 this._ui.refresh_circle_stop();
             }
+
+            // If there are no data at all (e.g. radar is down), reset the hodograph
+            if (this.frame_list.size == 0) {
+                this._hodo.reset();
+            }
         }).bind(this));
+    }
+
+    set_metar_obs(metars) {
+        this._metars = metars;
+
+        if (this.frame_list.size > 0) {
+            this.change_surface_wind(this._surface_wind);
+        }
     }
 
     set_anim_time(dt) {
@@ -495,17 +569,36 @@ class VWPContainer {
     }
 
     change_surface_wind(new_vec) {
-        this.frame_list.forEach(function(frame) {
+        this.frame_list.forEach((function(frame) {
             if (frame['status'] != 'notloaded') {
-                frame['data'].change_surface_wind(new_vec);
+                var vwp = frame['data'];
+                if (new_vec == 'metar') {
+                    if (this._metars !== null) {
+                        var metar = this._metars.slice().reverse().find(m => m['time'].isBefore(vwp.radar_dt));
+                        if (metar === undefined) {
+                            vwp.change_surface_wind('none');
+                        }
+                        else {
+                            vwp.change_surface_wind([metar['wdir'], metar['wspd']]);
+                        }
+                    }
+                    else {
+                        vwp.change_surface_wind('none');
+                    }
+                }
+                else {
+                    vwp.change_surface_wind(new_vec);
+                }
             }
-        });
+        }).bind(this));
 
         this._surface_wind = new_vec;
 
         if (this.frame_list.size > 0) {
             var frame = Array.from(this.frame_list.values()).find(f => f['status'] == 'active');
-            this._hodo.draw_vwp(frame['data']);
+            if (frame !== undefined) {
+                this._hodo.draw_vwp(frame['data']);
+            }
         }
     }
 
@@ -712,9 +805,10 @@ class HodoPlot {
 
         this._contexts = {};
 
+        this._default_hodo_bbox_uv = new BBox(-40, -40, 80, 80);
+
         var hodo_bbox_pixels = new BBox(16.64, 17.92, 449.28, 449.92);
-        var hodo_bbox_uv = new BBox(-40, -40, 80, 80);
-        this._contexts['hodo'] = HodoPlot._create_ctx_proxy(this._canvas, hodo_bbox_pixels, hodo_bbox_uv, this._dpr);
+        this._contexts['hodo'] = HodoPlot._create_ctx_proxy(this._canvas, hodo_bbox_pixels, this._default_hodo_bbox_uv, this._dpr);
 
         var table_bbox_pixels = new BBox(455.92, 17.92, 608.36, 160);
         var table_bbox_data = new BBox(0, 0, 1, 11);
@@ -733,6 +827,11 @@ class HodoPlot {
         this._canvas.onmousemove = this.mousemove.bind(this);
         this._canvas.onmouseup = this.mouseclick.bind(this);
         this._canvas.onmouseout = this.mouseleave.bind(this);
+    }
+
+    reset() {
+        this.set_bbox(this._default_hodo_bbox_uv);
+        this._clear_and_draw_background(this._canvas, this._contexts);
     }
 
     add_vwp_container(vwp_container) {

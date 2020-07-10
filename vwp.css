@@ -263,3 +263,16 @@ div#animcontrols .selectable {
     background: rgb(170,204,204);
     background: radial-gradient(circle closest-side, rgba(170,204,204,1) 0%, rgba(170,204,204,1) 45%, rgba(0,0,0,1) 45%, rgba(0,0,0,1) 60%, rgba(255,255,255,1) 60%);
 }
+
+#datamissing {
+    float: right;
+    margin: 0px;
+    margin-right: 5px;
+
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+
+    height: 32px;
+    line-height: 32px;
+}

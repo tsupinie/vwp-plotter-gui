@@ -41,13 +41,11 @@ $root_path = root_path();
     <div id="sfcsel">
       <p>Surface Wind:</p>
       <ul class="toggle-list">
-        <li class="selectable selected">None</li>
+        <li class="selectable">None</li>
+        <li id='asoswind' class="selectable selected">ASOS</li>
         <li class="selectable">DDD/SS</li>
       </ul>
     </div>
-    <!--div id="generate" class="selectable">
-      <p>Generate Hodograph</p>
-    </div-->
     <div id="autoupdate" class="selectable">
       <p>Auto-Update</p>
     </div>
