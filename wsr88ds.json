@@ -66,7 +66,7 @@
         "id": "KATX", 
         "latitude": 48.19444444444444, 
         "longitude": -122.49583435058594, 
-        "metar": "KOKH", 
+        "metar": "KNUW", 
         "name": "Seattle, WA", 
         "x_pix": 84.585070005281565, 
         "y_pix": 465.40392061543196
@@ -381,7 +381,7 @@
         "id": "KEPZ", 
         "latitude": 31.873055555555556, 
         "longitude": -106.69805908203125, 
-        "metar": "K5T6", 
+        "metar": "KELP", 
         "name": "El Paso, TX", 
         "x_pix": 246.48947966533211, 
         "y_pix": 126.26006257048273
@@ -480,7 +480,7 @@
         "id": "KFTG", 
         "latitude": 39.78666666666666, 
         "longitude": -104.54582977294922, 
-        "metar": "KFTG", 
+        "metar": "KDEN", 
         "name": "Denver, CO", 
         "x_pix": 291.46508694653375, 
         "y_pix": 269.85822595201984
@@ -777,7 +777,7 @@
         "id": "KLRX", 
         "latitude": 40.73972222222222, 
         "longitude": -116.80278015136719, 
-        "metar": "KB23", 
+        "metar": "KBAM", 
         "name": "Elko, NV", 
         "x_pix": 124.10250507467249, 
         "y_pix": 312.35037610587625
