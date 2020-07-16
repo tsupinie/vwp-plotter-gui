@@ -2,9 +2,11 @@
 
 function get_args() {
     $radar_id = addslashes($_GET['radar']);
+    $age_limit = intval($_GET['age']);
 
     $args = array(
-        'radar' => $radar_id
+        'radar' => $radar_id,
+        'age_limit' => $age_limit,
     );
 
     return $args;
@@ -54,10 +56,9 @@ function check($radar_id, $age_limit) {
 
 function _main() {
     date_default_timezone_set('UTC');
-    $age_limit = 1800;
 
     $args = get_args();
-    $times = check($args['radar'], $age_limit);
+    $times = check($args['radar'], $args['age_limit']);
 
     $json = array(
         'radar' => $args['radar'],

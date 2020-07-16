@@ -14,6 +14,7 @@ $root_path = root_path();
 <script type="text/javascript" src="<?php echo $root_url; ?>/map_click.js"></script>
 <script type="text/javascript" src="<?php echo $root_url; ?>/vad/parms.js"></script>
 <script type="text/javascript" src="<?php echo $root_url; ?>/vad/vwp.js"></script>
+<script type="text/javascript" src="<?php echo $root_url; ?>/vad/gif.js"></script>
 <link rel="stylesheet" type="text/css" href="<?php echo $root_url; ?>/main.css.php">
 <link rel="stylesheet" type="text/css" href="<?php echo $root_url; ?>/vad/vwp.css">
 </head>
@@ -33,30 +34,31 @@ $root_path = root_path();
     <div id="smsel">
       <p>Storm Motion:</p>
       <ul class="toggle-list">
-        <li class="selectable">BLM</li>
-        <li class="selectable selected">BRM</li>
-        <li class="selectable">DDD/SS</li>
+        <li class="selectable needhelp">BLM<span class="help helptop">Bunkers Left Mover Vector</span></li>
+        <li class="selectable selected needhelp">BRM<span class="help helptop">Bunkers Right Mover Vector</span></li>
+        <li class="selectable needhelp">DDD/SS<span class="help helptop">Select From Hodograph</span></li>
       </ul>
     </div>
     <div id="sfcsel">
       <p>Surface Wind:</p>
       <ul class="toggle-list">
-        <li class="selectable">None</li>
-        <li id='asoswind' class="selectable selected">ASOS</li>
-        <li class="selectable">DDD/SS</li>
+        <li class="selectable needhelp">None<span class="help helptop">No Surface Wind</span></li>
+        <li id='asoswind' class="selectable selected needhelp">ASOS<span class="help helptop">ASOS Surface Wind</span></li>
+        <li class="selectable needhelp">DDD/SS<span class="help helptop">Select From Hodograph</span></li>
       </ul>
     </div>
-    <div id="autoupdate" class="selectable">
-      <p>Auto-Update</p>
+    <div id="autoupdate" class="selectable needhelp">
+      <p>Auto-Update</p><span class='help helptop'>Toggle Auto-Update</span>
     </div>
   </div>
   <div id="hododiv">
     <canvas id="hodo" width=620 height=465></canvas>
     <div id="animcontrols">
-      <p id="animspdup", class='selectable'>+</p>
-      <p id="animspddn", class='selectable'>-</p>
-      <p id="refresh", class='selectable'>&nbsp;<span></span></p>
-      <p id="playpause", class='selectable'>&#9654;&#9616;&#9616;</p>
+      <p id="makegif", class='selectable needhelp '>GIF<span class='help helptop'>Make Animated GIF</span></p>
+      <p id="animspdup", class='selectable needhelp '>+<span class='help helptop'>Animation Speed Up</span></p>
+      <p id="animspddn", class='selectable needhelp'>-<span class='help helptop'>Animation Speed Down</span></p>
+      <p id="refresh", class='selectable needhelp'>&nbsp;<span class='arrow'></span><span class='help helptop'>Refresh</span></p>
+      <p id="playpause", class='selectable needhelp'>&#9654;&#9616;&#9616;<span class='help helptop'>Start/Stop Animation</span></p>
       <ul id='framelist'>
       </ul>
     </div>

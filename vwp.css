@@ -44,6 +44,10 @@ div#selection ul {
     -ms-user-select: none;
 }
 
+.toggle-list {
+    position: relative;
+}
+
 .toggle-list .selectable {
     display:inline;
     padding-left:5px;
@@ -51,6 +55,8 @@ div#selection ul {
 }
 
 .selectable {
+    position: relative;
+
     border: 1px solid black;
     cursor:pointer;
     background-color: #f3f3f3;
@@ -155,17 +161,16 @@ div#animcontrols .selectable {
     font-weight: bold;
 }
 
-#animspdup:active, #animspddn:active {
+#animspdup:active, #animspddn:active, #makegif:active {
     background-color:#aacccc;
 }
 
 #refresh {
-    position: relative;
     background: rgb(243,243,243);
     background: radial-gradient(circle, rgba(243,243,243,1) 0%, rgba(243,243,243,1) 33%, rgba(0,0,0,1) 33%, rgba(0,0,0,1) 43%, rgba(243,243,243,1) 43%);
 }
 
-#refresh span {
+#refresh span.arrow {
     display: inline-block;
     position: absolute;
     bottom: 16px;
@@ -188,7 +193,7 @@ div#animcontrols .selectable {
     100% { transform: translate(-3.9px, 0.6px) rotate(0deg) translate(7.9px, 0); }
 }
 
-#refresh span.animate {
+#refresh span.arrow.animate {
     animation-name: rotation;
     animation-duration: 2s;
     animation-iteration-count: infinite;
@@ -200,7 +205,7 @@ div#animcontrols .selectable {
     background: radial-gradient(circle, rgba(227,227,227,1) 0%, rgba(227,227,227,1) 33%, rgba(0,0,0,1) 33%, rgba(0,0,0,1) 43%, rgba(227,227,227,1) 43%);
 }
 
-#refresh:hover span {
+#refresh:hover span.arrow {
     border-left-color: #e3e3e3;
     border-right-color: #e3e3e3;
     border-top-color: #e3e3e3;
@@ -211,7 +216,7 @@ div#animcontrols .selectable {
     background: radial-gradient(circle, rgba(170,204,204,1) 0%, rgba(170,204,204,1) 33%, rgba(0,0,0,1) 33%, rgba(0,0,0,1) 43%, rgba(170,204,204,1) 43%);
 }
 
-#refresh:active span {
+#refresh:active span.arrow {
     border-left-color: #aacccc;
     border-right-color: #aacccc;
     border-top-color: #aacccc;
@@ -275,4 +280,70 @@ div#animcontrols .selectable {
 
     height: 32px;
     line-height: 32px;
+}
+
+.help {
+    pointer-events: none;
+    visibility: hidden;
+    opacity: 0;
+    background-color: black;
+    color: #ffffff;
+    text-align: center;
+    padding: 0;
+    border-radius: 6px;
+    font-size: calc(0.8 * 16px);
+    font-weight: normal;
+
+    width: 180px;
+    height: 30px;
+    line-height: 30px;
+
+    position: absolute;
+    z-index: 1;
+}
+
+.helptop {
+    bottom: calc(100% + 6px);
+    left: 50%;
+    margin-left: -90px;  
+}
+
+.helptop::after {
+    content: " ";
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    margin-left: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: black transparent transparent transparent;
+}
+
+.helpright {
+    top: 50%;
+    margin-top: -15px;
+    left: calc(100% + 6px);
+}
+
+.helpright::after {
+    content: " ";
+    position: absolute;
+    top: 50%;
+    right: 100%;
+    margin-top: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: transparent black transparent transparent;
+}
+
+@keyframes fadein {
+    0% { visibility: hidden; opacity: 0; }
+    1% { visibility: visible; opacity: 0; }
+    100% { visibility: visible; opacity: 1; }
+}
+
+.needhelp:hover .help {
+    animation: fadein 0.2s;
+    animation-delay: 1s;
+    animation-fill-mode: forwards;
 }
