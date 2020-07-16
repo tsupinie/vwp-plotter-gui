@@ -55,9 +55,19 @@ function do_output($json_fname, $dl_output) {
     echo json_encode($output);
 }
 
+function log_visit($args) {
+    $log_file = "/home/autumn35/vad/visits_v2.log";
+
+    $log_time = date('c');
+    $log = fopen($log_file, 'a');
+    fwrite($log, "$log_time|{$_SERVER['REMOTE_ADDR']}|{$args['radar']}|{$args['already_exists']}\n");
+    fclose($log);
+}
+
 function _main() {
     date_default_timezone_set('UTC');
 
+    $force_log = true;
     $json_path = root_path() . "/vad/json";
     $args = get_args();
 
@@ -65,8 +75,14 @@ function _main() {
     $json_fname = "$json_path/{$args['radar']}_$json_date.json";
 
     $output = NULL;
-    if (file_exists($json_fname) === false) {
+    $already_exists = (file_exists($json_fname) !== false);
+    if (!$already_exists) {
         $output = download_json($args, $json_path);
+    }
+
+    $args['already_exists'] = $already_exists;
+    if ($force_log || is_live_copy()) {
+        log_visit($args);
     }
 
     do_output($json_fname, $output);
