@@ -81,7 +81,7 @@ class VWPApp {
 
         var age_limit = 2700;
 
-        this.radars = new ClickableMap('imgs/static/map.png', 'wsr88ds.json', mapclick);
+        this.radars = new ClickableMap('imgs/map.png', 'wsr88ds.json', mapclick);
         this.hodo = new HodoPlot(this);
         this.vwp_container = new VWPContainer(this, this.hodo, age_limit);
         this.hodo.add_vwp_container(this.vwp_container);
@@ -594,7 +594,7 @@ class VWPContainer {
     }
 
     make_gif() {
-        var gif = new GIF({workers: 4, quality: 10});
+        var gif = new GIF({workers: 4, workerScript: 'gifjs/gif.worker.js', quality: 10});
         var n_frames = 0;
         var anim_intv = this._anim_intv;
 
