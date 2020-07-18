@@ -199,7 +199,7 @@ class VWPApp {
     toggle_autoupdate() {
         $('#autoupdate').toggleClass('selected');
         if (this._refresh_timer === null) {
-            window.setInterval(this.refresh.bind(this), this._refresh_intv);
+            this._refresh_timer = window.setInterval(this.refresh.bind(this), this._refresh_intv);
 
             this.refresh();
         }
