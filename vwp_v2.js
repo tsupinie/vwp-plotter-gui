@@ -589,6 +589,7 @@ class VWPContainer {
             var win = window.open();
             win.document.open();
             win.document.write(header + iframe);
+            win.document.location = '#';
             win.document.close();
         }
     }
@@ -637,6 +638,7 @@ class VWPContainer {
 
                     win.document.open();
                     win.document.write(header + iframe);
+                    win.document.location = '#';
                     win.document.close();
                 }
 
