@@ -67,7 +67,7 @@ function log_visit($args) {
 function _main() {
     date_default_timezone_set('UTC');
 
-    $force_log = true;
+    $force_log = false;
     $json_path = root_path() . "/vad/json";
     $args = get_args();
 

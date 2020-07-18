@@ -54,7 +54,7 @@ $root_path = root_path();
   <div id="hododiv">
     <canvas id="hodo" width=620 height=465></canvas>
     <div id="animcontrols">
-      <p id="makegif", class='selectable needhelp '>GIF<span class='help helptop'>Make Animated GIF</span></p>
+      <p id="makegif", class='selectable needhelp '>GIF<span class='help helptop'>Create Animated GIF</span></p>
       <p id="animspdup", class='selectable needhelp '>+<span class='help helptop'>Animation Speed Up</span></p>
       <p id="animspddn", class='selectable needhelp'>-<span class='help helptop'>Animation Speed Down</span></p>
       <p id="refresh", class='selectable needhelp'>&nbsp;<span class='arrow'></span><span class='help helptop'>Refresh</span></p>
@@ -67,8 +67,6 @@ $root_path = root_path();
     <p>Select vector by clicking<br>on the hodograph</p>
   </div>
   <div id="info">
-    <p>Information on how to interpret the hodograph can be found <a href="https://github.com/tsupinie/vad-plotter/blob/master/README.md#interpretation">on Github</a>, 
-       along with the <a href="https://github.com/tsupinie/vad-plotter">Python script</a> that creates the images.</p>
     <p>
     <script type="text/javascript">
       function wrt() {
