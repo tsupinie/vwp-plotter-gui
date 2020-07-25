@@ -1044,9 +1044,13 @@ class HodoPlot {
 
             var [lbu, lbv, ubu, ubv] = [ctx.bbox_data.lbx, ctx.bbox_data.lby, ctx.bbox_data.ubx, ctx.bbox_data.uby];
 
+            var hodo_ring_spacing = 10;
+
             var max_u = Math.max(Math.abs(lbu), Math.abs(ubu));
             var max_v = Math.max(Math.abs(lbv), Math.abs(ubv));
             var max_ring = Math.hypot(max_u, max_v);
+            var min_label = Math.ceil(lbu / hodo_ring_spacing) * hodo_ring_spacing;
+            var max_label = Math.floor(ubu / hodo_ring_spacing) * hodo_ring_spacing - hodo_ring_spacing;
 
             ctx.lineWidth = 1;
 
@@ -1054,8 +1058,6 @@ class HodoPlot {
             ctx.beginPath();
             ctx.rect(lbu, lbv, ubu - lbu, ubv - lbv);
             ctx.clip();
-
-            var hodo_ring_spacing = 10;
 
             for (var irng = hodo_ring_spacing; irng < max_ring; irng += hodo_ring_spacing) {
                 ctx.beginPath();
@@ -1065,20 +1067,20 @@ class HodoPlot {
 
                 ctx.circle(0, 0, irng);
                 ctx.stroke();
+            }
 
-                if (irng <= ubu - hodo_ring_spacing) {
-                    ctx.font = '11px Trebuchet MS';
-                    ctx.fillStyle = '#999999';
-                    ctx.textBaseline = 'top';
+            for (var irng = min_label; irng <= max_label; irng += hodo_ring_spacing) {
+                ctx.font = '11px Trebuchet MS';
+                ctx.fillStyle = '#999999';
+                ctx.textBaseline = 'top';
 
-                    var label_text = irng + "";
-                    if (irng > ubu - 2 * hodo_ring_spacing) {
-                        label_text = irng + " kts";
-                    }
-
-                    var [txtu, txtv] = ctx.pixelOffset(irng, 0, 1, 1);
-                    ctx.fillText(label_text, txtu, txtv);
+                var label_text = Math.abs(irng) + "";
+                if (irng == max_label) {
+                    label_text += " kts";
                 }
+
+                var [txtu, txtv] = ctx.pixelOffset(irng, 0, 1, 1);
+                ctx.fillText(label_text, txtu, txtv);
             } 
 
             ctx.restore()
