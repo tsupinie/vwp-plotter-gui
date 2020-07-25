@@ -1726,12 +1726,13 @@ class VWP {
     static from_server(radar_id, dt, file_id, callback) {
         var dt_str = dt.format('YYYY-MM-DD[T]HH:mm:ss[Z]');
         var root_url = $('#root_url').val();
+        var session_id = $('#session_id').val();
 
         if (!window.location.hostname.includes('www')) {
             root_url = root_url.replace('www.', '');
         }
 
-        var url = root_url + "/vad/get_radar_json.php?radar=" + radar_id + '&time=' + dt_str;
+        var url = root_url + "/vad/get_radar_json.php?radar=" + radar_id + '&time=' + dt_str + '&session_id=' + session_id;
         if (file_id !== null) {
             url += '&id=' + file_id;
         }

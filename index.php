@@ -5,6 +5,10 @@ require "../utils.php";
 $root_url = root_url();
 $root_path = root_path();
 
+$session_time = date('c');
+$session_source = $_SERVER['REMOTE_ADDR'];
+$session_id = md5("{$session_time}{$session_source}");
+
 ?>
 <html>
 <head>
@@ -19,7 +23,8 @@ $root_path = root_path();
 <link rel="stylesheet" type="text/css" href="<?php echo $root_url; ?>/vad/vwp_v2.css">
 </head>
 <body>
-<input type='hidden' id='root_url' value='<?php echo $root_url?>'>
+<input type='hidden' id='root_url' value='<?php echo $root_url; ?>'>
+<input type='hidden' id='session_id' value='<?php echo $session_id; ?>'>
 <div id="main">
   <h1>VWP Hodographs</h1>
   <div id="selection">

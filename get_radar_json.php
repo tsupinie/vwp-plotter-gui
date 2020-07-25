@@ -6,11 +6,13 @@ function get_args() {
     $radar_id = addslashes($_GET['radar']);
     $time = addslashes($_GET['time']);
     $file_id = addslashes($_GET['id']);
+    $session_id = addslashes($_GET['session_id']);
 
     $args = array(
         'radar' => $radar_id,
         'time' => $time,
         'file_id' => $file_id,
+        'session_id' => $session_id,
     );
     return $args;
 }
@@ -56,18 +58,22 @@ function do_output($json_fname, $dl_output) {
 }
 
 function log_visit($args) {
-    $log_file = "/home/autumn35/vad/visits_v2.log";
+    if (is_live_copy()) {
+        $log_file = "/home/autumn35/vad/visits_v2.log";
+    }
+    else {
+        $log_file = "/home/autumn35/vad/visits_v2_dev.log";
+    }
 
     $log_time = date('c');
     $log = fopen($log_file, 'a');
-    fwrite($log, "$log_time|{$_SERVER['REMOTE_ADDR']}|{$args['radar']}|{$args['already_exists']}\n");
+    fwrite($log, "$log_time|{$_SERVER['REMOTE_ADDR']}|{$args['session_id']}|{$args['radar']}|{$args['already_exists']}\n");
     fclose($log);
 }
 
 function _main() {
     date_default_timezone_set('UTC');
 
-    $force_log = false;
     $json_path = root_path() . "/vad/json";
     $args = get_args();
 
@@ -81,9 +87,7 @@ function _main() {
     }
 
     $args['already_exists'] = $already_exists;
-    if ($force_log || is_live_copy()) {
-        log_visit($args);
-    }
+    log_visit($args);
 
     do_output($json_fname, $output);
 }
