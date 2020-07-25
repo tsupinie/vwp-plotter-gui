@@ -1089,10 +1089,15 @@ class HodoPlot {
             ctx.setLineDash([]);
             ctx.strokeStyle = '#999999';
 
-            ctx.moveTo(0, lbv);
-            ctx.lineTo(0, ubv);
-            ctx.moveTo(lbu, 0);
-            ctx.lineTo(ubu, 0);
+            if (lbu < 0 && 0 < ubu) {
+                ctx.moveTo(0, lbv);
+                ctx.lineTo(0, ubv);
+            }
+            if (lbv < 0 && 0 < ubv) {
+                ctx.moveTo(lbu, 0);
+                ctx.lineTo(ubu, 0);
+            }
+
             ctx.stroke()
 
             ctx.beginPath();
