@@ -30,7 +30,7 @@ $session_id = md5("{$session_time}{$session_source}");
   <div id="selection">
     <p>Click on the map to select a radar</p>
     <div id="mapdiv">
-      <canvas id="map" width=400 height=247></canvas>
+      <canvas id="map" width=400 height=248></canvas>
       <div id="mapoverlay"></div>
     </div>
     <div id="mapsel">

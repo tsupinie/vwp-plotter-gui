@@ -60,8 +60,10 @@ class VWPApp {
     constructor() {
         this.sfc = "None";
         this.prev_selection = null;
-        this._refresh_timer = null
-        this._refresh_intv = 60 * 1000;
+        this._data_refresh_timer = null
+        this._map_refresh_timer = null
+        this._vwp_refresh_intv = 60 * 1000;
+        this._map_refresh_intv = 120 * 1000;
 
         this._metar_refresh_intv = 10 * 60 * 1000;
         this._metar_timer = window.setInterval(this.metar_refresh.bind(this), this._metar_refresh_intv);
@@ -81,7 +83,8 @@ class VWPApp {
 
         var age_limit = 2700;
 
-        this.radars = new ClickableMap('imgs/map.png', 'wsr88ds.json', mapclick);
+        this.map_fname = 'imgs/map.png';
+        this.radars = new ClickableMap(this.map_fname, 'wsr88ds.json', mapclick);
         this.hodo = new HodoPlot(this);
         this.vwp_container = new VWPContainer(this, this.hodo, age_limit);
         this.hodo.add_vwp_container(this.vwp_container);
@@ -198,15 +201,31 @@ class VWPApp {
 
     toggle_autoupdate() {
         $('#autoupdate').toggleClass('selected');
-        if (this._refresh_timer === null) {
-            this._refresh_timer = window.setInterval(this.refresh.bind(this), this._refresh_intv);
+
+        if (this._data_refresh_timer === null) {
+            this._data_refresh_timer = window.setInterval(this.refresh.bind(this), this._vwp_refresh_intv);
 
             this.refresh();
         }
         else {
-            window.clearInterval(this._refresh_timer);
-            this._refresh_timer = null;
+            window.clearInterval(this._data_refresh_timer);
+            this._data_refresh_timer = null;
         }
+
+        if (this._map_refresh_timer === null) {
+            this._map_refresh_timer = window.setInterval(this.refresh_map.bind(this), this._map_refresh_intv);
+
+            this.refresh_map();
+        }
+        else {
+            window.clearInterval(this._map_refresh_timer);
+            this._map_refresh_timer = null;
+        }
+
+    }
+
+    refresh_map() {
+        this.radars.set_background(this.map_fname);
     }
 
     animation_speed_up() {
