@@ -1447,6 +1447,14 @@ class VWP {
         var max_u = Math.max(...this.u);
         var max_v = Math.max(...this.v);
 
+        if (this.sfc_wind !== null) {
+            var [sfc_u, sfc_v] = this.sfc_wind;
+            min_u = Math.min(min_u, sfc_u);
+            max_u = Math.max(max_u, sfc_u);
+            min_v = Math.min(min_v, sfc_v);
+            max_v = Math.max(max_v, sfc_v);
+        }
+
         var ctr_u = (min_u + max_u) / 2;
         var ctr_v = (min_v + max_v) / 2;
 
