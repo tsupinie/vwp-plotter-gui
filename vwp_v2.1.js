@@ -225,7 +225,8 @@ class VWPApp {
     }
 
     refresh_map() {
-        this.radars.set_background(this.map_fname);
+        var dt = moment.utc().format(this._dt_fmt)
+        this.radars.set_background(this.map_fname + "?" + dt);
     }
 
     animation_speed_up() {
