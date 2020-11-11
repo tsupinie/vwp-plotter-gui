@@ -1,3 +1,10 @@
+
+const _home_svg = `<svg width="12" height="12" viewBox="15 12 70 70" xmlns="http://www.w3.org/2000/svg">
+  <polygon points="25,80 45,80 45,60 55,60 55,80 75,80 75,50 25,50" />
+  <polygon points="84,50 50,16 16,50" />
+  <rect x="60" y="20" width="10" height="30"/>
+</svg>`;
+
 window.onload = function() {
     var app = new VWPApp();
 
@@ -56,6 +63,41 @@ function compare_dt(dt1, dt2) {
     return dt1.isBefore(dt2) ? -1 : (dt1.isSame(dt2) ? 0 : 1);
 }
 
+function set_cookie(cook, value, expire) {
+    if (expire === undefined) { expire = false; }
+
+    var expire_dt = new Date();
+
+    if (expire) {
+        var expire_year = expire_dt.getFullYear() - 1;
+    }
+    else {
+        var expire_year = expire_dt.getFullYear() + 10
+    }
+    expire_dt.setFullYear(expire_year);
+
+    var cookie_str = cook + '=' + value + '; expires=' + expire_dt.toUTCString() + '; path=/';
+    document.cookie = cookie_str;
+}
+
+function get_cookie(cook) {
+    var decoded_cookie = decodeURIComponent(document.cookie);
+    var cookie_list = decoded_cookie.split(';');
+    for (var icook in cookie_list) {
+        var cookie_str = cookie_list[icook];
+        var crumbs = cookie_str.split('=');
+        if (crumbs[0].trim() == cook) {
+            return crumbs[1];
+        }
+    }
+    return undefined;
+}
+
+function delete_cookie(cook) {
+    set_cookie(cook, "", true);
+}
+
+
 class VWPApp {
     constructor() {
         this.sfc = "None";
@@ -76,7 +118,14 @@ class VWPApp {
         this._dt_fmt = "YYYY-MM-DD[T]HH:mm:ss[Z]";
 
         var mapclick = (function(rad) {
-            $('#mapsel').html('<p>Radar:</p> <ul><li>' + rad.id + ' (' + rad.name + ')</li></ul>');
+            $('#mapsel').html('<p>Radar:</p> <ul class="toggle-list"><li id="radarname">' + rad.id + ' (' + rad.name + ')</li>' +
+                              '<li id="default" class="selectable needhelp">' + _home_svg + '<span class="help helptop">Make Default</span></li></ul>');
+
+            if (get_cookie('default') == rad.id) {
+                $('#default').toggleClass('selected');
+            }
+            $('#default').click(this.toggle_default.bind(this));
+
             this.vwp_container.check_file_times(rad.id, false);
             this.update_asos_wind();
         }).bind(this);
@@ -85,6 +134,9 @@ class VWPApp {
 
         this.map_fname = 'imgs/map.png';
         this.radars = new ClickableMap(this.map_fname, 'wsr88ds.json', mapclick);
+        if (get_cookie('default') !== undefined) {
+            this.radars.select_point(get_cookie('default'));
+        }
         this.hodo = new HodoPlot(this);
         this.vwp_container = new VWPContainer(this, this.hodo, age_limit);
         this.hodo.add_vwp_container(this.vwp_container);
@@ -299,6 +351,16 @@ class VWPApp {
         var new_button_text = this._metar_button_text.replace("ASOS", radar_info['metar']);
         $('#asoswind').html(new_button_text);
         this.vwp_container.set_metar_obs(metar);
+    }
+
+    toggle_default() {
+        $('#default').toggleClass('selected');
+        if (get_cookie('default') === this.radars.selected) {
+            delete_cookie('default');
+        }
+        else {
+            set_cookie('default', this.radars.selected);
+        }
     }
 
     _select_box(obj) {
