@@ -15,7 +15,7 @@ $session_id = md5("{$session_time}{$session_source}");
 <title>VWP Hodographs | Autumn Sky</title>
 <script src='https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.27.0/moment.min.js'></script>
 <script src="https://code.jquery.com/jquery-3.5.1.min.js" integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0=" crossorigin="anonymous"></script>
-<script type="text/javascript" src="<?php echo $root_url; ?>/map_click_v2.1.js"></script>
+<script type="text/javascript" src="<?php echo $root_url; ?>/map_click_v2.2.js"></script>
 <script type="text/javascript" src="<?php echo $root_url; ?>/vad/parms_v2.2.js"></script>
 <script type="text/javascript" src="<?php echo $root_url; ?>/vad/vwp_v2.2.js"></script>
 <script type="text/javascript" src="<?php echo $root_url; ?>/vad/gifjs/gif.js"></script>
@@ -36,6 +36,7 @@ $session_id = md5("{$session_time}{$session_source}");
     <div id="mapsel">
       <p>Radar:</p>
     </div>
+
     <div id="smsel">
       <p>Storm Motion:</p>
       <ul class="toggle-list">
@@ -44,6 +45,15 @@ $session_id = md5("{$session_time}{$session_source}");
         <li class="selectable needhelp">DDD/SS<span class="help helptop">Select From Hodograph</span></li>
       </ul>
     </div>
+
+    <div id="orgsel">
+      <p>Origin:</p>
+      <ul class="toggle-list">
+        <li id='gr_origin' class="selectable selected needhelp">Ground<span class="help helptop">Ground-Relative Hodograph</span></li>
+        <li id='sr_origin' class="selectable grayout needhelp">Storm<span class="help helptop">Storm-Relative Hodograph</span></li>
+      </ul>
+    </div>
+
     <div id="sfcsel">
       <p>Surface Wind:</p>
       <ul class="toggle-list">
@@ -52,6 +62,7 @@ $session_id = md5("{$session_time}{$session_source}");
         <li class="selectable needhelp">DDD/SS<span class="help helptop">Select From Hodograph</span></li>
       </ul>
     </div>
+
     <div id="autoupdate" class="selectable needhelp">
       <p>Auto-Update</p><span class='help helptop'>Toggle Auto-Update</span>
     </div>

@@ -169,6 +169,10 @@ class VWPApp {
     select(event) {
         var target = event.target;
 
+        if (target.classList.contains("grayout")) {
+            return;
+        }
+
         if (this.hodo.selecting) {
             this._abort_selection();
         }
@@ -202,6 +206,10 @@ class VWPApp {
                     this._update_state(target, [wdir, wspd]);
                 }
 
+                if (this.vwp_container.is_animating) {
+                    this.vwp_container.start_animation();
+                }
+
                 help.style.visibility = "hidden";
                 help.style.offsetLeft = 0;
                 help.style.offsetTop = 0;
@@ -209,6 +217,9 @@ class VWPApp {
                 help.style.top = 0;
             }).bind(this);
 
+            if (this.vwp_container.is_animating) {
+                this.vwp_container.pause_animation();
+            }
             this.hodo.selection_start(vector_callback, done_callback);
         }
         else {
@@ -315,6 +326,17 @@ class VWPApp {
         $('#playpause').removeClass('selected');
     }
 
+    set_sr_available(is_available) {
+        if (is_available) {
+            $('#sr_origin').removeClass('grayout');
+        }
+        else {
+            // XXX: This will do weird things if this is set while sr_origin is selected
+            $('#sr_origin').addClass('grayout');
+            this.select({'target': $('#gr_origin')[0]});
+        }
+    }
+
     metar_refresh() {
         check_metars((function(metars) {
             this._metars = metars;
@@ -387,6 +409,9 @@ class VWPApp {
             }
             this.vwp_container.change_surface_wind(val);
         }
+        else if (obj.parentElement.parentElement.id == "orgsel") {
+            this.vwp_container.change_origin(val.toLowerCase());
+        }
     };
 
     _abort_selection() {
@@ -405,7 +430,7 @@ class VWPContainer {
         this._hodo = hodo;
         this._age_limit = age_limit;
 
-        this._is_animating = false;
+        this.is_animating = false;
         this._is_animation_paused = true;
         this._anim_timer = null;
         this._anim_intv = 500;
@@ -413,6 +438,8 @@ class VWPContainer {
         this._storm_motion = 'brm';
         this._surface_wind = 'metar';
         this._metars = null;
+
+        this._origin = 'ground';
 
         // TODO: These might not need to be instance variables (only local to check_file_times), but I'm confused about Javascript variable scoping ...
         this._expected_new_frames = 0;
@@ -488,25 +515,9 @@ class VWPContainer {
                             return;
                         }
 
-                        // Set storm motion and surface wind
-                        if (this._surface_wind == 'metar') {
-                            if (this._metars !== null) {
-                                var metar = this._metars.slice().reverse().find(m => m['time'].isBefore(vwp.radar_dt));
-                                if (metar === undefined) {
-                                    vwp.change_surface_wind('none');
-                                }
-                                else {
-                                    vwp.change_surface_wind([metar['wdir'], metar['wspd']]);
-                                }
-                            }
-                            else {
-                                vwp.change_surface_wind('none');
-                            }
-                        }
-                        else {
-                            vwp.change_surface_wind(this._surface_wind);
-                        }
+                        this.change_surface_wind(this._surface_wind);
                         vwp.change_storm_motion(this._storm_motion);
+                        vwp.change_origin(this._origin);
 
                         // Update frame data structure
                         var frame = this.frame_list.get(file_name);
@@ -515,14 +526,8 @@ class VWPContainer {
                         frame['dt'] = vwp.radar_dt;
                         frame['data'] = vwp;
 
-                        // Update hodograph bounding box
-                        var bbox = Array.from(this.frame_list.values()).filter(f => f['status'] != 'notloaded').map(f => f['data'].get_bbox()).reduce(BBox.union);
-                        if (bbox.lbx === undefined || bbox.ubx === undefined || bbox.lby === undefined || bbox.uby === undefined) {
-                            this._hodo.reset();
-                        }
-                        else {
-                            this._hodo.set_bbox(bbox);
-                        }
+                        this._update_ui_origin_selection();
+                        this._update_hodo_bbox();
 
                         // Update hodograph
                         if (!is_refresh || this._want_latest_frame) {
@@ -530,14 +535,13 @@ class VWPContainer {
                             this._set_active_frame(latest_frame);
                         }
 
-                        var frame = Array.from(this.frame_list.values()).find(f => f['status'] == 'active');
-                        this._hodo.draw_vwp(frame['data']);
+                        this._draw_active_frame();
 
                         // Update UI
                         this._update_ui_frame_list();
 
                         // Restart animation if it's paused
-                        if (this._is_animating && this._is_animation_paused) {
+                        if (this.is_animating && this._is_animation_paused) {
                             this.start_animation();
                         }
 
@@ -594,7 +598,7 @@ class VWPContainer {
     }
 
     toggle_animation() {
-        if (!this._is_animating) {
+        if (!this.is_animating) {
             this.start_animation();
         }
         else {
@@ -611,7 +615,7 @@ class VWPContainer {
 
             var has_some_loaded = this.frame_list.size > 0 && Array.from(this.frame_list.values()).map(f => f['status'] != 'notloaded').reduce((s1, s2) => s1 || s2);
 
-            if (has_some_loaded) {
+            if (has_some_loaded && !this._is_animation_paused) {
                 anim_idx = Array.from(this.frame_list.values()).findIndex(f => (f['status'] == 'active'));
                 // Increment animation counter
                 do {
@@ -641,13 +645,17 @@ class VWPContainer {
         }).bind(this);
 
         advance_frame();
-        this._is_animating = true;
+        this.is_animating = true;
         this._ui.animation_play();
+    }
+
+    pause_animation() {
+        this._is_animation_paused = true;
     }
 
     stop_animation() {
         window.clearTimeout(this._anim_timer);
-        this._is_animating = false;
+        this.is_animating = false;
         this._is_animation_paused = true;
         this._ui.animation_pause();
     }
@@ -756,13 +764,7 @@ class VWPContainer {
         }).bind(this));
 
         this._surface_wind = new_vec;
-
-        if (this.frame_list.size > 0) {
-            var frame = Array.from(this.frame_list.values()).find(f => f['status'] == 'active');
-            if (frame !== undefined) {
-                this._hodo.draw_vwp(frame['data']);
-            }
-        }
+        this._draw_active_frame();
     }
 
     change_storm_motion(new_vec) {
@@ -773,10 +775,49 @@ class VWPContainer {
         });
 
         this._storm_motion = new_vec;
+        this._update_ui_origin_selection();
+        this._update_hodo_bbox();
+        this._draw_active_frame();
+    }
 
+    change_origin(org) {
+        this.frame_list.forEach(function(frame) {
+            if (frame['status'] != 'notloaded') {
+                frame['data'].change_origin(org);
+            }
+        });
+
+        this._origin = org;
+        this._update_hodo_bbox();
+        this._draw_active_frame();
+    }
+ 
+    _draw_active_frame() {
         if (this.frame_list.size > 0) {
             var frame = Array.from(this.frame_list.values()).find(f => f['status'] == 'active');
-            this._hodo.draw_vwp(frame['data']);
+            if (frame !== undefined) {
+                this._hodo.draw_vwp(frame['data']);
+            }
+        }
+    }
+
+    _update_ui_origin_selection() {
+        var all_have_sm = Array.from(this.frame_list.values()).filter(f => f['status'] != 'notloaded').map(f => f['data'].has_sm_vec()).reduce((a, b) => a && b)
+        if (all_have_sm) {
+            this._ui.set_sr_available(true);
+        }
+        else {
+            this._ui.set_sr_available(false);
+        }
+    }
+
+    _update_hodo_bbox() {
+        var bbox = Array.from(this.frame_list.values()).filter(f => f['status'] != 'notloaded').map(f => f['data'].get_bbox()).reduce(BBox.union);
+        if (bbox.lbx === undefined || bbox.ubx === undefined || bbox.lby === undefined || bbox.uby === undefined) {
+            this._hodo.reset();
+        }
+        else {
+            this._hodo.set_bbox(bbox);
         }
     }
 
@@ -796,6 +837,10 @@ class BBox {
 
     contains(x, y) {
         return (this.lbx <= x && x <= this.ubx && this.lby <= y && y <= this.uby);
+    }
+
+    translate(x, y) {
+        return new BBox(this.lbx + x, this.lby + y, this.ubx + x, this.uby + y);
     }
 
     static union(bbox1, bbox2) {
@@ -977,6 +1022,7 @@ class HodoPlot {
 
         var hodo_bbox_pixels = new BBox(16.64, 17.92, 449.28, 449.92);
         this._contexts['hodo'] = HodoPlot._create_ctx_proxy(this._canvas, hodo_bbox_pixels, this._default_hodo_bbox_uv, this._dpr);
+        this._contexts['hodo_gr'] = HodoPlot._create_ctx_proxy(this._canvas, hodo_bbox_pixels, this._default_hodo_bbox_uv, this._dpr);
 
         var table_bbox_pixels = new BBox(455.92, 17.92, 608.36, 160);
         var table_bbox_data = new BBox(0, 0, 1, 11);
@@ -999,6 +1045,7 @@ class HodoPlot {
 
     reset() {
         this.set_bbox(this._default_hodo_bbox_uv);
+        this._contexts['hodo_gr'].bbox_data = this._default_hodo_bbox_uv
         this._clear_and_draw_background(this._canvas, this._contexts);
     }
 
@@ -1007,10 +1054,22 @@ class HodoPlot {
     }
 
     set_bbox(bbox) {
+        // Warning: this could let the display and ground-relative bboxes get out of sync. This doesn't happen
+        //  currently because the calling functions immediately draw a vwp, which updates the ground-relative bbox.
         this._contexts['hodo'].bbox_data = bbox;
     }
 
     draw_vwp(vwp) {
+        var [vwp_smu, vwp_smv] = vwp.sm_vec;
+        var hodo_bbox = this._contexts['hodo'].bbox_data;
+
+        if (vwp.origin == 'storm' && isFinite(vwp_smu) && isFinite(vwp_smv)) {
+            this._contexts['hodo_gr'].bbox_data = hodo_bbox.translate(vwp_smu, vwp_smv);
+        }
+        else {
+            this._contexts['hodo_gr'].bbox_data = hodo_bbox;
+        }
+
         this._draw_vwp(vwp, this._canvas, this._contexts);
     }
 
@@ -1027,9 +1086,9 @@ class HodoPlot {
             }
         }
         else {
-            var [u, v] = this._contexts['hodo'].pix_to_data(mx * this._dpr, my * this._dpr);
+            var [u, v] = this._contexts['hodo_gr'].pix_to_data(mx * this._dpr, my * this._dpr);
 
-            if (this._contexts['hodo'].bbox_data.contains(u, v)) {
+            if (this._contexts['hodo_gr'].bbox_data.contains(u, v)) {
                 hodo.style.cursor = "crosshair";
                 var [wdir, wspd] = comp2vec(u, v);
                 this._move_callback(wspd, wdir);
@@ -1072,7 +1131,7 @@ class HodoPlot {
 
     selection_finish(mx, my) {
         if (mx !== null && my !== null) {
-            var [u, v] = this._contexts['hodo'].pix_to_data(mx * this._dpr, my * this._dpr);
+            var [u, v] = this._contexts['hodo_gr'].pix_to_data(mx * this._dpr, my * this._dpr);
             var [wdir, wspd] = comp2vec(u, v);
         }
         else {
@@ -1107,53 +1166,42 @@ class HodoPlot {
         return ss_canvas;
     }
 
-    _clear_and_draw_background(canvas, contexts) {
-        var ctx = canvas.getContext('2d');
-        ctx.beginPath();
-        ctx.rect(0, 0, canvas.width, canvas.height);
-        ctx.fillStyle='#ffffff';
-        ctx.fill();
-
-/*      if (this._background_image === null) {
-            
+    _draw_hodo_coordinates(ctx, origin_u, origin_v, color, draw_labels) {
+        if (draw_labels === undefined) {
+            draw_labels = true;
         }
-        else { */
 
-           /**********************************
-            * Draw hodograph background
-            **********************************/
-            var ctx = contexts['hodo'];
+        var [lbu, lbv, ubu, ubv] = [ctx.bbox_data.lbx, ctx.bbox_data.lby, ctx.bbox_data.ubx, ctx.bbox_data.uby];
 
-            var [lbu, lbv, ubu, ubv] = [ctx.bbox_data.lbx, ctx.bbox_data.lby, ctx.bbox_data.ubx, ctx.bbox_data.uby];
+        var hodo_ring_spacing = 10;
 
-            var hodo_ring_spacing = 10;
+        var max_u = Math.max(Math.abs(lbu - origin_u), Math.abs(ubu - origin_u));
+        var max_v = Math.max(Math.abs(lbv - origin_v), Math.abs(ubv - origin_v));
+        var max_ring = Math.hypot(max_u, max_v);
+        var min_label = Math.ceil((lbu - origin_u) / hodo_ring_spacing) * hodo_ring_spacing;
+        var max_label = Math.floor((ubu - origin_u) / hodo_ring_spacing) * hodo_ring_spacing - hodo_ring_spacing;
 
-            var max_u = Math.max(Math.abs(lbu), Math.abs(ubu));
-            var max_v = Math.max(Math.abs(lbv), Math.abs(ubv));
-            var max_ring = Math.hypot(max_u, max_v);
-            var min_label = Math.ceil(lbu / hodo_ring_spacing) * hodo_ring_spacing;
-            var max_label = Math.floor(ubu / hodo_ring_spacing) * hodo_ring_spacing - hodo_ring_spacing;
+        ctx.lineWidth = 1;
 
-            ctx.lineWidth = 1;
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(lbu, lbv, ubu - lbu, ubv - lbv);
+        ctx.clip();
 
-            ctx.save();
+        for (var irng = hodo_ring_spacing; irng < max_ring; irng += hodo_ring_spacing) {
             ctx.beginPath();
-            ctx.rect(lbu, lbv, ubu - lbu, ubv - lbv);
-            ctx.clip();
 
-            for (var irng = hodo_ring_spacing; irng < max_ring; irng += hodo_ring_spacing) {
-                ctx.beginPath();
+            ctx.setLineDash([3, 4]);
+            ctx.strokeStyle = color;
 
-                ctx.setLineDash([3, 4]);
-                ctx.strokeStyle = '#999999';
+            ctx.circle(origin_u, origin_v, irng);
+            ctx.stroke();
+        }
 
-                ctx.circle(0, 0, irng);
-                ctx.stroke();
-            }
-
+        if (draw_labels) {
             for (var irng = min_label; irng <= max_label; irng += hodo_ring_spacing) {
                 ctx.font = '11px Trebuchet MS';
-                ctx.fillStyle = '#999999';
+                ctx.fillStyle = color;
                 ctx.textBaseline = 'top';
 
                 var label_text = Math.abs(irng) + "";
@@ -1161,161 +1209,177 @@ class HodoPlot {
                     label_text += " kts";
                 }
 
-                var [txtu, txtv] = ctx.pixelOffset(irng, 0, 1, 1);
+                var [txtu, txtv] = ctx.pixelOffset(origin_u + irng, origin_v, 1, 1);
                 ctx.fillText(label_text, txtu, txtv);
             } 
+        }
 
-            ctx.restore()
+        ctx.restore()
 
-            ctx.beginPath();
-            ctx.setLineDash([]);
-            ctx.strokeStyle = '#999999';
+        ctx.beginPath();
+        ctx.setLineDash([]);
+        ctx.strokeStyle = color;
 
-            if (lbu < 0 && 0 < ubu) {
-                ctx.moveTo(0, lbv);
-                ctx.lineTo(0, ubv);
+        if (lbu < origin_u && origin_u < ubu) {
+            ctx.moveTo(origin_u, lbv);
+            ctx.lineTo(origin_u, ubv);
+        }
+        if (lbv < origin_v && origin_v < ubv) {
+            ctx.moveTo(lbu, origin_v);
+            ctx.lineTo(ubu, origin_v);
+        }
+
+        ctx.stroke()
+    }
+
+    _clear_and_draw_background(canvas, contexts) {
+        var ctx = canvas.getContext('2d');
+        ctx.beginPath();
+        ctx.rect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle='#ffffff';
+        ctx.fill();
+
+       /**********************************
+        * Draw hodograph background
+        **********************************/
+        var ctx = contexts['hodo'];
+        var [lbu, lbv, ubu, ubv] = [ctx.bbox_data.lbx, ctx.bbox_data.lby, ctx.bbox_data.ubx, ctx.bbox_data.uby];
+
+        this._draw_hodo_coordinates(ctx, 0, 0, '#999999', true);
+
+        ctx.beginPath();
+
+        ctx.strokeStyle = '#000000';
+        ctx.rect(lbu, lbv, ubu - lbu, ubv - lbv);
+        ctx.stroke();
+
+        var [txtu, txtv] = ctx.pixelOffset(ubu, lbv, 0, 2);
+        ctx.fillStyle = '#000000';
+        ctx.font = '11px Trebuchet MS';
+        ctx.textBaseline = 'top';
+        ctx.textAlign = 'right';
+        ctx.fillText("http://www.autumnsky.us/vad/", txtu, txtv);
+
+       /**********************************
+        * Draw table background
+        **********************************/
+        ctx = contexts['table'];
+
+        // This is stupid. Find another way to do it.
+        var row = 11;
+
+        ctx.fillStyle = '#000000';
+        ctx.font = 'bold 10.5px Trebuchet MS';
+        ctx.textBaseline = 'top';
+        ctx.textAlign = 'center';
+
+        ctx.fillText('Parameters', 0.5, row);
+        row -= 1;
+
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = '#000000';
+        ctx.moveTo(0, row);
+        ctx.lineTo(1, row);
+        ctx.stroke();
+        row -= 0.2;
+
+        ctx.textAlign = 'left';
+        ctx.fillText('BWD (kts)', 0.28, row);
+        ctx.fillText('SRH (m\u{00b2}/s\u{00b2})', 0.63, row);
+        row -= 1;
+
+        ctx.fillText('0-1 km', 0, row);
+        row -= 1;
+
+        ctx.fillText('0-3 km', 0, row);
+        row -= 1;
+
+        ctx.fillText('0-6 km', 0, row);
+        row -= 1;
+
+        ctx.moveTo(0, row);
+        ctx.lineTo(1, row);
+        ctx.stroke();
+        row -= 0.2
+
+        ctx.fillText('Storm Motion:', 0, row);
+        row -= 1;
+
+        ctx.fillText('Bunkers Left Mover:', 0, row);
+        row -= 1;
+
+        ctx.fillText('Bunkers Right Mover:', 0, row);
+        row -= 1;
+
+        ctx.fillText('Mean Wind:', 0, row);
+        row -= 1;
+
+        ctx.moveTo(0, row);
+        ctx.lineTo(1, row);
+        ctx.stroke();
+        row -= 0.2;
+
+        ctx.fillText('Critical Angle:', 0, row);
+
+       /**********************************
+        * Draw SR wind plot background
+        **********************************/
+        ctx = contexts['srwind'];
+        var [lbs, lbz, ubs, ubz] = [ctx.bbox_data.lbx, ctx.bbox_data.lby, ctx.bbox_data.ubx, ctx.bbox_data.uby];
+
+        ctx.save();
+
+        ctx.beginPath();
+        ctx.rect(lbs, lbz, ubs - lbs, ubz - lbz);
+        ctx.stroke();
+
+        var srwind_z_spacing = 1;
+        var srwind_s_spacing = 10
+
+        ctx.beginPath();
+        ctx.setLineDash([3, 4]);
+        ctx.strokeStyle = '#999999';
+
+        for (var iz = lbz + srwind_z_spacing; iz < ubz; iz += srwind_z_spacing) {
+            ctx.moveTo(lbs, iz);
+            ctx.lineTo(ubs, iz);
+        }
+
+        for (var is = lbs + srwind_s_spacing; is < ubs; is += srwind_s_spacing) {
+            ctx.moveTo(is, lbz);
+            ctx.lineTo(is, ubz);
+        }
+
+        ctx.stroke();
+
+        ctx.fillStyle = '#000000';
+        ctx.font = '11px Trebuchet MS';
+        ctx.textAlign = 'right';
+        ctx.textBaseline = 'middle';
+        for (var iz = lbz; iz <= ubz; iz += srwind_z_spacing) {
+            var [txtu, txtv] = ctx.pixelOffset(lbs, iz, -2, 0);
+            ctx.fillText(iz, txtu, txtv);
+        }
+
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+        for (var is = lbs; is <= ubs; is += srwind_s_spacing) {
+            var [txtu, txtv] = ctx.pixelOffset(is, lbz, 0, 2);
+            var label = is + '';
+            if (is == ubs) {
+                label = 'kts  ';
             }
-            if (lbv < 0 && 0 < ubv) {
-                ctx.moveTo(lbu, 0);
-                ctx.lineTo(ubu, 0);
-            }
+            ctx.fillText(label, txtu, txtv);
+        }
 
-            ctx.stroke()
+        ctx.fillStyle = '#000000';
+        ctx.font = '11px Trebuchet MS';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'alphabetic';
+        var [txtu, txtv] = ctx.pixelOffset((lbs + ubs) / 2, ubz, 0, -5);
+        ctx.fillText('SR Wind vs. Height', txtu, txtv);
 
-            ctx.beginPath();
-
-            ctx.strokeStyle = '#000000';
-            ctx.rect(lbu, lbv, ubu - lbu, ubv - lbv);
-            ctx.stroke();
-
-            var [txtu, txtv] = ctx.pixelOffset(ubu, lbv, 0, 2);
-            ctx.fillStyle = '#000000';
-            ctx.font = '11px Trebuchet MS';
-            ctx.textBaseline = 'top';
-            ctx.textAlign = 'right';
-            ctx.fillText("http://www.autumnsky.us/vad/", txtu, txtv);
-
-           /**********************************
-            * Draw table background
-            **********************************/
-            ctx = contexts['table'];
-
-            // This is stupid. Find another way to do it.
-            var row = 11;
-
-            ctx.fillStyle = '#000000';
-            ctx.font = 'bold 10.5px Trebuchet MS';
-            ctx.textBaseline = 'top';
-            ctx.textAlign = 'center';
-
-            ctx.fillText('Parameters', 0.5, row);
-            row -= 1;
-
-            ctx.lineWidth = 1;
-            ctx.strokeStyle = '#000000';
-            ctx.moveTo(0, row);
-            ctx.lineTo(1, row);
-            ctx.stroke();
-            row -= 0.2;
-
-            ctx.textAlign = 'left';
-            ctx.fillText('BWD (kts)', 0.28, row);
-            ctx.fillText('SRH (m\u{00b2}/s\u{00b2})', 0.63, row);
-            row -= 1;
-
-            ctx.fillText('0-1 km', 0, row);
-            row -= 1;
-
-            ctx.fillText('0-3 km', 0, row);
-            row -= 1;
-
-            ctx.fillText('0-6 km', 0, row);
-            row -= 1;
-
-            ctx.moveTo(0, row);
-            ctx.lineTo(1, row);
-            ctx.stroke();
-            row -= 0.2
-
-            ctx.fillText('Storm Motion:', 0, row);
-            row -= 1;
-
-            ctx.fillText('Bunkers Left Mover:', 0, row);
-            row -= 1;
-
-            ctx.fillText('Bunkers Right Mover:', 0, row);
-            row -= 1;
-
-            ctx.fillText('Mean Wind:', 0, row);
-            row -= 1;
-
-            ctx.moveTo(0, row);
-            ctx.lineTo(1, row);
-            ctx.stroke();
-            row -= 0.2;
-
-            ctx.fillText('Critical Angle:', 0, row);
-
-           /**********************************
-            * Draw SR wind plot background
-            **********************************/
-            ctx = contexts['srwind'];
-            var [lbs, lbz, ubs, ubz] = [ctx.bbox_data.lbx, ctx.bbox_data.lby, ctx.bbox_data.ubx, ctx.bbox_data.uby];
-
-            ctx.save();
-
-            ctx.beginPath();
-            ctx.rect(lbs, lbz, ubs - lbs, ubz - lbz);
-            ctx.stroke();
-
-            var srwind_z_spacing = 1;
-            var srwind_s_spacing = 10
-
-            ctx.beginPath();
-            ctx.setLineDash([3, 4]);
-            ctx.strokeStyle = '#999999';
-
-            for (var iz = lbz + srwind_z_spacing; iz < ubz; iz += srwind_z_spacing) {
-                ctx.moveTo(lbs, iz);
-                ctx.lineTo(ubs, iz);
-            }
-
-            for (var is = lbs + srwind_s_spacing; is < ubs; is += srwind_s_spacing) {
-                ctx.moveTo(is, lbz);
-                ctx.lineTo(is, ubz);
-            }
-
-            ctx.stroke();
-
-            ctx.fillStyle = '#000000';
-            ctx.font = '11px Trebuchet MS';
-            ctx.textAlign = 'right';
-            ctx.textBaseline = 'middle';
-            for (var iz = lbz; iz <= ubz; iz += srwind_z_spacing) {
-                var [txtu, txtv] = ctx.pixelOffset(lbs, iz, -2, 0);
-                ctx.fillText(iz, txtu, txtv);
-            }
-
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'top';
-            for (var is = lbs; is <= ubs; is += srwind_s_spacing) {
-                var [txtu, txtv] = ctx.pixelOffset(is, lbz, 0, 2);
-                var label = is + '';
-                if (is == ubs) {
-                    label = 'kts  ';
-                }
-                ctx.fillText(label, txtu, txtv);
-            }
-
-            ctx.fillStyle = '#000000';
-            ctx.font = '11px Trebuchet MS';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'alphabetic';
-            var [txtu, txtv] = ctx.pixelOffset((lbs + ubs) / 2, ubz, 0, -5);
-            ctx.fillText('SR Wind vs. Height', txtu, txtv);
-
-            ctx.restore();
-//      }
+        ctx.restore();
     }
 
     _draw_vwp(vwp, canvas, contexts) {
@@ -1325,7 +1389,15 @@ class HodoPlot {
         * Draw background
         **********************************/
         this._clear_and_draw_background(canvas, contexts);
+/*
+        if (vwp.origin == 'storm') {
+            var [gnd_x, gnd_y] = vwp.sm_vec;
+            gnd_x = -gnd_x;
+            gnd_y = -gnd_y;
 
+            this._draw_hodo_coordinates(ctx, gnd_x, gnd_y, '#e6e6e6', false);
+        }
+*/
        /**********************************
         * Draw hodograph
         **********************************/
@@ -1423,6 +1495,7 @@ class VWP {
         this.sm_vec_str = 'brm';
         this.sm_vec = null;
         this.sfc_wind = null;
+        this.origin = 'ground';
 
         this._compute_parameters();
     }
@@ -1454,6 +1527,12 @@ class VWP {
             this.sm_vec = storm_motions['left'];
         }
         storm_motions['user'] = this.sm_vec;
+        var [smu, smv] = this.sm_vec;
+
+        for (var smvec in storm_motions) {
+            var [ustm, vstm] = storm_motions[smvec];
+            this.params['sr_bunkers_' + smvec] = [ustm - smu, vstm - smv];
+        }
 
         [1, 3, 6].forEach((function(lyr_ub) {
             try {
@@ -1486,28 +1565,50 @@ class VWP {
 
         this.params['ca'] = critical_angles['user'];
         this.params['ca_lyr_ub'] = critical_angles['lyr_ub'];
+        var [ca_lyr_u, ca_lyr_v] = critical_angles['lyr_ub'];
+        this.params['sr_ca_lyr_ub'] = [ca_lyr_u - smu, ca_lyr_v - smv];
 
+        this.sru = [];
+        this.srv = [];
         this.srwind = [];
-        var [smu, smv] = this.sm_vec;
 
         for (var i = 0; i < this.u.length; i++) {
-            this.srwind.push(Math.hypot(this.u[i] - smu, this.v[i] - smv));
+            this.sru.push(this.u[i] - smu);
+            this.srv.push(this.v[i] - smv);
+            this.srwind.push(Math.hypot(this.sru[i], this.srv[i]));
         }
 
+        this.sr_sfc_u = null;
+        this.sr_sfc_v = null;
         this.sr_sfc_wind = null;
         if (this.sfc_wind !== null) {
             var [usfc, vsfc] = this.sfc_wind;
-            this.sr_sfc_wind = Math.hypot(usfc - smu, vsfc - smv);
+            this.sr_sfc_u = usfc - smu;
+            this.sr_sfc_v = vsfc - smv;
+            this.sr_sfc_wind = Math.hypot(this.sr_sfc_u, this.sr_sfc_v);
         }
+    }
+
+    has_sm_vec() {
+        var [smu, smv] = this.sm_vec;
+        return !(isNaN(smu) || isNaN(smv));
     }
 
     get_bbox() {
         var buffer = 0.4
 
-        var min_u = Math.min(...this.u);
-        var min_v = Math.min(...this.v);
-        var max_u = Math.max(...this.u);
-        var max_v = Math.max(...this.v);
+        var u = this.u;
+        var v = this.v;
+
+        if (this.origin == 'storm') {
+            u = this.sru;
+            v = this.srv;
+        }
+
+        var min_u = Math.min(...u);
+        var min_v = Math.min(...v);
+        var max_u = Math.max(...u);
+        var max_v = Math.max(...v);
 
         if (this.sfc_wind !== null) {
             var [sfc_u, sfc_v] = this.sfc_wind;
@@ -1546,8 +1647,22 @@ class VWP {
         var ctx = hodo_ctx;
 
         var [lbu, lbv, ubu, ubv] = [ctx.bbox_data.lbx, ctx.bbox_data.lby, ctx.bbox_data.ubx, ctx.bbox_data.uby];
+        var hodo_u = this.u;
+        var hodo_v = this.v;
+        var [hodo_sfc_u, hodo_sfc_v] = [NaN, NaN];
 
-        if (this.alt.length == 0 || this.u.length == 0 || this.v.length == 0) {
+        if (this.sfc_wind !== null) {
+            [hodo_sfc_u, hodo_sfc_v] = this.sfc_wind;
+        }
+
+        if (this.origin == 'storm') {
+            hodo_u = this.sru;
+            hodo_v = this.srv;
+            hodo_sfc_u = this.sr_sfc_u;
+            hodo_sfc_v = this.sr_sfc_v;
+        }
+
+        if (this.alt.length == 0 || hodo_u.length == 0 || hodo_v.length == 0) {
             ctx.font = "36px Trebuchet MS";
             ctx.fillStyle = '#000000';
             ctx.textAlign = 'center';
@@ -1564,14 +1679,14 @@ class VWP {
         ctx.globalAlpha = 0.05;
 
         var iseg = 0;
-        for (var i = 0; i < this.u.length; i++) {
+        for (var i = 0; i < hodo_u.length; i++) {
             while (this.alt[i] > seg_cutoffs[iseg]) {
                 iseg++;
             }
 
             ctx.beginPath();
             ctx.fillStyle = colors[iseg];
-            ctx.circle(this.u[i], this.v[i], this.rmse[i] * Math.sqrt(2));
+            ctx.circle(hodo_u[i], hodo_v[i], this.rmse[i] * Math.sqrt(2));
             ctx.fill()
         }
 
@@ -1581,26 +1696,25 @@ class VWP {
         * Draw hodograph
         **********************************/
         if (this.sfc_wind !== null) {
-            var [usfc, vsfc] = this.sfc_wind;
             ctx.beginPath();
             ctx.strokeStyle = colors[0];
             ctx.setLineDash([4, 3]);
-            ctx.moveTo(usfc, vsfc);
-            ctx.lineTo(this.u[0], this.v[0]);
+            ctx.moveTo(hodo_sfc_u, hodo_sfc_v);
+            ctx.lineTo(hodo_u[0], hodo_v[0]);
             ctx.stroke()
         }
 
         ctx.beginPath();
         ctx.setLineDash([]);
-        ctx.moveTo(this.u[0], this.v[0]);
+        ctx.moveTo(hodo_u[0], hodo_v[0]);
 
         iseg = 0;
         ctx.strokeStyle = colors[iseg];
 
-        for (var i = 1; i < this.u.length; i++) {
+        for (var i = 1; i < hodo_u.length; i++) {
             while (this.alt[i] > seg_cutoffs[iseg]) {
-                var u_cutoff = linear_interp(seg_cutoffs[iseg], this.alt[i - 1], this.alt[i], this.u[i -  1], this.u[i]);
-                var v_cutoff = linear_interp(seg_cutoffs[iseg], this.alt[i - 1], this.alt[i], this.v[i -  1], this.v[i]);
+                var u_cutoff = linear_interp(seg_cutoffs[iseg], this.alt[i - 1], this.alt[i], hodo_u[i -  1], hodo_u[i]);
+                var v_cutoff = linear_interp(seg_cutoffs[iseg], this.alt[i - 1], this.alt[i], hodo_v[i -  1], hodo_v[i]);
 
                 ctx.lineTo(u_cutoff, v_cutoff);
                 ctx.stroke();
@@ -1612,7 +1726,7 @@ class VWP {
                 ctx.strokeStyle = colors[iseg];
             }
 
-            ctx.lineTo(this.u[i], this.v[i]);
+            ctx.lineTo(hodo_u[i], hodo_v[i]);
         }
         ctx.stroke();
 
@@ -1626,11 +1740,15 @@ class VWP {
         ctx.strokeStyle = '#00cccc';
 
         var [smu, smv] = this.sm_vec;
+        if (this.origin == 'storm') {
+            [smu, smv] = [0, 0];
+        }
         ctx.moveTo(smu, smv);
 
-        var [low_u, low_v] = [this.u[0], this.v[0]];
+        var [low_u, low_v] = [hodo_u[0], hodo_v[0]];
         if (this.sfc_wind !== null) {
-            [low_u, low_v] = this.sfc_wind;
+            low_u = hodo_sfc_u;
+            low_v = hodo_sfc_v;
         }
 
         ctx.lineTo(low_u, low_v);
@@ -1642,6 +1760,9 @@ class VWP {
         ctx.moveTo(low_u, low_v);
 
         var [calu, calv] = this.params['ca_lyr_ub'];
+        if (this.origin == 'storm') {
+            [calu, calv] = this.params['sr_ca_lyr_ub'];
+        }
         ctx.lineTo(calu, calv);
 
         ctx.stroke();
@@ -1654,64 +1775,113 @@ class VWP {
         ctx.lineWidth = 1;
 
         var smv_names = {'bunkers_right': 'RM', 'bunkers_left': 'LM', 'bunkers_mean': 'MEAN'};
+        if (this.origin == 'storm') {
+            var smv_names = {'sr_bunkers_right': 'RM', 'sr_bunkers_left': 'LM', 'sr_bunkers_mean': 'MEAN'};
+        }
+
+        var sm_vec_str = {'brm': 'bunkers_right', 'blm': 'bunkers_left'}[this.sm_vec_str];
 
         Object.keys(smv_names).forEach((function(smv) {
             var marker_rad = 3;
-
-            ctx.beginPath();
+            var off_sign;
 
             var [mkru, mkrv] = this.params[smv];
 
-            if (smv == 'bunkers_mean') {
-                ctx.strokeStyle = '#a04000';
-                ctx.fillStyle = '#a04000';
+            if (!(this.origin == 'storm' && smv.includes(sm_vec_str))) {
+                ctx.beginPath();
 
-                // I don't like this as much as I could
-                var [rect_lbu, rect_lbv] = ctx.pixelOffset(mkru, mkrv, -marker_rad, -marker_rad);
-                var [rect_ubu, rect_ubv] = ctx.pixelOffset(mkru, mkrv, marker_rad, marker_rad);
-                ctx.rect(rect_lbu, rect_lbv, rect_ubu - rect_lbu, rect_ubv - rect_lbv);
+                if (smv.includes('bunkers_mean')) {
+                    ctx.strokeStyle = '#a04000';
+                    ctx.fillStyle = '#a04000';
+
+                    // I don't like this as much as I could
+                    var [rect_lbu, rect_lbv] = ctx.pixelOffset(mkru, mkrv, -marker_rad, -marker_rad);
+                    var [rect_ubu, rect_ubv] = ctx.pixelOffset(mkru, mkrv, marker_rad, marker_rad);
+                    ctx.rect(rect_lbu, rect_lbv, rect_ubu - rect_lbu, rect_ubv - rect_lbv);
+                }
+                else {
+                    ctx.strokeStyle = '#000000';
+                    ctx.fillStyle = '#000000';
+                    ctx.circle(mkru, mkrv, marker_rad, 'pixels');
+                }
+            
+                ctx.stroke();
             }
             else {
                 ctx.strokeStyle = '#000000';
                 ctx.fillStyle = '#000000';
-                ctx.circle(mkru, mkrv, marker_rad, 'pixels');
             }
 
-            ctx.stroke();
+            ctx.textBaseline = 'alphabetic';
+            ctx.textAlign = 'right';
+            off_sign = -1;
 
-            ctx.textBaseline = 'top';
-
-            var [txt_u, txt_v] = ctx.pixelOffset(mkru, mkrv, marker_rad / Math.sqrt(2), marker_rad / Math.sqrt(2));
+            var [txt_u, txt_v] = ctx.pixelOffset(mkru, mkrv, off_sign * marker_rad / Math.sqrt(2), off_sign * marker_rad / Math.sqrt(2));
             ctx.fillText(smv_names[smv], txt_u, txt_v);
         }).bind(this));
 
-        var needs_user_smv = true; 
-        Object.keys(smv_names).forEach((function(smv) {
-            needs_user_smv &= !(this.params[smv][0] == this.sm_vec[0] && this.params[smv][1] == this.sm_vec[1]);
-        }).bind(this));
-
-        if (needs_user_smv) {
+        if (this.sm_vec_str == 'user') {
             var marker_rad = 3;
 
-            var [mkru, mkrv] = this.sm_vec;
-            var [plus_lbu, plus_lbv] = ctx.pixelOffset(mkru, mkrv, -marker_rad, -marker_rad);
-            var [plus_ubu, plus_ubv] = ctx.pixelOffset(mkru, mkrv, marker_rad, marker_rad);
-
+            var off_sign;
             ctx.strokeStyle = '#000000';
             ctx.fillStyle = '#000000';
 
-            ctx.beginPath();
-            ctx.moveTo(plus_lbu, mkrv);
-            ctx.lineTo(plus_ubu, mkrv);
-            ctx.moveTo(mkru, plus_lbv);
-            ctx.lineTo(mkru, plus_ubv);
-            ctx.stroke();
 
-            var [txt_u, txt_v] = ctx.pixelOffset(mkru, mkrv, marker_rad / Math.sqrt(2), marker_rad / Math.sqrt(2));
+            if (this.origin != 'storm') {
+                var [mkru, mkrv] = this.sm_vec;
+                var [plus_lbu, plus_lbv] = ctx.pixelOffset(mkru, mkrv, -marker_rad, -marker_rad);
+                var [plus_ubu, plus_ubv] = ctx.pixelOffset(mkru, mkrv, marker_rad, marker_rad);
+
+                ctx.beginPath();
+                ctx.moveTo(plus_lbu, mkrv);
+                ctx.lineTo(plus_ubu, mkrv);
+                ctx.moveTo(mkru, plus_lbv);
+                ctx.lineTo(mkru, plus_ubv);
+                ctx.stroke();
+            }
+            else {
+                var [mkru, mkrv] = [0, 0];
+            }
+
+            ctx.textBaseline = 'alphabetic';
+            ctx.textAlign = 'right';
+            off_sign = -1;
+
+            var [txt_u, txt_v] = ctx.pixelOffset(mkru, mkrv, off_sign * marker_rad / Math.sqrt(2), off_sign * marker_rad / Math.sqrt(2));
             ctx.fillText('SM', txt_u, txt_v);
         }
 
         ctx.restore();
+
+       /**********************************
+        * Draw origin (if storm-relative)
+        **********************************/
+        if (this.origin == 'storm') {
+
+            ctx.save();
+            var [mkru, mkrv] = this.sm_vec;
+            mkru = -mkru;
+            mkrv = -mkrv;
+
+            ctx.lineWidth = 1;
+            ctx.strokeStyle = '#dddddd';
+            ctx.fillStyle = '#cccccc';
+            ctx.textBaseline = 'top';
+            ctx.textAlign = 'right';
+
+            ctx.beginPath();
+            ctx.moveTo(lbu, mkrv);
+            ctx.lineTo(ubu, mkrv);
+            ctx.moveTo(mkru, lbv);
+            ctx.lineTo(mkru, ubv);
+            ctx.stroke();
+
+            var [txt_u, txt_v] = ctx.pixelOffset(mkru, mkrv, -1, 1);
+            ctx.fillText('GRND', txt_u, txt_v);
+
+            ctx.restore();
+        }
 
        /**********************************
         * Draw height markers
@@ -1722,10 +1892,10 @@ class VWP {
 
         var mkr_val = 1;
 
-        for (var i = 1; i < this.u.length; i++) {
+        for (var i = 1; i < hodo_u.length; i++) {
             while (this.alt[i - 1] < mkr_val && mkr_val <= this.alt[i]) {
-                var umkr = linear_interp(mkr_val, this.alt[i - 1], this.alt[i], this.u[i - 1], this.u[i]);
-                var vmkr = linear_interp(mkr_val, this.alt[i - 1], this.alt[i], this.v[i - 1], this.v[i]);
+                var umkr = linear_interp(mkr_val, this.alt[i - 1], this.alt[i], hodo_u[i - 1], hodo_u[i]);
+                var vmkr = linear_interp(mkr_val, this.alt[i - 1], this.alt[i], hodo_v[i - 1], hodo_v[i]);
 
                 ctx.beginPath();
                 ctx.fillStyle = '#000000';
@@ -1818,6 +1988,10 @@ class VWP {
             this.sm_vec_str = 'user';
         }
         this._compute_parameters();
+    }
+
+    change_origin(origin) {
+        this.origin = origin;
     }
 
     static from_server(radar_id, dt, file_id, callback) {

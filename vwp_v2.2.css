@@ -74,6 +74,16 @@ div#selection ul {
     background-color: #99bbbb;
 }
 
+.grayout {
+    border-color: #999999;
+    color: #999999;
+}
+
+.grayout:hover {
+    background-color: #f3f3f3;
+    cursor:default;
+}
+
 li#default {
     height: 19px;
     width: 12px;
@@ -110,12 +120,7 @@ div#mapsel li#radarname {
     margin-right: 5px;
 }
 
-div#smsel p {
-    display:inline-block;
-    width:110px;
-}
-
-div#sfcsel p {
+div#smsel p, div#sfcsel p, div#orgsel p {
     display:inline-block;
     width:110px;
 }
