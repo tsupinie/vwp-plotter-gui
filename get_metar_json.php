@@ -160,6 +160,8 @@ function has_valid_cache_file($cache_file_name) {
 function main_() {
     date_default_timezone_set('UTC');
 
+    $lock_file_name = "json/metars.lock";
+
     $cache_file_name = "json/metars.json";
     if (has_valid_cache_file($cache_file_name)) {
         $fp = fopen($cache_file_name, 'r');
@@ -168,6 +170,11 @@ function main_() {
     }
     else {
         $metars_out = download_metar_obs();
+
+        while ($metars_out == "[]") {
+            sleep(15);
+            $metars_out = download_metar_obs();
+        }
 
         $fp = fopen($cache_file_name, 'w');
         fwrite($fp, $metars_out);
