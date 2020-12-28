@@ -365,6 +365,10 @@ class VWPApp {
             metar.sort((m1, m2) => compare_dt(m1['time'], m2['time']));
         }
 
+        metar.forEach(function(m) {
+            m['id'] = radar_info['metar'];
+        });
+
         console.log(metar);
 
         if (this._metar_button_text === null) {
@@ -515,7 +519,6 @@ class VWPContainer {
                             return;
                         }
 
-                        this.change_surface_wind(this._surface_wind);
                         vwp.change_storm_motion(this._storm_motion);
                         vwp.change_origin(this._origin);
 
@@ -526,6 +529,7 @@ class VWPContainer {
                         frame['dt'] = vwp.radar_dt;
                         frame['data'] = vwp;
 
+                        this.change_surface_wind(this._surface_wind);
                         this._update_ui_origin_selection();
                         this._update_hodo_bbox();
 
@@ -750,7 +754,7 @@ class VWPContainer {
                             vwp.change_surface_wind('none');
                         }
                         else {
-                            vwp.change_surface_wind([metar['wdir'], metar['wspd']]);
+                            vwp.change_surface_wind([metar['wdir'], metar['wspd']], metar['id'] + " " + metar['time'].format("HHmm") + " UTC");
                         }
                     }
                     else {
@@ -758,7 +762,7 @@ class VWPContainer {
                     }
                 }
                 else {
-                    vwp.change_surface_wind(new_vec);
+                    vwp.change_surface_wind(new_vec, 'User');
                 }
             }
         }).bind(this));
@@ -1917,6 +1921,30 @@ class VWP {
         ctx.restore()
 
        /**********************************
+        * Draw surface wind source
+        **********************************/
+        ctx.save();
+
+        var [txtu, txtv] = ctx.pixelOffset(lbu, lbv, 0, 2);
+        ctx.fillStyle = '#000000';
+        ctx.font = '11px Trebuchet MS';
+        ctx.textBaseline = 'top';
+        ctx.textAlign = 'left';
+        var sfc_wind_src_txt = "Surface Wind: "
+
+        if (this.sfc_wind !== null) {
+            var [hodo_sfc_u, hodo_sfc_v] = this.sfc_wind;
+            var [hodo_sfc_wdir, hodo_sfc_wspd] = comp2vec(hodo_sfc_u, hodo_sfc_v);
+            sfc_wind_src_txt += format_vector(hodo_sfc_wdir, hodo_sfc_wspd) + " (" + this.sfc_wind_src + ")"
+        }
+        else {
+            sfc_wind_src_txt += "None"
+        }
+        ctx.fillText(sfc_wind_src_txt, txtu, txtv);
+
+        ctx.restore();
+
+       /**********************************
         * Draw SR wind
         **********************************/
         ctx = srwind_ctx;
@@ -1952,7 +1980,7 @@ class VWP {
         ctx.restore();
     }
 
-    change_surface_wind(new_vec) {
+    change_surface_wind(new_vec, source) {
         if (typeof new_vec == 'string') {
             if (new_vec.toLowerCase() == 'none') {
                 this.sfc_wind = null;
@@ -1962,6 +1990,8 @@ class VWP {
             var [wdir, wspd] = new_vec;
             this.sfc_wind = vec2comp(wdir, wspd);
         }
+
+        this.sfc_wind_src = source;
 
         if (this.sm_vec_str == 'blm' || this.sm_vec_str == 'brm') {
             // Force a recompute of the storm motion vector if the user hasn't set one
