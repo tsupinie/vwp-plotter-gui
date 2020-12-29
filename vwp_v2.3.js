@@ -806,8 +806,12 @@ class VWPContainer {
     }
 
     _update_ui_origin_selection() {
-        var all_have_sm = Array.from(this.frame_list.values()).filter(f => f['status'] != 'notloaded').map(f => f['data'].has_sm_vec()).reduce((a, b) => a && b)
-        if (all_have_sm) {
+        var have_sm = Array.from(this.frame_list.values()).filter(f => f['status'] != 'notloaded').map(f => f['data'].has_sm_vec());
+        if (have_sm.length == 0) {
+            return;
+        }
+
+        if (have_sm.reduce((a, b) => a && b)) {
             this._ui.set_sr_available(true);
         }
         else {
@@ -816,12 +820,18 @@ class VWPContainer {
     }
 
     _update_hodo_bbox() {
-        var bbox = Array.from(this.frame_list.values()).filter(f => f['status'] != 'notloaded').map(f => f['data'].get_bbox()).reduce(BBox.union);
-        if (bbox.lbx === undefined || bbox.ubx === undefined || bbox.lby === undefined || bbox.uby === undefined) {
+        var bboxes = Array.from(this.frame_list.values()).filter(f => f['status'] != 'notloaded').map(f => f['data'].get_bbox());
+        if (bboxes.length == 0) {
             this._hodo.reset();
         }
         else {
-            this._hodo.set_bbox(bbox);
+            var bbox = bboxes.reduce(BBox.union);
+            if (bbox.lbx === undefined || bbox.ubx === undefined || bbox.lby === undefined || bbox.uby === undefined) {
+                this._hodo.reset();
+            }
+            else {
+                this._hodo.set_bbox(bbox);
+            }
         }
     }
 
