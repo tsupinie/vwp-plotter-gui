@@ -27,9 +27,17 @@ function check($radar_id, $age_limit) {
 
     $ftimes = array();
 
+    $cur_time = new DateTime();
+    $cur_year = date('Y');
+    $last_year = strval(intval($cur_year) - 1);
+
     foreach ($contents as $line) {
         if (preg_match('/([\S]+ [\S]+ [\S]+) (sn.[\d]{4})/', $line, $matches, PREG_OFFSET_CAPTURE)) {
-            $ftimes[$matches[2][0]] = strtotime($matches[1][0]);
+            $dt = date_create_from_format('Y M d H:i', $cur_year . " " . $matches[1][0]);
+            if ($dt > $cur_time) {
+                $dt = date_create_from_format('Y M d H:i', $last_year . " " . $matches[1][0]);
+            }
+            $ftimes[$matches[2][0]] = intval(date_format($dt, 'U'));
         }
     }
 
