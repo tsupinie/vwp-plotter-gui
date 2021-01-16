@@ -85,6 +85,36 @@ div#selection ul {
     cursor:default;
 }
 
+.tab-list {
+    width: 100%;
+}
+
+.tab-list li {
+    display: inline-block;
+
+    margin: 0px;
+    padding: 5px;
+    border-left: 1px solid black;
+    border-top: 1px solid black;
+    border-right: 1px solid black;
+
+    border-top-left-radius: 3px;
+    border-top-right-radius: 3px;
+    transform: translate(0px, 1px);
+}
+
+/*
+.tab-list li.tab-selected {
+    background-color: #aacccc;
+}
+*/
+
+/*
+canvas#map {
+    border: 1px solid black;
+}
+*/
+
 li#default {
     height: 19px;
     width: 12px;
