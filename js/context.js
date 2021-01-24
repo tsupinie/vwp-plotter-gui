@@ -140,4 +140,10 @@ class Context2DWrapper {
         return [x_data, y_data];
     }
 
+    static create_proxy(canvas, bbox_pixels, bbox_data, dpr) {
+        // Set up a wrapper for the drawing context that handles transformations and the device pixel ratio
+        var ctx = canvas.getContext('2d');
+        var ctx_wrapper = new Context2DWrapper(bbox_pixels, bbox_data, dpr);
+        return new Proxy(ctx, ctx_wrapper)
+    }
 }

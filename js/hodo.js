@@ -19,16 +19,16 @@ class HodoPlot {
         this._default_hodo_bbox_uv = new BBox(-40, -40, 80, 80);
 
         var hodo_bbox_pixels = new BBox(16.64, 17.92, 449.28, 449.92);
-        this._contexts['hodo'] = HodoPlot._create_ctx_proxy(this._canvas, hodo_bbox_pixels, this._default_hodo_bbox_uv, this._dpr);
-        this._contexts['hodo_gr'] = HodoPlot._create_ctx_proxy(this._canvas, hodo_bbox_pixels, this._default_hodo_bbox_uv, this._dpr);
+        this._contexts['hodo'] = Context2DWrapper.create_proxy(this._canvas, hodo_bbox_pixels, this._default_hodo_bbox_uv, this._dpr);
+        this._contexts['hodo_gr'] = Context2DWrapper.create_proxy(this._canvas, hodo_bbox_pixels, this._default_hodo_bbox_uv, this._dpr);
 
         var table_bbox_pixels = new BBox(455.92, 17.92, 608.36, 160);
         var table_bbox_data = new BBox(0, 0, 1, 11);
-        this._contexts['table'] = HodoPlot._create_ctx_proxy(this._canvas, table_bbox_pixels, table_bbox_data, this._dpr);
+        this._contexts['table'] = Context2DWrapper.create_proxy(this._canvas, table_bbox_pixels, table_bbox_data, this._dpr);
 
         var srwind_bbox_pixels = new BBox(470, 180, 608.36, 449.92);
         var srwind_bbox_data = new BBox(0, 0, 70, 12);
-        this._contexts['srwind'] = HodoPlot._create_ctx_proxy(this._canvas, srwind_bbox_pixels, srwind_bbox_data, this._dpr);
+        this._contexts['srwind'] = Context2DWrapper.create_proxy(this._canvas, srwind_bbox_pixels, srwind_bbox_data, this._dpr);
 
         this._clear_and_draw_background(this._canvas, this._contexts);
 
@@ -459,13 +459,6 @@ class HodoPlot {
         ctx.fillText(format_vector(dir, spd, 'kts'), 0.7, 2.6);
 
         ctx.fillText(format(vwp.params['ca'], '\u{00b0}'), 0.5, 1.4);
-    }
-
-    static _create_ctx_proxy(canvas, bbox_pixels, bbox_data, dpr) {
-        // Set up a wrapper for the drawing context that handles transformations and the device pixel ratio
-        var ctx = canvas.getContext('2d');
-        var ctx_wrapper = new Context2DWrapper(bbox_pixels, bbox_data, dpr);
-        return new Proxy(ctx, ctx_wrapper)
     }
 }
 
