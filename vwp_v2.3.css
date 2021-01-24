@@ -33,9 +33,11 @@ div#selection > div {
     margin-bottom:3px;
 }
 
-div#selection ul {
+.toggle-list, .tab-list {
+    position: relative;
+
     list-style-type:none;
-    display:inline;
+    display:inline-block;
     margin:0px;
     padding:0px;
     cursor:default;
@@ -43,10 +45,6 @@ div#selection ul {
     -webkit-user-select: none;
     -moz-user-select: none;
     -ms-user-select: none;
-}
-
-.toggle-list {
-    position: relative;
 }
 
 .toggle-list .selectable {
@@ -87,9 +85,10 @@ div#selection ul {
 
 .tab-list {
     width: 100%;
+    display: flex;
 }
 
-.tab-list li {
+.tab-list .selectable {
     display: inline-block;
 
     margin: 0px;
@@ -98,22 +97,11 @@ div#selection ul {
     border-top: 1px solid black;
     border-right: 1px solid black;
 
-    border-top-left-radius: 3px;
-    border-top-right-radius: 3px;
+    flex-basis: 100%;
+    text-align: center;
+
     transform: translate(0px, 1px);
 }
-
-/*
-.tab-list li.tab-selected {
-    background-color: #aacccc;
-}
-*/
-
-/*
-canvas#map {
-    border: 1px solid black;
-}
-*/
 
 li#default {
     height: 19px;
