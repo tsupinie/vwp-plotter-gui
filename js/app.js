@@ -52,8 +52,8 @@ class VWPApp {
 
         var select_func = this.select.bind(this);
         function bind_select() {
-            $(this).mouseup(select_func);
             $(this).find('li').each(function() {
+                $(this).mouseup(select_func);
                 this.vector_select = false;
 
                 if (this.childNodes[0].textContent == "DDD/SS") {
