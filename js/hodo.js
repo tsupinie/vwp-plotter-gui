@@ -249,7 +249,7 @@ class HodoPlot {
         this._draw_hodo_coordinates(ctx, 0, 0, '#999999', true);
 
         if (this.selecting) {
-            var highlight_colors = ['#c3efc3', '#86df86', '#4acf4a', '#2ab12b'];
+            var highlight_colors = ['#dfecec', '#afcfcf', '#80b3b3', '#568f8f'];
             highlight_colors.forEach(function(color, ary_idx, ary) {
                 var offset = ary.length - ary_idx;
                 var [rect_lbu, rect_lbv] = ctx.pixelOffset(lbu, lbv, -offset, offset)
