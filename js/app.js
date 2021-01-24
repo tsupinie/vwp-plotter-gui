@@ -86,15 +86,6 @@ class VWPApp {
 
         if (target.vector_select) {
             this.prev_selection = this._select_box(target);
-            var help = document.getElementById("selecthelp");
-
-            help.style.visibility = "visible";
-            var target_pos = _page_pos(target);
-
-            help.style.offsetLeft = target_pos.x + 70;
-            help.style.offsetTop = target_pos.y - 17;
-            help.style.left = target_pos.x + 70;
-            help.style.top = target_pos.y - 17;
 
             var vector_callback = (function(wspd, wdir) {
                 if (wspd !== null && wdir !== null) {
@@ -116,18 +107,13 @@ class VWPApp {
                 if (this.vwp_container.is_animating) {
                     this.vwp_container.start_animation();
                 }
-
-                help.style.visibility = "hidden";
-                help.style.offsetLeft = 0;
-                help.style.offsetTop = 0;
-                help.style.left = 0;
-                help.style.top = 0;
             }).bind(this);
 
             if (this.vwp_container.is_animating) {
                 this.vwp_container.pause_animation();
             }
             this.hodo.selection_start(vector_callback, done_callback);
+            this.vwp_container.draw_active_frame();
         }
         else {
             this._select_box(target);

@@ -94,9 +94,6 @@ $session_id = md5("{$session_time}{$session_source}");
       </ul>
     </div>
   </div>
-  <div id="selecthelp">
-    <p>Select vector by clicking<br>on the hodograph</p>
-  </div>
   <div id="info">
     <p>
     <script type="text/javascript">

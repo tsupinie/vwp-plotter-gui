@@ -110,7 +110,7 @@ class VWPContainer {
                             this._set_active_frame(latest_frame);
                         }
 
-                        this._draw_active_frame();
+                        this.draw_active_frame();
 
                         // Update UI
                         this._update_ui_frame_list();
@@ -159,6 +159,7 @@ class VWPContainer {
         this._set_active_frame(frame);
         this._update_ui_frame_list();
 
+        // Replace with draw_active_frame?
         this._hodo.draw_vwp(frame['data']);
     }
 
@@ -339,7 +340,7 @@ class VWPContainer {
         }).bind(this));
 
         this._surface_wind = new_vec;
-        this._draw_active_frame();
+        this.draw_active_frame();
     }
 
     change_storm_motion(new_vec) {
@@ -352,7 +353,7 @@ class VWPContainer {
         this._storm_motion = new_vec;
         this._update_ui_origin_selection();
         this._update_hodo_bbox();
-        this._draw_active_frame();
+        this.draw_active_frame();
     }
 
     change_origin(org) {
@@ -364,15 +365,21 @@ class VWPContainer {
 
         this._origin = org;
         this._update_hodo_bbox();
-        this._draw_active_frame();
+        this.draw_active_frame();
     }
  
-    _draw_active_frame() {
+    draw_active_frame() {
         if (this.frame_list.size > 0) {
             var frame = Array.from(this.frame_list.values()).find(f => f['status'] == 'active');
             if (frame !== undefined) {
                 this._hodo.draw_vwp(frame['data']);
             }
+            else {
+                this._hodo.draw_vwp(null);
+            }
+        }
+        else {
+            this._hodo.draw_vwp(null);
         }
     }
 

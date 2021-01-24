@@ -12,8 +12,6 @@ class HodoPlot {
         this._canvas.width *= this._dpr;
         this._canvas.height *= this._dpr;
 
-        this._background_image = null;
-
         this._contexts = {};
 
         this._default_hodo_bbox_uv = new BBox(-40, -40, 80, 80);
@@ -58,17 +56,22 @@ class HodoPlot {
     }
 
     draw_vwp(vwp) {
-        var [vwp_smu, vwp_smv] = vwp.sm_vec;
-        var hodo_bbox = this._contexts['hodo'].bbox_data;
+        if (vwp !== null) {
+            var [vwp_smu, vwp_smv] = vwp.sm_vec;
+            var hodo_bbox = this._contexts['hodo'].bbox_data;
 
-        if (vwp.origin == 'storm' && isFinite(vwp_smu) && isFinite(vwp_smv)) {
-            this._contexts['hodo_gr'].bbox_data = hodo_bbox.translate(vwp_smu, vwp_smv);
+            if (vwp.origin == 'storm' && isFinite(vwp_smu) && isFinite(vwp_smv)) {
+                this._contexts['hodo_gr'].bbox_data = hodo_bbox.translate(vwp_smu, vwp_smv);
+            }
+            else {
+                this._contexts['hodo_gr'].bbox_data = hodo_bbox;
+            }
+
+            this._draw_vwp(vwp, this._canvas, this._contexts);
         }
         else {
-            this._contexts['hodo_gr'].bbox_data = hodo_bbox;
+            this._clear_and_draw_background(this._canvas, this._contexts);
         }
-
-        this._draw_vwp(vwp, this._canvas, this._contexts);
     }
 
     mousemove(event) {
@@ -231,11 +234,11 @@ class HodoPlot {
     }
 
     _clear_and_draw_background(canvas, contexts) {
-        var ctx = canvas.getContext('2d');
-        ctx.beginPath();
-        ctx.rect(0, 0, canvas.width, canvas.height);
-        ctx.fillStyle='#ffffff';
-        ctx.fill();
+        var ctx_raw = canvas.getContext('2d');
+        ctx_raw.beginPath();
+        ctx_raw.rect(0, 0, canvas.width, canvas.height);
+        ctx_raw.fillStyle='#ffffff';
+        ctx_raw.fill();
 
        /**********************************
         * Draw hodograph background
@@ -245,8 +248,21 @@ class HodoPlot {
 
         this._draw_hodo_coordinates(ctx, 0, 0, '#999999', true);
 
-        ctx.beginPath();
+        if (this.selecting) {
+            var highlight_colors = ['#c3efc3', '#86df86', '#4acf4a', '#2ab12b'];
+            highlight_colors.forEach(function(color, ary_idx, ary) {
+                var offset = ary.length - ary_idx;
+                var [rect_lbu, rect_lbv] = ctx.pixelOffset(lbu, lbv, -offset, offset)
+                var [rect_ubu, rect_ubv] = ctx.pixelOffset(ubu, ubv, offset, -offset)
 
+                ctx.beginPath();
+                ctx.strokeStyle = color;
+                ctx.rect(rect_lbu, rect_lbv, rect_ubu - rect_lbu, rect_ubv - rect_lbv);
+                ctx.stroke();
+            });
+        }
+
+        ctx.beginPath();
         ctx.strokeStyle = '#000000';
         ctx.rect(lbu, lbv, ubu - lbu, ubv - lbv);
         ctx.stroke();
