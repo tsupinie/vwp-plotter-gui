@@ -159,7 +159,7 @@ class HodoPlot {
         var contexts = {};
         for (var ctx_name in this._contexts) {
             var ctx = this._contexts[ctx_name];
-            contexts[ctx_name] = HodoPlot._create_ctx_proxy(ss_canvas, ctx.bbox_pixels, ctx.bbox_data, dpr);
+            contexts[ctx_name] = Context2DWrapper.create_proxy(ss_canvas, ctx.bbox_pixels, ctx.bbox_data, dpr);
         }
 
         this._draw_vwp(vwp, ss_canvas, contexts);
