@@ -148,6 +148,19 @@ class VWP {
             max_v = Math.max(max_v, sfc_v);
         }
 
+        min_u = Math.min(min_u, 0);
+        max_u = Math.max(max_u, 0);
+        min_v = Math.min(min_v, 0);
+        max_v = Math.max(max_v, 0);
+
+        if (this.origin == 'storm') {
+            var [smu, smv] = this.sm_vec;
+            min_u = Math.min(min_u, -smu);
+            max_u = Math.max(max_u, -smu);
+            min_v = Math.min(min_v, -smv);
+            max_v = Math.max(max_v, -smv);
+        }
+
         var ctr_u = (min_u + max_u) / 2;
         var ctr_v = (min_v + max_v) / 2;
 
