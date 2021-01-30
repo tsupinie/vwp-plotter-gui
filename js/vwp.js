@@ -53,6 +53,9 @@ class VWP {
         else if (this.sm_vec_str == 'blm') {
             this.sm_vec = storm_motions['left'];
         }
+        else if (this.sm_vec_str == 'mean') {
+            this.sm_vec = storm_motions['mean'];
+        }
         storm_motions['user'] = this.sm_vec;
         var [smu, smv] = this.sm_vec;
 
@@ -306,7 +309,7 @@ class VWP {
             var smv_names = {'sr_bunkers_right': 'RM', 'sr_bunkers_left': 'LM', 'sr_bunkers_mean': 'MEAN'};
         }
 
-        var sm_vec_str = {'brm': 'bunkers_right', 'blm': 'bunkers_left'}[this.sm_vec_str];
+        var sm_vec_str = {'brm': 'bunkers_right', 'blm': 'bunkers_left', 'mean': 'bunkers_mean'}[this.sm_vec_str];
 
         Object.keys(smv_names).forEach((function(smv) {
             var marker_rad = 3;
@@ -335,8 +338,14 @@ class VWP {
                 ctx.stroke();
             }
             else {
-                ctx.strokeStyle = '#000000';
-                ctx.fillStyle = '#000000';
+                if (smv.includes('bunkers_mean')) {
+                    ctx.strokeStyle = '#a04000';
+                    ctx.fillStyle = '#a04000';
+                }
+                else {
+                    ctx.strokeStyle = '#000000';
+                    ctx.fillStyle = '#000000';
+                }
             }
 
             ctx.textBaseline = 'alphabetic';
@@ -516,7 +525,7 @@ class VWP {
 
         this.sfc_wind_src = source;
 
-        if (this.sm_vec_str == 'blm' || this.sm_vec_str == 'brm') {
+        if (this.sm_vec_str != 'user') {
             // Force a recompute of the storm motion vector if the user hasn't set one
             this.sm_vec = null;
         }
@@ -533,6 +542,9 @@ class VWP {
             }
             else if (this.sm_vec_str == 'brm') {
                 this.sm_vec = this.params['bunkers_right'];
+            }
+            else if (this.sm_vec_str == 'mean') {
+                this.sm_vec = this.params['bunkers_mean'];
             }
         }
         else {
