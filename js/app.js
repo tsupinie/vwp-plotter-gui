@@ -226,7 +226,10 @@ class VWPApp {
         else {
             // XXX: This will do weird things if this is set while sr_origin is selected
             $('#sr_origin').addClass('grayout');
-            this.select({'target': $('#gr_origin')[0]});
+            var target = $('#gr_origin')[0];
+
+            this._select_box(target);
+            this._update_state(target, target.childNodes[0].textContent);
         }
     }
 
