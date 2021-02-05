@@ -7,6 +7,7 @@ class VWPContainer {
 
         this.is_animating = false;
         this._is_animation_paused = true;
+        this._is_hodo_selecting = false;
         this._anim_timer = null;
         this._anim_intv = 500;
 
@@ -30,6 +31,7 @@ class VWPContainer {
 
         if (this._radar !== null && this._radar != radar_id) {
             this.frame_list.clear();
+            this.pause_animation();
         }
         this._radar = radar_id;
 
@@ -116,7 +118,7 @@ class VWPContainer {
                         this._update_ui_frame_list();
 
                         // Restart animation if it's paused
-                        if (this.is_animating && this._is_animation_paused) {
+                        if (this.is_animating && this._is_animation_paused && !this._is_hodo_selecting) {
                             this.start_animation();
                         }
 
@@ -183,6 +185,7 @@ class VWPContainer {
     }
 
     start_animation() {
+        this._is_hodo_selecting = false;
         this._is_animation_paused = false;
 
         var advance_frame = (function() {
@@ -225,11 +228,19 @@ class VWPContainer {
         this._ui.animation_play();
     }
 
-    pause_animation() {
+    pause_animation(is_hodo_selection) {
+        if (is_hodo_selection === undefined) {
+            is_hodo_selection = false;
+        }
         this._is_animation_paused = true;
+        this._is_hodo_selecting = is_hodo_selection;
     }
 
     stop_animation() {
+        if (this._is_hodo_selecting) {
+            return;
+        }
+
         window.clearTimeout(this._anim_timer);
         this.is_animating = false;
         this._is_animation_paused = true;

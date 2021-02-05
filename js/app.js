@@ -70,7 +70,7 @@ class VWPApp {
         $('#animspddn').mouseup(this.animation_speed_down.bind(this));
         $('#playpause').mouseup(this.animation_play_pause.bind(this));
         $('#refresh').mouseup(this.refresh.bind(this));
-        $('#makegif').mouseup(this.vwp_container.make_gif.bind(this.vwp_container));
+        $('#makegif').mouseup(this.make_gif.bind(this));
     }
 
     select(event) {
@@ -105,12 +105,12 @@ class VWPApp {
                 }
 
                 if (this.vwp_container.is_animating) {
-                    this.vwp_container.start_animation();
+                    this.vwp_container.start_animation(true);
                 }
             }).bind(this);
 
             if (this.vwp_container.is_animating) {
-                this.vwp_container.pause_animation();
+                this.vwp_container.pause_animation(true);
             }
             this.hodo.selection_start(vector_callback, done_callback);
             this.vwp_container.draw_active_frame();
@@ -217,6 +217,14 @@ class VWPApp {
 
     animation_pause() {
         $('#playpause').removeClass('selected');
+    }
+
+    make_gif() {
+        if (this.hodo.selecting) {
+            this._abort_selection();
+        }
+
+        this.vwp_container.make_gif();
     }
 
     set_sr_available(is_available) {
