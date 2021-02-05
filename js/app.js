@@ -326,22 +326,6 @@ class VWPApp {
     }
 }
 
-
-function check_files(radar_id, age_limit, callback) {
-    var root_url = $('#root_url').val();
-
-    if (!window.location.hostname.includes('www')) {
-        root_url = root_url.replace('www.', '');
-    }
-
-    $.getJSON(root_url + "/vad/get_radar_times.php?radar=" + radar_id + '&age=' + age_limit, function(json) {
-        for (fname in json['times']) {
-            json['times'][fname] = moment.utc(json['times'][fname]);
-        }
-        callback(json);
-    })
-}
-
 function check_metars(callback) {
     var root_url = $('#root_url').val();
 
