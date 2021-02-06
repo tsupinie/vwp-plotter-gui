@@ -56,7 +56,7 @@ $session_id = md5("{$session_time}{$session_source}");
       <p>Storm Motion:</p>
       <ul class="toggle-list">
         <li class="selectable needhelp">BLM<span class="help helptop">Bunkers Left Mover Vector</span></li>
-        <li class="selectable needhelp">MEAN<span class="help helptop">0-6 km Mean Wind</span></li>
+        <li class="selectable needhelp">Mean<span class="help helptop">0-6 km Mean Wind</span></li>
         <li class="selectable selected needhelp">BRM<span class="help helptop">Bunkers Right Mover Vector</span></li>
         <li class="selectable needhelp">DDD/SS<span class="help helptop">Select From Hodograph</span></li>
       </ul>
