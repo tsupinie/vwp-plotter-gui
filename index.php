@@ -27,7 +27,7 @@ $session_id = md5("{$session_time}{$session_source}");
 <script type="text/javascript" src="<?php echo $root_url; ?>/vad/js/context.js"></script>
 <script type="text/javascript" src="<?php echo $root_url; ?>/vad/js/hodo.js"></script>
 <script type="text/javascript" src="<?php echo $root_url; ?>/vad/js/vwp.js"></script>
-<script type="text/javascript" src="<?php echo $root_url; ?>/vad/gifjs/gif.js"></script>
+<script type="text/javascript" src="<?php echo $root_url; ?>/vad/js/gifjs/gif.js"></script>
 
 <!--script type="text/javascript" src="<?php echo $root_url; ?>/vad/vwp.min.js"></script-->
 <link rel="stylesheet" type="text/css" href="<?php echo $root_url; ?>/main.css.php">

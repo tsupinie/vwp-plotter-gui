@@ -272,7 +272,7 @@ class VWPContainer {
     }
 
     make_gif() {
-        var gif = new GIF({workers: 4, workerScript: 'gifjs/gif.worker.js', quality: 10});
+        var gif = new GIF({workers: 4, workerScript: 'js/gifjs/gif.worker.js', quality: 10});
         var n_frames = 0;
         var anim_intv = this._anim_intv;
 
