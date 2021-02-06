@@ -95,6 +95,9 @@ $session_id = md5("{$session_time}{$session_source}");
       </ul>
     </div>
   </div>
+  <div id="selecthelp">
+    <p>&#8594;</p>
+  </div>
   <div id="info">
     <p>
     <script type="text/javascript">

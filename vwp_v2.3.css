@@ -154,6 +154,17 @@ div#generate:active {
     background-color:#aacccc;
 }
 
+div#selecthelp {
+    position:absolute;
+    visibility:hidden;
+/*  font-size:0.8em; */
+    margin: 0px;
+}
+
+div#selecthelp p {
+    margin: 0px;
+}
+
 div#info {
     width:100%;
     text-align:center;
