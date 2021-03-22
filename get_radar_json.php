@@ -88,13 +88,11 @@ function run_shell_command($cmd, $timeout) {
 
 function get_args() {
     $radar_id = addslashes($_GET['radar']);
-    $time = addslashes($_GET['time']);
     $file_id = addslashes($_GET['id']);
     $session_id = addslashes($_GET['session_id']);
 
     $args = array(
         'radar' => $radar_id,
-        'time' => $time,
         'file_id' => $file_id,
         'session_id' => $session_id,
     );
@@ -170,9 +168,7 @@ function _main() {
     $args = get_args();
 
     $lock_file_name = "$json_path/{$args['radar']}.{$args['file_id']}.lock";
-
-    $json_date = date("Ymd_Hi", strtotime($args['time']));
-    $json_fname = "$json_path/{$args['radar']}_$json_date.json";
+    $json_fname = "$json_path/{$args['radar']}_{$args['file_id']}.json";
 
     $output = NULL;
     $already_exists = (file_exists($json_fname) !== false);
@@ -190,7 +186,6 @@ function _main() {
         $output = download_json($args, $json_path);
         unlink($lock_file_name);
     }
-
 
     $args['already_exists'] = $already_exists;
     log_visit($args);

@@ -86,7 +86,7 @@ class VWPContainer {
                     this._expected_new_frames++;
 
                     console.log('Downloading vwp at ' + frame['dt'].format(this._dt_format));
-                    VWP.from_server(radar_id, frame['dt'], id, (function(vwp) {
+                    VWP.from_server(radar_id, id, (function(vwp) {
                         // Check to see if this is still the radar we're looking for (user might have changed it while we were waiting for data).
                         if (this._radar != vwp.radar_id) {
                             return;
