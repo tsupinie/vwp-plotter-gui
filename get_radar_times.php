@@ -106,7 +106,7 @@ function check_cache($cache, $radar) {
     else {
         $cache_time = new DateTime($cache->{$radar}->{'asof'});
         $cache_time_cutoff = clone $cache_time;
-        $cache_time_cutoff->add(new DateInterval('PT1M'));
+        $cache_time_cutoff->add(new DateInterval('PT55S'));
         if (new DateTime() > $cache_time_cutoff) {
             $check_server = true;
         }
