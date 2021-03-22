@@ -1,5 +1,9 @@
 <?php
 
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
 function get_args() {
     $radar_id = addslashes($_GET['radar']);
     $age_limit = intval($_GET['age']);
@@ -12,7 +16,7 @@ function get_args() {
     return $args;
 }
 
-function check($radar_id, $age_limit) {
+function check_server($radar_id, $age_limit) {
     $ftp_server = "tgftp.nws.noaa.gov";
     $remote_dir = "SL.us008001/DF.of/DC.radar/DS.48vwp/SI." . strtolower($radar_id);
 
@@ -20,10 +24,31 @@ function check($radar_id, $age_limit) {
     $ftp_user_pass = "anonymous";
 
     $ftpc = ftp_connect($ftp_server);
-    ftp_login($ftpc, $ftp_user_name, $ftp_user_pass);
-    ftp_pasv($ftpc, true);
+    if ($ftpc === false) {
+        throw new \Exception("Failed to establish connection");
+    }
+
+    ftp_set_option($ftpc, FTP_TIMEOUT_SEC, 15);
+
+    $ret = ftp_login($ftpc, $ftp_user_name, $ftp_user_pass);
+    if ($ret === false) {
+        throw new \Exception("Failed to login");
+    }
+
+    $ret = ftp_pasv($ftpc, true);
+    if ($ret === false) {
+        throw new \Exception("Failed to set passive mode");
+    }
+
     $contents = ftp_nlist($ftpc, "-l $remote_dir");
-    ftp_close($ftpc);
+    if ($contents === false) {
+        throw new \Exception("Failed to list directory");
+    }
+
+    $ret = ftp_close($ftpc);
+    if ($ret === false) {
+        throw new \Exception("Failed to close connection");
+    }
 
     $ftimes = array();
 
@@ -62,7 +87,7 @@ function check($radar_id, $age_limit) {
     return $ftime_strs;
 }
 
-function check_cache($cache_file_name) {
+function load_cache($cache_file_name) {
     if (!file_exists($cache_file_name)) {
         return json_decode('{}');
     }
@@ -70,6 +95,24 @@ function check_cache($cache_file_name) {
     $cache_json = file_get_contents($cache_file_name);
     $cache = json_decode($cache_json);
     return $cache;
+}
+
+function check_cache($cache, $radar) {
+    $check_server = false;
+
+    if(!array_key_exists($radar, $cache)) {
+        $check_server = true;
+    }
+    else {
+        $cache_time = new DateTime($cache->{$radar}->{'asof'});
+        $cache_time_cutoff = clone $cache_time;
+        $cache_time_cutoff->add(new DateInterval('PT1M'));
+        if (new DateTime() > $cache_time_cutoff) {
+            $check_server = true;
+        }
+    }
+
+    return $check_server;
 }
 
 function save_cache($cache, $cache_file_name) {
@@ -86,24 +129,38 @@ function _main() {
     $args = get_args();
 
     $cache_file_name = "json/radar_times.json";
+    $lock_file_name = "json/radar_times.{$args['radar']}.lock";
 
-    $cache = check_cache($cache_file_name);
-    $check_server = false;
+    $cache = load_cache($cache_file_name);
+    $check_server = check_cache($cache, $args['radar']);
 
-    if(!array_key_exists($args['radar'], $cache)) {
-        $check_server = true;
-    }
-    else {
-        $cache_time = new DateTime($cache->{$args['radar']}->{'asof'});
-        $cache_time_cutoff = clone $cache_time;
-        $cache_time_cutoff->add(new DateInterval('PT1M'));
-        if (new DateTime() > $cache_time_cutoff) {
-            $check_server = true;
+    if ($check_server) {
+        while (file_exists($lock_file_name)) {
+            sleep(1);
         }
+
+        $cache = load_cache($cache_file_name);
+        $check_server = check_cache($cache, $args['radar']);
     }
 
     if ($check_server) {
-        $times = check($args['radar'], $args['age_limit']);
+        $failure = false;
+
+        touch($lock_file_name);
+        try {
+            $times = check_server($args['radar'], $args['age_limit']);
+        }
+        catch (Exception $exc) {
+            echo "{\"error\": \"{$exc->getMessage()}\"}";
+            $failure = true;
+        }
+
+        unlink($lock_file_name);
+
+        if ($failure) {
+            return;
+        }
+
         $cache->{$args['radar']} = array('times' => $times, 'asof' => date('c'));
         save_cache($cache, $cache_file_name);
     }
