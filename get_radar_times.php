@@ -62,11 +62,54 @@ function check($radar_id, $age_limit) {
     return $ftime_strs;
 }
 
+function check_cache($cache_file_name) {
+    if (!file_exists($cache_file_name)) {
+        return json_decode('{}');
+    }
+
+    $cache_json = file_get_contents($cache_file_name);
+    $cache = json_decode($cache_json);
+    return $cache;
+}
+
+function save_cache($cache, $cache_file_name) {
+    $cache_json = json_encode($cache);
+
+    $fp = fopen($cache_file_name, 'w');
+    fwrite($fp, $cache_json);
+    fclose($fp);
+}
+
 function _main() {
     date_default_timezone_set('UTC');
 
     $args = get_args();
-    $times = check($args['radar'], $args['age_limit']);
+
+    $cache_file_name = "json/radar_times.json";
+
+    $cache = check_cache($cache_file_name);
+    $check_server = false;
+
+    if(!array_key_exists($args['radar'], $cache)) {
+        $check_server = true;
+    }
+    else {
+        $cache_time = new DateTime($cache->{$args['radar']}->{'asof'});
+        $cache_time_cutoff = clone $cache_time;
+        $cache_time_cutoff->add(new DateInterval('PT1M'));
+        if (new DateTime() > $cache_time_cutoff) {
+            $check_server = true;
+        }
+    }
+
+    if ($check_server) {
+        $times = check($args['radar'], $args['age_limit']);
+        $cache->{$args['radar']} = array('times' => $times, 'asof' => date('c'));
+        save_cache($cache, $cache_file_name);
+    }
+    else {
+        $times = $cache->{$args['radar']}->{'times'};
+    }
 
     $json = array(
         'radar' => $args['radar'],
