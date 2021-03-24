@@ -150,7 +150,7 @@ function has_valid_cache_file($cache_file_name) {
 
     $file_mod_time = new DateTime(date('c', filemtime($cache_file_name)));
     $file_mod_time_cutoff = clone $file_mod_time;
-    $file_mod_time_cutoff->add(new DateInterval('PT9M'));
+    $file_mod_time_cutoff->add(new DateInterval('PT9M30S'));
     if (new DateTime() > $file_mod_time_cutoff) {
         return false;
     }
