@@ -1,8 +1,10 @@
 <?php
 
+/*
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
+*/
 
 function get_args() {
     $radar_id = addslashes($_GET['radar']);
@@ -128,7 +130,7 @@ function _main() {
 
     $args = get_args();
 
-    $cache_file_name = "json/radar_times.json";
+    $cache_file_name = "json/radar_times.{$args['radar']}.json";
     $lock_file_name = "json/radar_times.{$args['radar']}.lock";
 
     $cache = load_cache($cache_file_name);
