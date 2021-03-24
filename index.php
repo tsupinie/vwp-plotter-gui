@@ -31,7 +31,7 @@ $session_id = md5("{$session_time}{$session_source}");
 
 <!--script type="text/javascript" src="<?php echo $root_url; ?>/vad/vwp.min.js"></script-->
 <link rel="stylesheet" type="text/css" href="<?php echo $root_url; ?>/main.css.php">
-<link rel="stylesheet" type="text/css" href="<?php echo $root_url; ?>/vad/vwp_v2.4.css">
+<link rel="stylesheet" type="text/css" href="<?php echo $root_url; ?>/vad/vwp_v2.5.css">
 </head>
 <body>
 <input type='hidden' id='root_url' value='<?php echo $root_url; ?>'>
