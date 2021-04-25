@@ -8,6 +8,8 @@ error_reporting(E_ALL);
 
 require "../utils.php";
 
+$lock_file_name = '';
+
 class TimeoutException extends Exception {}
 
 function run_shell_command($cmd, $timeout) {
@@ -161,7 +163,22 @@ function log_visit($args) {
     fclose($log);
 }
 
+function cleanup_lockfile($fname) {
+    // This shouldn't ever be required (I don't think), but an extra safety measure against abandoned lock files
+    if (file_exists($fname)) {
+        unlink($fname);
+    }
+}
+
+function handle_sigterm($sig) {
+    echo '{"error": "Terminated"}';
+    cleanup_lockfile($lock_file_name);
+    exit;
+}
+
 function _main() {
+    global $lock_file_name;
+
     date_default_timezone_set('UTC');
 
     $json_path = root_path() . "/vad/json";
@@ -169,6 +186,9 @@ function _main() {
 
     $lock_file_name = "$json_path/{$args['radar']}.{$args['file_id']}.lock";
     $json_fname = "$json_path/{$args['radar']}_{$args['file_id']}.json";
+
+    register_shutdown_function('cleanup_lockfile', $lock_file_name);
+    pcntl_signal(SIGTERM, "handle_sigterm");
 
     $output = NULL;
     $already_exists = (file_exists($json_fname) !== false);

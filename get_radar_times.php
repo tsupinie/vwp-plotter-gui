@@ -6,6 +6,8 @@ ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 */
 
+$lock_file_name = '';
+
 function get_args() {
     $radar_id = addslashes($_GET['radar']);
     $age_limit = intval($_GET['age']);
@@ -125,13 +127,31 @@ function save_cache($cache, $cache_file_name) {
     fclose($fp);
 }
 
+function cleanup_lockfile($fname) {
+    // This shouldn't ever be required (I don't think), but an extra safety measure against abandoned lock files
+    if (file_exists($fname)) {
+        unlink($fname);
+    }
+}
+
+function handle_sigterm($sig) {
+    echo '{"error": "Terminated"}';
+    cleanup_lockfile($lock_file_name);
+    exit;
+}
+
 function _main() {
+    global $lock_file_name;
+
     date_default_timezone_set('UTC');
 
     $args = get_args();
 
     $cache_file_name = "json/radar_times.{$args['radar']}.json";
     $lock_file_name = "json/radar_times.{$args['radar']}.lock";
+
+    register_shutdown_function('cleanup_lockfile', $lock_file_name);
+    pcntl_signal(SIGTERM, "handle_sigterm");
 
     $cache = load_cache($cache_file_name);
     $check_server = check_cache($cache, $args['radar']);
