@@ -32,7 +32,7 @@ class Table {
 
         if (Array.isArray(rows)) {
             this.n_rows = rows.length;
-            this._row_weights = rows;
+            this._row_weights = rows.slice();
         }
         else {
             this.n_rows = rows;
@@ -41,7 +41,7 @@ class Table {
 
         if (Array.isArray(cols)) {
             this.n_cols = cols.length;
-            this._col_weights = cols;
+            this._col_weights = cols.slice();
         }
         else {
             this.n_cols = cols;

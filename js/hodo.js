@@ -24,45 +24,21 @@ class HodoPlot {
         this._tab_xub = 608.36;
         this._tab_top = 17.92;
         this._tab_line_spacing = 12;
-        this._tab_spacer_ys = [];
-        const tab_spacing = 5;
+        this._tab_spacing = 5;
 
-        const tables = [
+        this._tables = [
             {'rows': 3, 'cols': [2.5, 3], 'row_headers': ['0-1 km', '0-3 km', '0-6 km'], 'row_header_weight': 2, 'col_headers': ['BWD (kts)', 'SRH (m\u{00b2}/s\u{00b2})']},
             {'rows': 4, 'cols': [1], 'row_headers': ['Storm Motion:', 'Bunkers Left Mover:', 'Bunkers Right Mover:', 'Mean Wind:'], 'row_header_weight': 2.3},
             {'rows': 1, 'cols': 1, 'row_headers': ['Critical Angle:']}
         ];
 
-        this._contexts['table'] = [];
-        
-        let tab_ylb = this._tab_top, tab_yub = tab_ylb + this._tab_line_spacing;
-
-        tables.forEach(t => {
-            this._tab_spacer_ys.push(tab_yub + tab_spacing / 2);
-
-            let n_rows_tot = t['rows'];
-            if (t['col_headers'] !== undefined) { n_rows_tot++; }
-
-            tab_ylb = tab_yub + tab_spacing;
-            tab_yub = tab_ylb + n_rows_tot * this._tab_line_spacing
-
-            let bbox_pixels = new BBox(this._tab_xlb, tab_ylb, this._tab_xub, tab_yub);
-            let tab = new Table(t['rows'], t['cols'], this._canvas, bbox_pixels, this._dpr);
-            if (t['row_headers'] !== undefined) {
-                tab.set_row_headers(t['row_headers'], t['row_header_weight']);
-            }
-            if (t['col_headers'] !== undefined) {
-                tab.set_col_headers(t['col_headers'], t['col_header_weight']);
-            }
-
-            this._contexts['table'].push(tab);
-        });
+        [this._contexts['table'], this._tab_spacer_ys] = this._generate_table_proxies(this._canvas, this._dpr);
 
         var srwind_bbox_pixels = new BBox(470, 180, 608.36, 449.92);
         var srwind_bbox_data = new BBox(0, 0, 70, 12);
         this._contexts['srwind'] = Context2DWrapper.create_proxy(this._canvas, srwind_bbox_pixels, srwind_bbox_data, this._dpr);
 
-        this._clear_and_draw_background(this._canvas, this._contexts);
+        this._clear_and_draw_background(this._canvas, this._contexts, this._dpr);
 
         this._move_callback = null;
         this._done_callback = null;
@@ -76,7 +52,7 @@ class HodoPlot {
     reset() {
         this.set_bbox(this._default_hodo_bbox_uv);
         this._contexts['hodo_gr'].bbox_data = this._default_hodo_bbox_uv
-        this._clear_and_draw_background(this._canvas, this._contexts);
+        this._clear_and_draw_background(this._canvas, this._contexts, this._dpr);
     }
 
     add_vwp_container(vwp_container) {
@@ -101,10 +77,10 @@ class HodoPlot {
                 this._contexts['hodo_gr'].bbox_data = hodo_bbox;
             }
 
-            this._draw_vwp(vwp, this._canvas, this._contexts);
+            this._draw_vwp(vwp, this._canvas, this._contexts, this._dpr);
         }
         else {
-            this._clear_and_draw_background(this._canvas, this._contexts);
+            this._clear_and_draw_background(this._canvas, this._contexts, this._dpr);
         }
     }
 
@@ -193,10 +169,16 @@ class HodoPlot {
         var contexts = {};
         for (var ctx_name in this._contexts) {
             var ctx = this._contexts[ctx_name];
-            contexts[ctx_name] = Context2DWrapper.create_proxy(ss_canvas, ctx.bbox_pixels, ctx.bbox_data, dpr);
+            if (ctx_name == 'table') {
+                var [ctx_, _] = this._generate_table_proxies(ss_canvas, dpr);
+                contexts[ctx_name] = ctx_;
+            }
+            else {
+                contexts[ctx_name] = Context2DWrapper.create_proxy(ss_canvas, ctx.bbox_pixels, ctx.bbox_data, dpr);
+            }
         }
 
-        this._draw_vwp(vwp, ss_canvas, contexts);
+        this._draw_vwp(vwp, ss_canvas, contexts, dpr);
 
         return ss_canvas;
     }
@@ -267,7 +249,7 @@ class HodoPlot {
         ctx.stroke()
     }
 
-    _clear_and_draw_background(canvas, contexts) {
+    _clear_and_draw_background(canvas, contexts, dpr) {
         var ctx_raw = canvas.getContext('2d');
         ctx_raw.beginPath();
         ctx_raw.rect(0, 0, canvas.width, canvas.height);
@@ -313,16 +295,16 @@ class HodoPlot {
         **********************************/
         let tab_ylb = this._tab_top, tab_yub = tab_ylb + this._tab_line_spacing;
 
-        ctx_raw.font = 'bold 21px Trebuchet MS';
+        ctx_raw.font = 'bold ' + (10.5 * dpr) + 'px Trebuchet MS';
         ctx_raw.textBaseline = 'middle';
         ctx_raw.textAlign = 'center';
-        ctx_raw.fillText('Parameters', this._dpr * (this._tab_xlb + this._tab_xub) / 2, this._dpr * (tab_ylb + tab_yub) / 2);
+        ctx_raw.fillText('Parameters', dpr * (this._tab_xlb + this._tab_xub) / 2, dpr * (tab_ylb + tab_yub) / 2);
 
         contexts['table'].forEach((tab, idx) => {
-            ctx_raw.lineWidth = this._dpr;
+            ctx_raw.lineWidth = dpr;
             ctx_raw.strokeStyle = '#000000';
-            ctx_raw.moveTo(this._dpr * this._tab_xlb, this._dpr * this._tab_spacer_ys[idx]);
-            ctx_raw.lineTo(this._dpr * this._tab_xub, this._dpr * this._tab_spacer_ys[idx]);
+            ctx_raw.moveTo(dpr * this._tab_xlb, dpr * this._tab_spacer_ys[idx]);
+            ctx_raw.lineTo(dpr * this._tab_xub, dpr * this._tab_spacer_ys[idx]);
             ctx_raw.stroke();
 
             tab.draw_headers('bold 10.5px Trebuchet MS');
@@ -389,13 +371,13 @@ class HodoPlot {
         ctx.restore();
     }
 
-    _draw_vwp(vwp, canvas, contexts) {
+    _draw_vwp(vwp, canvas, contexts, dpr) {
         var ctx = contexts['hodo'];
 
        /**********************************
         * Draw background
         **********************************/
-        this._clear_and_draw_background(canvas, contexts);
+        this._clear_and_draw_background(canvas, contexts, dpr);
 /*
         if (vwp.origin == 'storm') {
             var [gnd_x, gnd_y] = vwp.sm_vec;
@@ -469,6 +451,36 @@ class HodoPlot {
         ctxs.forEach((tab, idx) => {
             tab.draw_data(tab_data[idx], '10.5px Trebuchet MS');
         });
+    }
+
+    _generate_table_proxies(canvas, dpr) {
+        let tab_ylb = this._tab_top, tab_yub = tab_ylb + this._tab_line_spacing;
+
+        let tables = [];
+        let tab_spacer_ys = [];
+
+        this._tables.forEach(t => {
+            tab_spacer_ys.push(tab_yub + this._tab_spacing / 2);
+
+            let n_rows_tot = t['rows'];
+            if (t['col_headers'] !== undefined) { n_rows_tot++; }
+
+            tab_ylb = tab_yub + this._tab_spacing;
+            tab_yub = tab_ylb + n_rows_tot * this._tab_line_spacing
+
+            let bbox_pixels = new BBox(this._tab_xlb, tab_ylb, this._tab_xub, tab_yub);
+            let tab = new Table(t['rows'], t['cols'], canvas, bbox_pixels, dpr);
+            if (t['row_headers'] !== undefined) {
+                tab.set_row_headers(t['row_headers'], t['row_header_weight']);
+            }
+            if (t['col_headers'] !== undefined) {
+                tab.set_col_headers(t['col_headers'], t['col_header_weight']);
+            }
+
+            tables.push(tab);
+        });
+
+        return [tables, tab_spacer_ys];
     }
 }
 
