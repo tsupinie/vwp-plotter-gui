@@ -27,14 +27,14 @@ class HodoPlot {
         this._tab_spacing = 5;
 
         this._tables = [
-            {'rows': 3, 'cols': [2.5, 3], 'row_headers': ['0-1 km', '0-3 km', '0-6 km'], 'row_header_weight': 2, 'col_headers': ['BWD (kts)', 'SRH (m\u{00b2}/s\u{00b2})']},
+            {'rows': 4, 'cols': [2.2, 2.5], 'row_headers': ['0-500 m', '0-1 km', '0-3 km', '0-6 km'], 'row_header_weight': 2, 'col_headers': ['BWD (kts)', 'SRH (m\u{00b2}/s\u{00b2})']},
             {'rows': 4, 'cols': [1], 'row_headers': ['Storm Motion:', 'Bunkers Left Mover:', 'Bunkers Right Mover:', 'Mean Wind:'], 'row_header_weight': 2.3},
             {'rows': 1, 'cols': 1, 'row_headers': ['Critical Angle:']}
         ];
 
         [this._contexts['table'], this._tab_spacer_ys] = this._generate_table_proxies(this._canvas, this._dpr);
 
-        var srwind_bbox_pixels = new BBox(470, 180, 608.36, 449.92);
+        var srwind_bbox_pixels = new BBox(470, 190, 608.36, 449.92);
         var srwind_bbox_data = new BBox(0, 0, 70, 12);
         this._contexts['srwind'] = Context2DWrapper.create_proxy(this._canvas, srwind_bbox_pixels, srwind_bbox_data, this._dpr);
 
@@ -433,9 +433,10 @@ class HodoPlot {
 
         let tab_data = [
             [
-                [format(vwp.params['bwd01']), format(vwp.params['srh01'])],
-                [format(vwp.params['bwd03']), format(vwp.params['srh03'])],
-                [format(vwp.params['bwd06'])],
+                [format(vwp.params['bwd_0_500']), format(vwp.params['srh_0_500'])],
+                [format(vwp.params['bwd_0_1000']), format(vwp.params['srh_0_1000'])],
+                [format(vwp.params['bwd_0_3000']), format(vwp.params['srh_0_3000'])],
+                [format(vwp.params['bwd_0_6000'])],
             ],
             [
                 [format_vector_(vwp.sm_vec, 'kts')], 

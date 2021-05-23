@@ -64,7 +64,7 @@ class VWP {
             this.params['sr_bunkers_' + smvec] = [ustm - smu, vstm - smv];
         }
 
-        [1, 3, 6].forEach((function(lyr_ub) {
+        [0.5, 1, 3, 6].forEach(lyr_ub => {
             try {
                 var [shr_u, shr_v] = wind_shear(u, v, alt, alt[0], lyr_ub);
             }
@@ -72,10 +72,10 @@ class VWP {
                 var [shr_u, shr_v] = [NaN, NaN];
             }
 
-            this.params['bwd0' + lyr_ub] = Math.hypot(shr_u, shr_v);
-        }).bind(this));
+            this.params['bwd_0_' + (lyr_ub * 1000)] = Math.hypot(shr_u, shr_v);
+        });
 
-        [1, 3].forEach((function(lyr_ub) {
+        [0.5, 1, 3].forEach(lyr_ub => {
             try {
                 var srh = storm_relative_helicity(u, v, alt, alt[0], lyr_ub, {'user': this.sm_vec});
             }
@@ -83,8 +83,8 @@ class VWP {
                 var srh = {'user': NaN};
             }
 
-            this.params['srh0' + lyr_ub] = srh['user'];
-        }).bind(this));
+            this.params['srh_0_' + (lyr_ub * 1000)] = srh['user'];
+        });
 
         try {
             var critical_angles = critical_angle(u, v, alt, {'user': this.sm_vec});
