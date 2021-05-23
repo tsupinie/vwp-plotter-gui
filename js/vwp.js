@@ -439,25 +439,39 @@ class VWP {
         var marker_fudge = 0.5 // This is unnecessary in Safari
         var marker_rad = 6;
 
-        var mkr_val = 1;
+        var mkr_val = Math.floor(Math.min(...this.alt)) + 1;
+
+        const draw_height_marker = (umkr, vmkr, mkr_val) => {
+            ctx.beginPath();
+            ctx.fillStyle = '#000000';
+            ctx.circle(umkr, vmkr, marker_rad, 'pixels');
+            ctx.fill();
+
+            ctx.fillStyle = '#ffffff';
+            ctx.font = "9px Trebuchet MS";
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+
+            var [txt_u, txt_v] = ctx.pixelOffset(umkr, vmkr, 0, marker_fudge);
+            ctx.fillText(mkr_val, txt_u, txt_v);
+        };
+
+        if (this.sfc_wind !== null) {
+            var [sfcu, sfcv] = this.sfc_wind;
+            for (var mv = 1; mv < mkr_val; mv++) {
+                var umkr = linear_interp(mv, 0.1, this.alt[0], sfcu, hodo_u[0]);
+                var vmkr = linear_interp(mv, 0.1, this.alt[0], sfcv, hodo_v[0]);
+
+                draw_height_marker(umkr, vmkr, mv);
+            }
+        }
 
         for (var i = 1; i < hodo_u.length; i++) {
             while (this.alt[i - 1] < mkr_val && mkr_val <= this.alt[i]) {
                 var umkr = linear_interp(mkr_val, this.alt[i - 1], this.alt[i], hodo_u[i - 1], hodo_u[i]);
                 var vmkr = linear_interp(mkr_val, this.alt[i - 1], this.alt[i], hodo_v[i - 1], hodo_v[i]);
 
-                ctx.beginPath();
-                ctx.fillStyle = '#000000';
-                ctx.circle(umkr, vmkr, marker_rad, 'pixels');
-                ctx.fill();
-
-                ctx.fillStyle = '#ffffff';
-                ctx.font = "9px Trebuchet MS";
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-
-                var [txt_u, txt_v] = ctx.pixelOffset(umkr, vmkr, 0, marker_fudge);
-                ctx.fillText(mkr_val, txt_u, txt_v);
+                draw_height_marker(umkr, vmkr, mkr_val);
 
                 mkr_val++;
             }
