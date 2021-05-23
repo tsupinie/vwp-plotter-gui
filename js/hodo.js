@@ -20,9 +20,43 @@ class HodoPlot {
         this._contexts['hodo'] = Context2DWrapper.create_proxy(this._canvas, hodo_bbox_pixels, this._default_hodo_bbox_uv, this._dpr);
         this._contexts['hodo_gr'] = Context2DWrapper.create_proxy(this._canvas, hodo_bbox_pixels, this._default_hodo_bbox_uv, this._dpr);
 
-        var table_bbox_pixels = new BBox(455.92, 17.92, 608.36, 160);
-        var table_bbox_data = new BBox(0, 0, 1, 11);
-        this._contexts['table'] = Context2DWrapper.create_proxy(this._canvas, table_bbox_pixels, table_bbox_data, this._dpr);
+        this._tab_xlb = 455.92;
+        this._tab_xub = 608.36;
+        this._tab_top = 17.92;
+        this._tab_line_spacing = 12;
+        this._tab_spacer_ys = [];
+        const tab_spacing = 5;
+
+        const tables = [
+            {'rows': 3, 'cols': [2.5, 3], 'row_headers': ['0-1 km', '0-3 km', '0-6 km'], 'row_header_weight': 2, 'col_headers': ['BWD (kts)', 'SRH (m\u{00b2}/s\u{00b2})']},
+            {'rows': 4, 'cols': [1], 'row_headers': ['Storm Motion:', 'Bunkers Left Mover:', 'Bunkers Right Mover:', 'Mean Wind:'], 'row_header_weight': 2.3},
+            {'rows': 1, 'cols': 1, 'row_headers': ['Critical Angle:']}
+        ];
+
+        this._contexts['table'] = [];
+        
+        let tab_ylb = this._tab_top, tab_yub = tab_ylb + this._tab_line_spacing;
+
+        tables.forEach(t => {
+            this._tab_spacer_ys.push(tab_yub + tab_spacing / 2);
+
+            let n_rows_tot = t['rows'];
+            if (t['col_headers'] !== undefined) { n_rows_tot++; }
+
+            tab_ylb = tab_yub + tab_spacing;
+            tab_yub = tab_ylb + n_rows_tot * this._tab_line_spacing
+
+            let bbox_pixels = new BBox(this._tab_xlb, tab_ylb, this._tab_xub, tab_yub);
+            let tab = new Table(t['rows'], t['cols'], this._canvas, bbox_pixels, this._dpr);
+            if (t['row_headers'] !== undefined) {
+                tab.set_row_headers(t['row_headers'], t['row_header_weight']);
+            }
+            if (t['col_headers'] !== undefined) {
+                tab.set_col_headers(t['col_headers'], t['col_header_weight']);
+            }
+
+            this._contexts['table'].push(tab);
+        });
 
         var srwind_bbox_pixels = new BBox(470, 180, 608.36, 449.92);
         var srwind_bbox_data = new BBox(0, 0, 70, 12);
@@ -277,63 +311,22 @@ class HodoPlot {
        /**********************************
         * Draw table background
         **********************************/
-        ctx = contexts['table'];
+        let tab_ylb = this._tab_top, tab_yub = tab_ylb + this._tab_line_spacing;
 
-        // This is stupid. Find another way to do it.
-        var row = 11;
+        ctx_raw.font = 'bold 21px Trebuchet MS';
+        ctx_raw.textBaseline = 'middle';
+        ctx_raw.textAlign = 'center';
+        ctx_raw.fillText('Parameters', this._dpr * (this._tab_xlb + this._tab_xub) / 2, this._dpr * (tab_ylb + tab_yub) / 2);
 
-        ctx.fillStyle = '#000000';
-        ctx.font = 'bold 10.5px Trebuchet MS';
-        ctx.textBaseline = 'top';
-        ctx.textAlign = 'center';
+        contexts['table'].forEach((tab, idx) => {
+            ctx_raw.lineWidth = this._dpr;
+            ctx_raw.strokeStyle = '#000000';
+            ctx_raw.moveTo(this._dpr * this._tab_xlb, this._dpr * this._tab_spacer_ys[idx]);
+            ctx_raw.lineTo(this._dpr * this._tab_xub, this._dpr * this._tab_spacer_ys[idx]);
+            ctx_raw.stroke();
 
-        ctx.fillText('Parameters', 0.5, row);
-        row -= 1;
-
-        ctx.lineWidth = 1;
-        ctx.strokeStyle = '#000000';
-        ctx.moveTo(0, row);
-        ctx.lineTo(1, row);
-        ctx.stroke();
-        row -= 0.2;
-
-        ctx.textAlign = 'left';
-        ctx.fillText('BWD (kts)', 0.28, row);
-        ctx.fillText('SRH (m\u{00b2}/s\u{00b2})', 0.63, row);
-        row -= 1;
-
-        ctx.fillText('0-1 km', 0, row);
-        row -= 1;
-
-        ctx.fillText('0-3 km', 0, row);
-        row -= 1;
-
-        ctx.fillText('0-6 km', 0, row);
-        row -= 1;
-
-        ctx.moveTo(0, row);
-        ctx.lineTo(1, row);
-        ctx.stroke();
-        row -= 0.2
-
-        ctx.fillText('Storm Motion:', 0, row);
-        row -= 1;
-
-        ctx.fillText('Bunkers Left Mover:', 0, row);
-        row -= 1;
-
-        ctx.fillText('Bunkers Right Mover:', 0, row);
-        row -= 1;
-
-        ctx.fillText('Mean Wind:', 0, row);
-        row -= 1;
-
-        ctx.moveTo(0, row);
-        ctx.lineTo(1, row);
-        ctx.stroke();
-        row -= 0.2;
-
-        ctx.fillText('Critical Angle:', 0, row);
+            tab.draw_headers('bold 10.5px Trebuchet MS');
+        });
 
        /**********************************
         * Draw SR wind plot background
@@ -437,11 +430,7 @@ class HodoPlot {
        /**********************************
         * Fill in parameter table
         **********************************/
-        ctx = contexts['table'];
-
-        ctx.font = "10.5px Trebuchet MS";
-        ctx.textAlign = 'left';
-        ctx.textBaseline = 'top';
+        let ctxs = contexts['table'];
 
         function format(val, units) {
             if (isNaN(val)) {
@@ -455,26 +444,31 @@ class HodoPlot {
             return val.toFixed(0) + units
         }
 
-        ctx.fillText(format(vwp.params['bwd01']), 0.28, 8.8);
-        ctx.fillText(format(vwp.params['bwd03']), 0.28, 7.8);
-        ctx.fillText(format(vwp.params['bwd06']), 0.28, 6.8);
+        function format_vector_(val, units) {
+            const [dir, spd] = comp2vec.apply(null, val); 
+            return format_vector(dir, spd, units);
+        }
 
-        ctx.fillText(format(vwp.params['srh01']), 0.63, 8.8);
-        ctx.fillText(format(vwp.params['srh03']), 0.63, 7.8);
+        let tab_data = [
+            [
+                [format(vwp.params['bwd01']), format(vwp.params['srh01'])],
+                [format(vwp.params['bwd03']), format(vwp.params['srh03'])],
+                [format(vwp.params['bwd06'])],
+            ],
+            [
+                [format_vector_(vwp.sm_vec, 'kts')], 
+                [format_vector_(vwp.params['bunkers_left'], 'kts')], 
+                [format_vector_(vwp.params['bunkers_right'], 'kts')], 
+                [format_vector_(vwp.params['bunkers_mean'], 'kts')]
+            ],
+            [
+                [format(vwp.params['ca'], '\u{00b0}')],
+            ]
+        ];
 
-        var [dir, spd] = comp2vec.apply(null, vwp.sm_vec);
-        ctx.fillText(format_vector(dir, spd, 'kts'), 0.7, 5.6);
-
-        var [dir, spd] = comp2vec.apply(null, vwp.params['bunkers_left']);
-        ctx.fillText(format_vector(dir, spd, 'kts'), 0.7, 4.6);
-
-        var [dir, spd] = comp2vec.apply(null, vwp.params['bunkers_right']);
-        ctx.fillText(format_vector(dir, spd, 'kts'), 0.7, 3.6);
-
-        var [dir, spd] = comp2vec.apply(null, vwp.params['bunkers_mean']);
-        ctx.fillText(format_vector(dir, spd, 'kts'), 0.7, 2.6);
-
-        ctx.fillText(format(vwp.params['ca'], '\u{00b0}'), 0.5, 1.4);
+        ctxs.forEach((tab, idx) => {
+            tab.draw_data(tab_data[idx], '10.5px Trebuchet MS');
+        });
     }
 }
 
