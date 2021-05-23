@@ -117,6 +117,28 @@ class VWP {
             this.sr_sfc_v = vsfc - smv;
             this.sr_sfc_wind = Math.hypot(this.sr_sfc_u, this.sr_sfc_v);
         }
+
+        try {
+            this.params['mean_0_300'] = mean_wind(u, v, alt, alt[0], 0.3);
+        }
+        catch (err) {
+            this.params['mean_0_300'] = [NaN, NaN];
+        }
+
+        try {
+            this.params['mean_0_500'] = mean_wind(u, v, alt, alt[0], 0.5);
+        }
+        catch (err) {
+            this.params['mean_0_500'] = [NaN, NaN];
+        }
+
+        var [smu, smv] = storm_motions['user'];
+        var [mwu, mwv] = this.params['mean_0_500'];
+        this.params['dtm_obs'] = [(smu + mwu) / 2, (smv + mwv) / 2];
+
+        var [smu, smv] = storm_motions['right'];
+        var [mwu, mwv] = this.params['mean_0_300'];
+        this.params['dtm_b2k'] = [(smu + mwu) / 2, (smv + mwv) / 2];
     }
 
     has_sm_vec() {
@@ -400,6 +422,40 @@ class VWP {
             var [txt_u, txt_v] = ctx.pixelOffset(mkru, mkrv, off_sign * marker_rad / Math.sqrt(2), off_sign * marker_rad / Math.sqrt(2));
             ctx.fillText('SM', txt_u, txt_v);
         }
+
+        ctx.restore();
+
+       /**********************************
+        * Draw DTM marker
+        **********************************/
+        ctx.save();
+        ctx.lineWidth = 1;
+
+        var marker_rad = 3;
+
+        var off_sign;
+        ctx.strokeStyle = '#000000';
+        ctx.fillStyle = '#000000';
+
+        var [mkru, mkrv] = this.params['dtm_obs'];
+
+        ctx.beginPath();
+        var [tri_u, tri_v] = ctx.pixelOffset(mkru, mkrv, marker_rad, -marker_rad / Math.sqrt(3));
+        ctx.moveTo(tri_u, tri_v);
+        var [tri_u, tri_v] = ctx.pixelOffset(mkru, mkrv, -marker_rad, -marker_rad / Math.sqrt(3));
+        ctx.lineTo(tri_u, tri_v);
+        var [tri_u, tri_v] = ctx.pixelOffset(mkru, mkrv, 0, 2 * marker_rad / Math.sqrt(3));
+        ctx.lineTo(tri_u, tri_v);
+        var [tri_u, tri_v] = ctx.pixelOffset(mkru, mkrv, marker_rad, -marker_rad / Math.sqrt(3));
+        ctx.lineTo(tri_u, tri_v);
+        ctx.stroke();
+
+        ctx.textBaseline = 'alphabetic';
+        ctx.textAlign = 'right';
+        off_sign = -1;
+
+        var [txt_u, txt_v] = ctx.pixelOffset(mkru, mkrv, off_sign * marker_rad / Math.sqrt(2), off_sign * marker_rad / Math.sqrt(2));
+        ctx.fillText('DTM', txt_u, txt_v);
 
         ctx.restore();
 
