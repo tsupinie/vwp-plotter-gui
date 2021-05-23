@@ -563,16 +563,6 @@ class VWP {
     change_storm_motion(new_vec) {
         if (typeof new_vec == 'string') {
             this.sm_vec_str = new_vec.toLowerCase();
-
-            if (this.sm_vec_str == 'blm') {
-                this.sm_vec = this.params['bunkers_left'];
-            }
-            else if (this.sm_vec_str == 'brm') {
-                this.sm_vec = this.params['bunkers_right'];
-            }
-            else if (this.sm_vec_str == 'mean') {
-                this.sm_vec = this.params['bunkers_mean'];
-            }
         }
         else {
             var [wdir, wspd] = new_vec;
