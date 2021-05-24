@@ -28,13 +28,13 @@ class HodoPlot {
 
         this._tables = [
             {'rows': 4, 'cols': [2.2, 2.5], 'row_headers': ['0-500 m', '0-1 km', '0-3 km', '0-6 km'], 'row_header_weight': 2, 'col_headers': ['BWD (kts)', 'SRH (m\u{00b2}/s\u{00b2})']},
-            {'rows': 4, 'cols': [1], 'row_headers': ['Storm Motion:', 'Bunkers Left Mover:', 'Bunkers Right Mover:', 'Mean Wind:'], 'row_header_weight': 2.3},
+            {'rows': 5, 'cols': [1], 'row_headers': ['Storm Motion:', 'Bunkers Left Mover:', 'Bunkers Right Mover:', 'Mean Wind:', 'Dev. Tornado Motion:'], 'row_header_weight': 2.3},
             {'rows': 1, 'cols': 1, 'row_headers': ['Critical Angle:']}
         ];
 
         [this._contexts['table'], this._tab_spacer_ys] = this._generate_table_proxies(this._canvas, this._dpr);
 
-        var srwind_bbox_pixels = new BBox(470, 190, 608.36, 449.92);
+        var srwind_bbox_pixels = new BBox(470, 200, 608.36, 449.92);
         var srwind_bbox_data = new BBox(0, 0, 70, 12);
         this._contexts['srwind'] = Context2DWrapper.create_proxy(this._canvas, srwind_bbox_pixels, srwind_bbox_data, this._dpr);
 
@@ -442,7 +442,8 @@ class HodoPlot {
                 [format_vector_(vwp.sm_vec, 'kts')], 
                 [format_vector_(vwp.params['bunkers_left'], 'kts')], 
                 [format_vector_(vwp.params['bunkers_right'], 'kts')], 
-                [format_vector_(vwp.params['bunkers_mean'], 'kts')]
+                [format_vector_(vwp.params['bunkers_mean'], 'kts')],
+                [format_vector_(vwp.params['dtm_obs'], 'kts')]
             ],
             [
                 [format(vwp.params['ca'], '\u{00b0}')],
