@@ -5,6 +5,10 @@ const _home_svg = `<svg width="12" height="12" viewBox="15 12 70 70" xmlns="http
   <rect x="60" y="20" width="10" height="30"/>
 </svg>`;
 
+const _KEY_SPACEBAR = 32;
+const _KEY_LEFT_ARROW = 37;
+const _KEY_RIGHT_ARROW = 39;
+
 class VWPApp {
     constructor() {
         this.sfc = "None";
@@ -71,6 +75,23 @@ class VWPApp {
         $('#playpause').mouseup(this.animation_play_pause.bind(this));
         $('#refresh').mouseup(this.refresh.bind(this));
         $('#makegif').mouseup(this.make_gif.bind(this));
+
+        $(document).keydown(ev => {
+            switch(ev.which) {
+                case _KEY_SPACEBAR:
+                    this.animation_play_pause();
+                    break;
+                case _KEY_LEFT_ARROW:
+                    this.advance_frame(-1);
+                    break;
+                case _KEY_RIGHT_ARROW:
+                    this.advance_frame(1);
+                    break;
+
+                default: return;
+            }
+            ev.preventDefault();
+        });
     }
 
     select(event) {
@@ -150,7 +171,7 @@ class VWPApp {
 
             var dt_fmt = this._dt_fmt;
 
-            frames.reverse().forEach((function(frame) {
+            frames.reverse().forEach(frame => {
                 frame_list.append('<li data-datetime="' + frame['dt'].format(dt_fmt) + '">&nbsp;</li>');
                 var child = frame_list.children().last();
 
@@ -166,8 +187,37 @@ class VWPApp {
                 if (frame['status'] == 'active') {
                     child.addClass('frameactive');
                 }
-            }).bind(this));
+            });
         }
+    }
+
+    advance_frame(direction) {
+        let frame_list = $('#framelist');
+        let current_active = frame_list.find('.frameactive');
+
+        if (current_active.length == 0) {
+            return
+        }
+
+        let new_active = current_active;
+
+        do {
+            // These seem backwards because the list elements are in reverse chronological order (because float right)
+            if (direction > 0) {
+                new_active = new_active.prev();
+                if (new_active.length == 0) {
+                    new_active = frame_list.find('li').last();
+                }
+            }
+            else if (direction < 0) {
+                new_active = new_active.next();
+                if (new_active.length == 0) {
+                    new_active = frame_list.find('li').first();
+                }
+            }
+        } while (new_active.hasClass('framenotloaded'));
+
+        this.vwp_container.set_anim_time(moment.utc(new_active.attr('data-datetime')));
     }
 
     toggle_autoupdate() {
