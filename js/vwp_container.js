@@ -78,15 +78,17 @@ class VWPContainer {
             this._expected_new_frames = 0;
 
             // Load new frames
-            Array.from(this.frame_list.entries()).reverse().forEach((function([file_name, frame]) {
+            Array.from(this.frame_list.entries()).reverse().forEach(([file_name, frame]) => {
                 var id = file_name.substring(3);
                 var dt_str = frame['dt'].format(this._dt_fmt);
 
                 if (frame['status'] == 'notloaded') {
                     this._expected_new_frames++;
 
+                    const _debug_missing_frames = false;
+
                     console.log('Downloading vwp at ' + frame['dt'].format(this._dt_format));
-                    VWP.from_server(radar_id, id, (function(vwp) {
+                    VWP.from_server(radar_id, id, vwp => {
                         // Check to see if this is still the radar we're looking for (user might have changed it while we were waiting for data).
                         if (this._radar != vwp.radar_id) {
                             return;
@@ -129,9 +131,9 @@ class VWPContainer {
                             this._ui.refresh_circle_stop();
                         }
 
-                    }).bind(this));
+                    }, _debug_missing_frames && (file_name == this.frame_list.keys().next().value));
                 }
-            }).bind(this));
+            });
 
             // If there are no new frames, stop the animation refresh
             if (this._expected_new_frames == 0) {

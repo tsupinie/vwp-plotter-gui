@@ -632,7 +632,11 @@ class VWP {
         this.origin = origin;
     }
 
-    static from_server(radar_id, file_id, callback) {
+    static from_server(radar_id, file_id, callback, _delay_debug) {
+        if (_delay_debug === undefined) {
+            _delay_debug = false;
+        }
+
         var root_url = $('#root_url').val();
         var session_id = $('#session_id').val();
 
@@ -645,9 +649,16 @@ class VWP {
             url += '&id=' + file_id;
         }
 
-        $.getJSON(url, function(json) {
-            json['warnings'].forEach(function(warn) { console.warn(warn); });
-            callback(VWP.from_json(json['response']));
+        $.getJSON(url, json => {
+            json['warnings'].forEach(warn => console.warn(warn));
+            const vwp = VWP.from_json(json['response']);
+            if (_delay_debug) {
+                // Artificially delay calling the callback for debugging purposes
+                window.setTimeout(() => callback(vwp), 10000);
+            }
+            else {
+                callback(vwp);
+            }
         });
     }
 
