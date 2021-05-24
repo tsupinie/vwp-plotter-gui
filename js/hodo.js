@@ -148,13 +148,14 @@ class HodoPlot {
         else {
             var [wdir, wspd] = [null, null];
         }
+        this.selecting = false;
+
         this._done_callback(wspd, wdir);
 
         this._move_callback = null;
         this._done_callback = null;
 
         this._canvas.style.cursor = "pointer";
-        this.selecting = false;
     }
 
     screenshot(vwp, dpr) {
