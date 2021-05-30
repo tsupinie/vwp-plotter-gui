@@ -21,20 +21,21 @@ class HodoPlot {
         this._contexts['hodo_gr'] = Context2DWrapper.create_proxy(this._canvas, hodo_bbox_pixels, this._default_hodo_bbox_uv, this._dpr);
 
         this._tab_xlb = 455.92;
-        this._tab_xub = 608.36;
+        this._tab_xub = 658.36;
         this._tab_top = 17.92;
         this._tab_line_spacing = 12;
         this._tab_spacing = 5;
 
         this._tables = [
-            {'rows': 4, 'cols': [2.2, 2.5], 'row_headers': ['0-500 m', '0-1 km', '0-3 km', '0-6 km'], 'row_header_weight': 2, 'col_headers': ['BWD (kts)', 'SRH (m\u{00b2}/s\u{00b2})']},
-            {'rows': 5, 'cols': [1], 'row_headers': ['Storm Motion:', 'Bunkers Left Mover:', 'Bunkers Right Mover:', 'Mean Wind:', 'Dev. Tornado Motion:'], 'row_header_weight': 2.3},
+            {'rows': 4, 'cols': 3, 'row_headers': ['0-500 m', '0-1 km', '0-3 km', '0-6 km'], 'row_header_weight': 1, 
+                'col_headers': ['BWD\n(kts)', 'SR Flow\n(kts)', 'SRH\n(m\u{00b2}/s\u{00b2})'], 'col_header_weight': 2},
+            {'rows': 5, 'cols': [1], 'row_headers': ['Storm Motion:', 'Bunkers Left Mover:', 'Bunkers Right Mover:', 'Mean Wind:', 'Deviant Tornado Motion:'], 'row_header_weight': 2.3},
             {'rows': 1, 'cols': 1, 'row_headers': ['Critical Angle:']}
         ];
 
         [this._contexts['table'], this._tab_spacer_ys] = this._generate_table_proxies(this._canvas, this._dpr);
 
-        var srwind_bbox_pixels = new BBox(470, 200, 608.36, 449.92);
+        var srwind_bbox_pixels = new BBox(470, 210, 658.36, 449.92);
         var srwind_bbox_data = new BBox(0, 0, 70, 12);
         this._contexts['srwind'] = Context2DWrapper.create_proxy(this._canvas, srwind_bbox_pixels, srwind_bbox_data, this._dpr);
 
@@ -317,6 +318,16 @@ class HodoPlot {
         ctx = contexts['srwind'];
         var [lbs, lbz, ubs, ubz] = [ctx.bbox_data.lbx, ctx.bbox_data.lby, ctx.bbox_data.ubx, ctx.bbox_data.uby];
 
+        const peters_supercell_srw_cutoff = 19.44;
+        const peters_supercell_srw_depth = 2;
+
+        ctx.save();
+        ctx.fillStyle='#e9e9e9';
+        ctx.beginPath();
+        ctx.rect(peters_supercell_srw_cutoff, 0, ubs - peters_supercell_srw_cutoff, peters_supercell_srw_depth);
+        ctx.fill()
+        ctx.restore();
+
         ctx.save();
 
         ctx.beginPath();
@@ -434,9 +445,9 @@ class HodoPlot {
 
         let tab_data = [
             [
-                [format(vwp.params['bwd_0_500']), format(vwp.params['srh_0_500'])],
-                [format(vwp.params['bwd_0_1000']), format(vwp.params['srh_0_1000'])],
-                [format(vwp.params['bwd_0_3000']), format(vwp.params['srh_0_3000'])],
+                [format(vwp.params['bwd_0_500']), format(vwp.params['srmean_0_500']), format(vwp.params['srh_0_500'])],
+                [format(vwp.params['bwd_0_1000']), format(vwp.params['srmean_0_1000']), format(vwp.params['srh_0_1000'])],
+                [format(vwp.params['bwd_0_3000']), format(vwp.params['srmean_0_3000']), format(vwp.params['srh_0_3000'])],
                 [format(vwp.params['bwd_0_6000'])],
             ],
             [
@@ -466,7 +477,7 @@ class HodoPlot {
             tab_spacer_ys.push(tab_yub + this._tab_spacing / 2);
 
             let n_rows_tot = t['rows'];
-            if (t['col_headers'] !== undefined) { n_rows_tot++; }
+            if (t['col_headers'] !== undefined) { n_rows_tot += (t['col_header_weight'] === undefined ? 1 : 2); }
 
             tab_ylb = tab_yub + this._tab_spacing;
             tab_yub = tab_ylb + n_rows_tot * this._tab_line_spacing

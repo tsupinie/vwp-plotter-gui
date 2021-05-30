@@ -118,6 +118,24 @@ class VWP {
             this.sr_sfc_wind = Math.hypot(this.sr_sfc_u, this.sr_sfc_v);
         }
 
+        [0.5, 1, 2, 3].forEach(lyr_ub => {
+            let srmean;
+            let srwind = this.srwind.slice();
+            if (this.sr_sfc_wind !== null) {
+                srwind.unshift(this.sr_sfc_wind);
+            }
+
+            if (alt[0] < lyr_ub && alt[alt.length - 1] >= lyr_ub) {
+                srmean = profile_alt_mean(srwind, alt, alt[0], lyr_ub);
+            }
+            else {
+                srmean = NaN;
+            }
+
+            this.params['srmean_0_' + (lyr_ub * 1000)] = srmean;
+        });
+
+
         try {
             this.params['mean_0_300'] = mean_wind(u, v, alt, alt[0], 0.3);
         }
@@ -592,6 +610,21 @@ class VWP {
         }
         ctx.stroke();
 
+        ctx.restore();
+
+        ctx.save();
+        colors = ['#000000']; //'#ff00ff', '#ff0000', '#00ff00'];
+        [2].forEach((lyr_ub, ilyr) => {
+            const key = 'srmean_0_' + (lyr_ub * 1000);
+
+            ctx.setLineDash([4, 3]);
+            ctx.strokeStyle = colors[ilyr];
+
+            ctx.beginPath();
+            ctx.moveTo(this.params[key], 0);
+            ctx.lineTo(this.params[key], lyr_ub);
+            ctx.stroke()
+        });
         ctx.restore();
     }
 

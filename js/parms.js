@@ -62,48 +62,45 @@ function trapz(y, x, x1, x2) {
     return integ;
 }
 
-function mean_wind(u, v, alt, lyr_lb, lyr_ub) {
-//  var u_mean = trapz(u, alt, lyr_lb, lyr_ub) / (lyr_ub - lyr_lb);
-//  var v_mean = trapz(v, alt, lyr_lb, lyr_ub) / (lyr_ub - lyr_lb);
+function profile_alt_mean(prof, alt, lyr_lb, lyr_ub) {
+//  var prof_mean = trapz(prof, alt, lyr_lb, lyr_ub) / (lyr_ub - lyr_lb);
 
-    var u_sum = 0;
-    var v_sum = 0;
+    var prof_sum = 0;
     var pts = 0;
 
     var do_sum = false;
 
     for (var i = 1; i < alt.length; i++) {
         if (alt[i - 1] <= lyr_lb && lyr_lb < alt[i]) {
-            var u1 = linear_interp(lyr_lb, alt[i - 1], alt[i], u[i - 1], u[i]);
-            var v1 = linear_interp(lyr_lb, alt[i - 1], alt[i], v[i - 1], v[i]);
+            var v1 = linear_interp(lyr_lb, alt[i - 1], alt[i], prof[i - 1], prof[i]);
 
-            u_sum += u1;
-            v_sum += v1;
+            prof_sum += v1;
             pts += 1
 
             do_sum = true;
         }
 
         if (alt[i - 1] < lyr_ub && lyr_ub <= alt[i]) {
-            var u2 = linear_interp(lyr_ub, alt[i - 1], alt[i], u[i - 1], u[i]);
-            var v2 = linear_interp(lyr_ub, alt[i - 1], alt[i], v[i - 1], v[i]);
+            var v2 = linear_interp(lyr_ub, alt[i - 1], alt[i], prof[i - 1], prof[i]);
 
-            u_sum += u2;
-            v_sum += v2;
+            prof_sum += v2;
             pts += 1
 
             break;
         }
 
         if (do_sum) {
-            u_sum += u[i];
-            v_sum += v[i];
+            prof_sum += prof[i];
             pts += 1
         }
     }
 
-    var u_mean = u_sum / pts;
-    var v_mean = v_sum / pts;
+    return prof_sum / pts;
+}
+
+function mean_wind(u, v, alt, lyr_lb, lyr_ub) {
+    const u_mean = profile_alt_mean(u, alt, lyr_lb, lyr_ub);
+    const v_mean = profile_alt_mean(v, alt, lyr_lb, lyr_ub);
 
     return [u_mean, v_mean];
 }

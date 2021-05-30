@@ -85,7 +85,7 @@ $session_id = md5("{$session_time}{$session_source}");
     </div>
   </div>
   <div id="hododiv">
-    <canvas id="hodo" width=620 height=465></canvas>
+    <canvas id="hodo" width=670 height=465></canvas>
     <div id="animcontrols">
       <p id="makegif", class='selectable needhelp '>GIF<span class='help helptop'>Create Animated GIF</span></p>
       <p id="animspdup", class='selectable needhelp '>+<span class='help helptop'>Animation Speed Up</span></p>

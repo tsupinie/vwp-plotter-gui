@@ -91,7 +91,29 @@ class Context2DWrapper {
 
     fillText(ctx, str, x_data, y_data) {
         var [x, y] = this.data_to_pix(ctx, x_data, y_data);
-        ctx.fillText(str, x, y);
+
+        str = str + "";
+
+        const n_lines = (str.match(/\n/g) || []).length + 1
+        const line_height = ctx.measureText('M').width * 1.2;
+
+        let y_pos;
+
+        if (ctx.textBaseline == 'top' || ctx.textBaseline == 'hanging') {
+            y_pos = y;
+        }
+        else if (ctx.textBaseline == 'middle') {
+            y_pos = y - (n_lines - 1) * line_height / 2;
+        }
+        else if (ctx.textBaseline == 'bottom' || ctx.textBaseline == 'alphabetic') {
+            y_pos = y - (n_lines - 1) * line_height;
+        }
+
+        str.split("\n").forEach(line => {
+            ctx.fillText(line, x, y_pos);
+            y_pos += line_height;
+        });
+
     }
 
     setLineDash(ctx, segments) {
