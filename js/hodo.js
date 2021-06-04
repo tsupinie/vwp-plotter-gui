@@ -16,7 +16,7 @@ class HodoPlot {
 
         this._default_hodo_bbox_uv = new BBox(-40, -40, 80, 80);
 
-        var hodo_bbox_pixels = new BBox(16.64, 17.92, 449.28, 449.92);
+        var hodo_bbox_pixels = new BBox(17.28, 17.92, 449.28, 449.92);
         this._contexts['hodo'] = Context2DWrapper.create_proxy(this._canvas, hodo_bbox_pixels, this._default_hodo_bbox_uv, this._dpr);
         this._contexts['hodo_gr'] = Context2DWrapper.create_proxy(this._canvas, hodo_bbox_pixels, this._default_hodo_bbox_uv, this._dpr);
 

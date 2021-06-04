@@ -416,12 +416,21 @@ class VWPContainer {
             this._hodo.reset();
         }
         else {
-            var bbox = bboxes.reduce(BBox.union);
+            const bbox = bboxes.reduce(BBox.union);
             if (bbox.lbx === undefined || bbox.ubx === undefined || bbox.lby === undefined || bbox.uby === undefined) {
                 this._hodo.reset();
             }
             else {
-                this._hodo.set_bbox(bbox);
+                const ctr_u = (bbox.lbx + bbox.ubx) / 2;
+                const ctr_v = (bbox.lby + bbox.uby) / 2;
+
+                const side = Math.max(bbox.ubx - bbox.lbx, bbox.uby - bbox.lby);
+                const min_u = ctr_u - side / 2;
+                const min_v = ctr_v - side / 2;
+                const max_u = ctr_u + side / 2;
+                const max_v = ctr_v + side / 2;
+
+                this._hodo.set_bbox(new BBox(min_u, min_v, max_u, max_v));
             }
         }
     }
