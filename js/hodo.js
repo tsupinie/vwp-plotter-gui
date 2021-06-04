@@ -27,10 +27,10 @@ class HodoPlot {
         this._tab_spacing = 5;
 
         this._tables = [
-            {'rows': 4, 'cols': 3, 'row_headers': ['0-500 m', '0-1 km', '0-3 km', '0-6 km'], 'row_header_weight': 1, 
-                'col_headers': ['BWD\n(kts)', 'SR Flow\n(kts)', 'SRH\n(m\u{00b2}/s\u{00b2})'], 'col_header_weight': 2},
-            {'rows': 5, 'cols': [1], 'row_headers': ['Storm Motion:', 'Bunkers Left Mover:', 'Bunkers Right Mover:', 'Mean Wind:', 'Deviant Tornado Motion:'], 'row_header_weight': 2.3},
-            {'rows': 1, 'cols': 1, 'row_headers': ['Critical Angle:']}
+            {'rows': 4, 'cols': [1, 1, 1.4, 1], 'row_headers': ['0-500 m', '0-1 km', '0-3 km', '0-6 km'], 'row_header_weight': 1.5,
+                'col_headers': ['BWD\n(kts)', 'LNBS\n(kts)', 'SR Flow\n(kts)', 'SRH\n(m\u{00b2}/s\u{00b2})'], 'col_header_weight': 2},
+            {'rows': 5, 'cols': [1], 'row_headers': ['Storm Motion:', 'Bunkers Left Mover:', 'Bunkers Right Mover:', 'Mean Wind:', 'Deviant Tornado Motion:'], 'row_header_weight': 3},
+            {'rows': 1, 'cols': 1, 'row_headers': ['Critical Angle:'], 'row_header_weight': 3}
         ];
 
         [this._contexts['table'], this._tab_spacer_ys] = this._generate_table_proxies(this._canvas, this._dpr);
@@ -468,10 +468,10 @@ class HodoPlot {
 
         let tab_data = [
             [
-                [format(vwp.params['bwd_0_500']), format(vwp.params['srmean_0_500']), format(vwp.params['srh_0_500'])],
-                [format(vwp.params['bwd_0_1000']), format(vwp.params['srmean_0_1000']), format(vwp.params['srh_0_1000'])],
-                [format(vwp.params['bwd_0_3000']), format(vwp.params['srmean_0_3000']), format(vwp.params['srh_0_3000'])],
-                [format(vwp.params['bwd_0_6000'])],
+                [format(Math.hypot.apply(null, vwp.params['bwd_0_500'])), format(vwp.params['xbdy_bwd_0_500']), format(vwp.params['srmean_0_500']), format(vwp.params['srh_0_500'])],
+                [format(Math.hypot.apply(null, vwp.params['bwd_0_1000'])), format(vwp.params['xbdy_bwd_0_1000']), format(vwp.params['srmean_0_1000']), format(vwp.params['srh_0_1000'])],
+                [format(Math.hypot.apply(null, vwp.params['bwd_0_3000'])), format(vwp.params['xbdy_bwd_0_3000']), format(vwp.params['srmean_0_3000']), format(vwp.params['srh_0_3000'])],
+                [format(Math.hypot.apply(null, vwp.params['bwd_0_6000']))],
             ],
             [
                 [format_vector_(vwp.sm_vec, 'kts')], 

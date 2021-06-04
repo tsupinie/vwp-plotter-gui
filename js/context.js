@@ -89,6 +89,21 @@ class Context2DWrapper {
         ctx.rect(lbx, lby, ubx - lbx, uby - lby);
     }
 
+    translate(ctx, u_data, v_data) {
+        var [x_data, y_data] = this.data_to_pix(ctx, u_data, v_data);
+        var [x_org, y_org] = this.data_to_pix(ctx, 0, 0);
+
+        ctx.translate(x_data - x_org, y_data - y_org);
+    }
+
+    rotate(ctx, angle) {
+        var [x_org, y_org] = this.data_to_pix(ctx, 0, 0);
+
+        ctx.translate(x_org, y_org);
+        ctx.rotate(angle);
+        ctx.translate(-x_org, -y_org);
+    }
+
     fillText(ctx, str, x_data, y_data) {
         var [x, y] = this.data_to_pix(ctx, x_data, y_data);
 

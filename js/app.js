@@ -117,7 +117,7 @@ class VWPApp {
             help.style.left = target_pos.x + 70;
             help.style.top = target_pos.y;
 
-            var vector_callback = (function(wspd, wdir) {
+            var vector_callback = (wspd, wdir) => {
                 if (wspd !== null && wdir !== null) {
                     var vec_str = format_vector(wdir, wspd);
                 }
@@ -127,9 +127,9 @@ class VWPApp {
 
                 var txt = document.createTextNode(vec_str);
                 target.replaceChild(txt, target.childNodes[0]);
-            }).bind(this);
+            };
 
-            var done_callback = (function(wspd, wdir) {
+            var done_callback = (wspd, wdir) => {
                 if (wdir !== null && wspd !== null) {
                     this._update_state(target, [wdir, wspd]);
                 }
@@ -143,7 +143,7 @@ class VWPApp {
                 help.style.offsetTop = 0;
                 help.style.left = 0;
                 help.style.top = 0;
-            }).bind(this);
+            };
 
             if (this.vwp_container.is_animating) {
                 this.vwp_container.pause_animation(true);
@@ -384,6 +384,9 @@ class VWPApp {
         }
         else if (obj.parentElement.parentElement.id == "orgsel") {
             this.vwp_container.change_origin(val.toLowerCase());
+        }
+        else if (obj.parentElement.parentElement.id == "bdysel") {
+            this.vwp_container.change_boundary(val);
         }
         else if (obj.parentElement.parentElement.id == "mapdiv") {
             this.radars.set_type(val)

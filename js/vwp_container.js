@@ -17,6 +17,8 @@ class VWPContainer {
 
         this._origin = 'ground';
 
+        this._boundary = null;
+
         // TODO: These might not need to be instance variables (only local to check_file_times), but I'm confused about Javascript variable scoping ...
         this._expected_new_frames = 0;
         this._new_frames_loaded = 0;
@@ -105,6 +107,7 @@ class VWPContainer {
                         frame['data'] = vwp;
 
                         this.change_surface_wind(this._surface_wind);
+                        this.change_boundary(this._boundary);
                         this._update_ui_origin_selection();
                         this._update_hodo_bbox();
 
@@ -380,7 +383,18 @@ class VWPContainer {
         this._update_hodo_bbox();
         this.draw_active_frame();
     }
- 
+
+    change_boundary(new_vec) {
+        this.frame_list.forEach(frame => {
+            if (frame['status'] != 'notloaded') {
+                frame['data'].change_boundary(new_vec);
+            }
+        });
+
+        this._boundary = new_vec;
+        this.draw_active_frame();
+    }
+
     draw_active_frame() {
         if (this.frame_list.size > 0) {
             var frame = Array.from(this.frame_list.values()).find(f => f['status'] == 'active');

@@ -23,6 +23,7 @@ class VWP {
         this.sm_vec = null;
         this.sfc_wind = null;
         this.origin = 'ground';
+        this.boundary = null;
 
         this._compute_parameters();
     }
@@ -72,7 +73,7 @@ class VWP {
                 var [shr_u, shr_v] = [NaN, NaN];
             }
 
-            this.params['bwd_0_' + (lyr_ub * 1000)] = Math.hypot(shr_u, shr_v);
+            this.params['bwd_0_' + (lyr_ub * 1000)] = [shr_u, shr_v];
         });
 
         [0.5, 1, 3].forEach(lyr_ub => {
@@ -158,6 +159,19 @@ class VWP {
         var [smu, smv] = storm_motions['right'];
         var [mwu, mwv] = this.params['mean_0_300'];
         this.params['dtm_b2k'] = [(smu + mwu) / 2, (smv + mwv) / 2];
+
+        [0.5, 1, 3].forEach(lyr_ub => {
+            if (this.boundary === null) {
+                this.params['xbdy_bwd_0_' + (lyr_ub * 1000)] = NaN;
+            }
+            else {
+                const [bdy_u, bdy_v] = this.boundary;
+                const [bwd_u, bwd_v] = this.params['bwd_0_' + (lyr_ub * 1000)];
+
+                const [bdy_dir, bdy_mag] = comp2vec(bdy_u, bdy_v);
+                this.params['xbdy_bwd_0_' + (lyr_ub * 1000)] = bdy_u / bdy_mag * bwd_u + bdy_v / bdy_mag * bwd_v;
+            }
+        });
     }
 
     has_sm_vec() {
@@ -508,6 +522,111 @@ class VWP {
         }
 
        /**********************************
+        * Draw boundary
+        **********************************/
+        if (this.boundary !== null) {
+            let [bdy_u, bdy_v] = this.boundary;
+            let [bdy_u_org, bdy_v_org] = [bdy_u, bdy_v];
+
+            if (this.origin == 'storm') {
+                let [smu, smv] = this.sm_vec;
+                bdy_u_org -= smu;
+                bdy_v_org -= smv;
+            }
+
+            const [bdy_dir, bdy_mag] = comp2vec(bdy_u, bdy_v);
+            const bdy_u_dot = -bdy_v / bdy_mag;
+            const bdy_v_dot = bdy_u / bdy_mag;
+            let alpha_lb, alpha_ub;
+            let degenerate = false;
+
+            if (Math.abs(bdy_u_dot) == 0) {
+                if (Math.abs(bdy_v_dot) == 0) {
+                    degenerate = true;
+                }
+                else {
+                    alpha_lb = (lbv - bdy_v_org) / bdy_v_dot;
+                    alpha_ub = (ubv - bdy_v_org) / bdy_v_dot;
+                }
+            }
+            else if (Math.abs(bdy_v_dot) == 0) {
+                alpha_lb = (lbu - bdy_u_org) / bdy_u_dot;
+                alpha_ub = (ubu - bdy_u_org) / bdy_u_dot;
+            }
+            else {
+                let alu_lb = (lbu - bdy_u_org) / bdy_u_dot;
+                let alv_lb = (lbv - bdy_v_org) / bdy_v_dot;
+                let alu_ub = (ubu - bdy_u_org) / bdy_u_dot;
+                let alv_ub = (ubv - bdy_v_org) / bdy_v_dot;
+
+                if (alu_lb > alu_ub) [alu_lb, alu_ub] = [alu_ub, alu_lb];
+                if (alv_lb > alv_ub) [alv_lb, alv_ub] = [alv_ub, alv_lb];
+
+                alpha_lb = Math.max(alu_lb, alv_lb);
+                alpha_ub = Math.min(alu_ub, alv_ub);
+            }
+
+            let bdy_lbu, bdy_ubu, bdy_lbv, bdy_ubv;
+            let annot_u, annot_v;
+
+            if (degenerate) {
+                bdy_lbu = 0;
+                bdy_ubu = 0;
+                bdy_lbv = lbv;
+                bdy_ubv = ubv;
+
+                annot_u = 0;
+                annot_v = lbv + (ubv - lbv) * 0.05
+            }
+            else {
+                bdy_lbu = bdy_u_org + alpha_lb * bdy_u_dot;
+                bdy_ubu = bdy_u_org + alpha_ub * bdy_u_dot;
+                bdy_lbv = bdy_v_org + alpha_lb * bdy_v_dot;
+                bdy_ubv = bdy_v_org + alpha_ub * bdy_v_dot;
+
+                annot_u = bdy_u_org + 0.9 * alpha_lb * bdy_u_dot
+                annot_v = bdy_v_org + 0.9 * alpha_lb * bdy_v_dot
+            }
+
+            const vec_pix_mag = 40;
+            const arrow_pix_size = 8;
+
+            ctx.save();
+
+            ctx.strokeStyle = "#666666";
+            ctx.fillStyle = "#666666";
+
+            ctx.beginPath();
+            ctx.moveTo(bdy_lbu, bdy_lbv);
+            ctx.lineTo(bdy_ubu, bdy_ubv);
+            ctx.stroke();
+
+            ctx.save();
+            ctx.translate(annot_u, annot_v);
+
+            let txt_u, txt_v;
+            if (bdy_dir > 90 && bdy_dir <= 270) {
+                ctx.rotate((bdy_dir + 180) * Math.PI / 180);
+                [txt_u, txt_v] = ctx.pixelOffset(0, 0, 0, 1);
+                ctx.textBaseline = "top";
+                ctx.textAlign = "right";
+            }
+            else {
+                ctx.rotate(bdy_dir * Math.PI / 180);
+                [txt_u, txt_v] = ctx.pixelOffset(0, 0, 0, -3);
+                ctx.textBaseline = "alphabetic";
+                ctx.textAlign = "left";
+            }
+            ctx.fillText('QLCS: ' + format_vector(bdy_dir, bdy_mag, 'kts'), txt_u, txt_v);
+            ctx.restore();
+
+            ctx.strokeStyle = "#333333";
+            ctx.fillStyle = "#333333";
+
+            ctx.restore();
+        }
+
+       /**********************************
         * Draw height markers
         **********************************/
         ctx.save()
@@ -664,6 +783,17 @@ class VWP {
 
     change_origin(origin) {
         this.origin = origin;
+    }
+
+    change_boundary(new_vec) {
+        if (new_vec !== null) {
+            let [bdy_dir, bdy_spd] = new_vec;
+            this.boundary = vec2comp(bdy_dir, bdy_spd);
+        }
+        else {
+            this.boundary = new_vec;
+        }
+        this._compute_parameters();
     }
 
     static from_server(radar_id, file_id, callback, _delay_debug) {

@@ -53,6 +53,14 @@ $session_id = md5("{$session_time}{$session_source}");
       <p>Radar:</p>
     </div>
 
+    <div id="orgsel">
+      <p>Origin:</p>
+      <ul class="toggle-list">
+        <li id='gr_origin' class="selectable selected needhelp">Ground<span class="help helptop">Ground-Relative Hodograph</span></li>
+        <li id='sr_origin' class="selectable grayout needhelp">Storm<span class="help helptop">Storm-Relative Hodograph</span></li>
+      </ul>
+    </div>
+
     <div id="smsel">
       <p>Storm Motion:</p>
       <ul class="toggle-list">
@@ -63,11 +71,11 @@ $session_id = md5("{$session_time}{$session_source}");
       </ul>
     </div>
 
-    <div id="orgsel">
-      <p>Origin:</p>
+    <div id="bdysel">
+      <p>QLCS Motion:</p>
       <ul class="toggle-list">
-        <li id='gr_origin' class="selectable selected needhelp">Ground<span class="help helptop">Ground-Relative Hodograph</span></li>
-        <li id='sr_origin' class="selectable grayout needhelp">Storm<span class="help helptop">Storm-Relative Hodograph</span></li>
+        <li class="selectable selected needhelp">None<span class="help helptop">No Boundary</span></li>
+        <li class="selectable needhelp">DDD/SS<span class="help helptop">Select From Hodograph</span></li>
       </ul>
     </div>
 
