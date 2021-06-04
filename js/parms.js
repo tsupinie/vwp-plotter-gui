@@ -63,8 +63,10 @@ function trapz(y, x, x1, x2) {
 }
 
 function profile_alt_mean(prof, alt, lyr_lb, lyr_ub) {
-//  var prof_mean = trapz(prof, alt, lyr_lb, lyr_ub) / (lyr_ub - lyr_lb);
+    var prof_mean = trapz(prof, alt, lyr_lb, lyr_ub) / (lyr_ub - lyr_lb);
+    return prof_mean;
 
+/*
     var prof_sum = 0;
     var pts = 0;
 
@@ -96,6 +98,7 @@ function profile_alt_mean(prof, alt, lyr_lb, lyr_ub) {
     }
 
     return prof_sum / pts;
+*/
 }
 
 function mean_wind(u, v, alt, lyr_lb, lyr_ub) {
@@ -134,22 +137,28 @@ function wind_shear(u, v, alt, lyr_lb, lyr_ub) {
 function storm_motion(u, v, alt) {
     // Uses the Bunkers (2000) method
 
-    var lyr = 6;
-    var dev = 7.5 * 1.94 // Deviation value emperically derived as 7.5 m/s
+    const lyr = 6;
+    const dev = 7.5 * 1.94 // Deviation value emperically derived as 7.5 m/s
+
+    let u_shr, v_shr, u_mean, v_mean;
 
     try {
-        var [u_mean, v_mean] = mean_wind(u, v, alt, alt[0], lyr);
-        var [u_shr, v_shr] = wind_shear(u, v, alt, alt[0], lyr);
+        [u_mean, v_mean] = mean_wind(u, v, alt, alt[0], lyr);
+        const [u_tail, v_tail] = mean_wind(u, v, alt, alt[0], 0.5);
+        const [u_tip, v_tip] = mean_wind(u, v, alt, 5.5, 6);
+
+        u_shr = u_tip - u_tail;
+        v_shr = v_tip - v_tail;
     }
     catch (err) {
         return {'left': [NaN, NaN], 'right': [NaN, NaN], 'mean': [NaN, NaN]};
     }
 
-    var tmp = dev / Math.hypot(u_shr, v_shr);
-    var rstu = u_mean + tmp * v_shr;
-    var rstv = v_mean - tmp * u_shr;
-    var lstu = u_mean - tmp * v_shr;
-    var lstv = v_mean + tmp * u_shr;
+    const tmp = dev / Math.hypot(u_shr, v_shr);
+    const rstu = u_mean + tmp * v_shr;
+    const rstv = v_mean - tmp * u_shr;
+    const lstu = u_mean - tmp * v_shr;
+    const lstv = v_mean + tmp * u_shr;
 
     return {'left':[lstu, lstv], 'right':[rstu, rstv], 'mean':[u_mean, v_mean]};
 }
