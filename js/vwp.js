@@ -118,23 +118,24 @@ class VWP {
             this.sr_sfc_wind = Math.hypot(this.sr_sfc_u, this.sr_sfc_v);
         }
 
-        [0.5, 1, 2, 3].forEach(lyr_ub => {
+        [[0, 0.5], [0, 1], [0, 2], [0, 3], [4, 6], [9, 11]].forEach(([lyr_lb, lyr_ub]) => {
             let srmean;
             let srwind = this.srwind.slice();
+            const lyr_lb_interp = Math.max(lyr_lb, alt[0]);
+
             if (this.sr_sfc_wind !== null) {
                 srwind.unshift(this.sr_sfc_wind);
             }
 
-            if (alt[0] < lyr_ub && alt[alt.length - 1] >= lyr_ub) {
-                srmean = profile_alt_mean(srwind, alt, alt[0], lyr_ub);
+            if (lyr_lb_interp < lyr_ub && alt[alt.length - 1] >= lyr_ub) {
+                srmean = profile_alt_mean(srwind, alt, lyr_lb_interp, lyr_ub);
             }
             else {
                 srmean = NaN;
             }
 
-            this.params['srmean_0_' + (lyr_ub * 1000)] = srmean;
+            this.params['srmean_' + (lyr_lb * 1000) + '_' + (lyr_ub * 1000)] = srmean;
         });
-
 
         try {
             this.params['mean_0_300'] = mean_wind(u, v, alt, alt[0], 0.3);
@@ -613,15 +614,15 @@ class VWP {
         ctx.restore();
 
         ctx.save();
-        colors = ['#000000']; //'#ff00ff', '#ff0000', '#00ff00'];
-        [2].forEach((lyr_ub, ilyr) => {
-            const key = 'srmean_0_' + (lyr_ub * 1000);
+        let color = '#000000'; //'#ff00ff', '#ff0000', '#00ff00'];
+        [[0, 2], [4, 6], [9, 11]].forEach(([lyr_lb, lyr_ub]) => {
+            const key = 'srmean_' + (lyr_lb * 1000) + '_' + (lyr_ub * 1000);
 
             ctx.setLineDash([4, 3]);
-            ctx.strokeStyle = colors[ilyr];
+            ctx.strokeStyle = color;
 
             ctx.beginPath();
-            ctx.moveTo(this.params[key], 0);
+            ctx.moveTo(this.params[key], lyr_lb);
             ctx.lineTo(this.params[key], lyr_ub);
             ctx.stroke()
         });

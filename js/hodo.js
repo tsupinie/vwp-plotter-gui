@@ -326,6 +326,29 @@ class HodoPlot {
         ctx.beginPath();
         ctx.rect(peters_supercell_srw_cutoff, 0, ubs - peters_supercell_srw_cutoff, peters_supercell_srw_depth);
         ctx.fill()
+
+        ctx.fillStyle = '#aaaaaa';
+        ctx.textBaseline = 'middle';
+        ctx.textAlign = 'center';
+        ctx.font = '10px Trebuchet MS';
+        ctx.fillText('Peters et al. (2020)\nSupercell', (peters_supercell_srw_cutoff + ubs) / 2, peters_supercell_srw_depth / 2);
+        ctx.restore();
+
+        const classic_supercell_srw_cutoff = 40;
+        const classic_supercell_srw_zlb = 9;
+        const classic_supercell_srw_zub = 11;
+
+        ctx.save();
+        ctx.fillStyle='#e9e9e9';
+        ctx.beginPath();
+        ctx.rect(classic_supercell_srw_cutoff, classic_supercell_srw_zlb, ubs - classic_supercell_srw_cutoff, classic_supercell_srw_zub - classic_supercell_srw_zlb);
+        ctx.fill()
+
+        ctx.fillStyle = '#aaaaaa';
+        ctx.textBaseline = 'middle';
+        ctx.textAlign = 'center';
+        ctx.font = '10px Trebuchet MS';
+        ctx.fillText('Classic\nSupercell', (classic_supercell_srw_cutoff + ubs) / 2, (classic_supercell_srw_zlb + classic_supercell_srw_zub) / 2);
         ctx.restore();
 
         ctx.save();
