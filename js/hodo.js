@@ -44,6 +44,8 @@ class HodoPlot {
         this._move_callback = null;
         this._done_callback = null;
         this.selecting = false;
+        this._selection_anim_bg = null;
+        this._need_anim_bg = false;
 
         this._canvas.onmousemove = this.mousemove.bind(this);
         this._canvas.onmouseup = this.mouseclick.bind(this);
@@ -83,11 +85,18 @@ class HodoPlot {
         else {
             this._clear_and_draw_background(this._canvas, this._contexts, this._dpr);
         }
+
+        if (this._need_anim_bg) {
+            this._selection_anim_bg = new Image();
+            this._selection_anim_bg.src = this._canvas.toDataURL();
+
+            this._need_anim_bg = false;
+        }
     }
 
     mousemove(event) {
-        var mx = event.pageX - this._canvas.offsetLeft;
-        var my = event.pageY - this._canvas.offsetTop;
+        const mx = event.pageX - this._canvas.offsetLeft;
+        const my = event.pageY - this._canvas.offsetTop;
 
         if (this._move_callback === null) {
             if (this._contexts['hodo'].bbox_pixels.contains(mx, my)) {
@@ -98,24 +107,31 @@ class HodoPlot {
             }
         }
         else {
-            var [u, v] = this._contexts['hodo_gr'].pix_to_data(mx * this._dpr, my * this._dpr);
+            const [u, v] = this._contexts['hodo_gr'].pix_to_data(mx * this._dpr, my * this._dpr);
+
+            let ctx_raw = this._canvas.getContext('2d');
+            ctx_raw.beginPath();
+            ctx_raw.rect(0, 0, this._canvas.width, this._canvas.height);
+            ctx_raw.fillStyle='#ffffff';
+            ctx_raw.fill();
+
+            ctx_raw.drawImage(this._selection_anim_bg, 0, 0);
 
             if (this._contexts['hodo_gr'].bbox_data.contains(u, v)) {
                 hodo.style.cursor = "crosshair";
-                var [wdir, wspd] = comp2vec(u, v);
-                this._move_callback(wspd, wdir);
-
+                const [wdir, wspd] = comp2vec(u, v);
+                this._move_callback(wspd, wdir, this._contexts['hodo_gr']);
             }
             else {
                 hodo.style.cursor = "default";
-                this._move_callback(null, null);
+                this._move_callback(null, null, null);
             }
         }
     }
 
     mouseclick(event) {
-        var mx = event.pageX - hodo.offsetLeft;
-        var my = event.pageY - hodo.offsetTop;
+        const mx = event.pageX - hodo.offsetLeft;
+        const my = event.pageY - hodo.offsetTop;
 
         if (this._move_callback === null) {
             if (this._contexts['hodo'].bbox_pixels.contains(mx, my)) {
@@ -131,7 +147,7 @@ class HodoPlot {
 
     mouseleave(event) {
         if (this._move_callback !== null) {
-            this._move_callback(null, null);
+            this._move_callback(null, null, null);
         }
     }
 
@@ -139,6 +155,7 @@ class HodoPlot {
         this._move_callback = move_callback;
         this._done_callback = done_callback;
         this.selecting = true;
+        this._need_anim_bg = true;
     }
 
     selection_finish(mx, my) {
@@ -155,6 +172,7 @@ class HodoPlot {
 
         this._move_callback = null;
         this._done_callback = null;
+        this._selection_anim_bg = null;
 
         this._canvas.style.cursor = "pointer";
     }

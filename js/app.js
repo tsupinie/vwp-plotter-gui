@@ -95,7 +95,7 @@ class VWPApp {
     }
 
     select(event) {
-        var target = event.target;
+        const target = event.target;
 
         if (target.classList.contains("grayout")) {
             return;
@@ -107,29 +107,56 @@ class VWPApp {
 
         if (target.vector_select) {
             this.prev_selection = this._select_box(target);
-            var help = document.getElementById("selecthelp");
+            let help = document.getElementById("selecthelp");
 
             help.style.visibility = "visible";
-            var target_pos = _page_pos(target);
+            let target_pos = _page_pos(target);
 
             help.style.offsetLeft = target_pos.x + 70;
             help.style.offsetTop = target_pos.y;
             help.style.left = target_pos.x + 70;
             help.style.top = target_pos.y;
 
-            var vector_callback = (wspd, wdir) => {
+            const vector_callback = (wspd, wdir) => {
+                let vec_str;
+
                 if (wspd !== null && wdir !== null) {
-                    var vec_str = format_vector(wdir, wspd);
+                    vec_str = format_vector(wdir, wspd);
                 }
                 else {
-                    var vec_str = "DDD/SS";
+                    vec_str = "DDD/SS";
                 }
 
-                var txt = document.createTextNode(vec_str);
+                const txt = document.createTextNode(vec_str);
                 target.replaceChild(txt, target.childNodes[0]);
             };
 
-            var done_callback = (wspd, wdir) => {
+            const vector_callback_boundary = (wspd, wdir, ctx) => {
+                let vec_str;
+
+                if (wspd !== null && wdir !== null) {
+                    vec_str = format_vector(wdir, wspd);
+
+                    const [[bdy_lbu, bdy_lbv], [bdy_ubu, bdy_ubv]] = compute_boundary_segment(ctx.bbox_data, vec2comp(wdir, wspd));
+                    ctx.save();
+
+                    ctx.lineWidth = 0.5;
+                    ctx.strokeStyle = '#666666';
+                    ctx.moveTo(bdy_lbu, bdy_lbv);
+                    ctx.lineTo(bdy_ubu, bdy_ubv);
+                    ctx.stroke();
+
+                    ctx.restore();
+                }
+                else {
+                    vec_str = "DDD/SS";
+                }
+
+                const txt = document.createTextNode(vec_str);
+                target.replaceChild(txt, target.childNodes[0]);
+            };
+
+            const done_callback = (wspd, wdir) => {
                 if (wdir !== null && wspd !== null) {
                     this._update_state(target, [wdir, wspd]);
                 }
@@ -148,7 +175,12 @@ class VWPApp {
             if (this.vwp_container.is_animating) {
                 this.vwp_container.pause_animation(true);
             }
-            this.hodo.selection_start(vector_callback, done_callback);
+            if (target.parentElement.parentElement.id == "bdysel") {
+                this.hodo.selection_start(vector_callback_boundary, done_callback);
+            }
+            else {
+                this.hodo.selection_start(vector_callback, done_callback);
+            }
             this.vwp_container.draw_active_frame();
         }
         else {

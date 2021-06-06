@@ -525,71 +525,27 @@ class VWP {
         * Draw boundary
         **********************************/
         if (this.boundary !== null) {
-            let [bdy_u, bdy_v] = this.boundary;
-            let [bdy_u_org, bdy_v_org] = [bdy_u, bdy_v];
+
+            let bbox = ctx.bbox_data;
+            const [smu, smv] = this.sm_vec;
 
             if (this.origin == 'storm') {
-                let [smu, smv] = this.sm_vec;
-                bdy_u_org -= smu;
-                bdy_v_org -= smv;
+                bbox = bbox.translate(smu, smv);
             }
 
+            const [bdy_u, bdy_v] = this.boundary;
             const [bdy_dir, bdy_mag] = comp2vec(bdy_u, bdy_v);
-            const bdy_u_dot = -bdy_v / bdy_mag;
-            const bdy_v_dot = bdy_u / bdy_mag;
-            let alpha_lb, alpha_ub;
-            let degenerate = false;
 
-            if (Math.abs(bdy_u_dot) == 0) {
-                if (Math.abs(bdy_v_dot) == 0) {
-                    degenerate = true;
-                }
-                else {
-                    alpha_lb = (lbv - bdy_v_org) / bdy_v_dot;
-                    alpha_ub = (ubv - bdy_v_org) / bdy_v_dot;
-                }
-            }
-            else if (Math.abs(bdy_v_dot) == 0) {
-                alpha_lb = (lbu - bdy_u_org) / bdy_u_dot;
-                alpha_ub = (ubu - bdy_u_org) / bdy_u_dot;
-            }
-            else {
-                let alu_lb = (lbu - bdy_u_org) / bdy_u_dot;
-                let alv_lb = (lbv - bdy_v_org) / bdy_v_dot;
-                let alu_ub = (ubu - bdy_u_org) / bdy_u_dot;
-                let alv_ub = (ubv - bdy_v_org) / bdy_v_dot;
-
-                if (alu_lb > alu_ub) [alu_lb, alu_ub] = [alu_ub, alu_lb];
-                if (alv_lb > alv_ub) [alv_lb, alv_ub] = [alv_ub, alv_lb];
-
-                alpha_lb = Math.max(alu_lb, alv_lb);
-                alpha_ub = Math.min(alu_ub, alv_ub);
+            let [[bdy_lbu, bdy_lbv], [bdy_ubu, bdy_ubv]] = compute_boundary_segment(bbox, this.boundary);
+            if (this.origin == 'storm') {
+                bdy_lbu -= smu;
+                bdy_lbv -= smv;
+                bdy_ubu -= smu;
+                bdy_ubv -= smv;
             }
 
-            let bdy_lbu, bdy_ubu, bdy_lbv, bdy_ubv;
-            let annot_u, annot_v;
-
-            if (degenerate) {
-                bdy_lbu = 0;
-                bdy_ubu = 0;
-                bdy_lbv = lbv;
-                bdy_ubv = ubv;
-
-                annot_u = 0;
-                annot_v = lbv + (ubv - lbv) * 0.05
-            }
-            else {
-                bdy_lbu = bdy_u_org + alpha_lb * bdy_u_dot;
-                bdy_ubu = bdy_u_org + alpha_ub * bdy_u_dot;
-                bdy_lbv = bdy_v_org + alpha_lb * bdy_v_dot;
-                bdy_ubv = bdy_v_org + alpha_ub * bdy_v_dot;
-
-                annot_u = bdy_u_org + 0.9 * alpha_lb * bdy_u_dot
-                annot_v = bdy_v_org + 0.9 * alpha_lb * bdy_v_dot
-            }
-
-            const vec_pix_mag = 40;
-            const arrow_pix_size = 8;
+            const annot_u = bdy_lbu + (bdy_ubu - bdy_lbu) * 0.05;
+            const annot_v = bdy_lbv + (bdy_ubv - bdy_lbv) * 0.05;
 
             ctx.save();
 
@@ -786,12 +742,12 @@ class VWP {
     }
 
     change_boundary(new_vec) {
-        if (new_vec !== null) {
-            let [bdy_dir, bdy_spd] = new_vec;
-            this.boundary = vec2comp(bdy_dir, bdy_spd);
+        if (typeof new_vec == 'string' && new_vec.toLowerCase() === 'none') {
+            this.boundary = null;
         }
         else {
-            this.boundary = new_vec;
+            let [bdy_dir, bdy_spd] = new_vec;
+            this.boundary = vec2comp(bdy_dir, bdy_spd);
         }
         this._compute_parameters();
     }

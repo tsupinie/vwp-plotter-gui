@@ -17,7 +17,7 @@ class VWPContainer {
 
         this._origin = 'ground';
 
-        this._boundary = null;
+        this._boundary = 'none';
 
         // TODO: These might not need to be instance variables (only local to check_file_times), but I'm confused about Javascript variable scoping ...
         this._expected_new_frames = 0;
