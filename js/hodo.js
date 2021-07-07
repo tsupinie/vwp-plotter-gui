@@ -24,7 +24,7 @@ class HodoPlot {
         this._tab_xub = 658.36;
         this._tab_top = 17.92;
         this._tab_line_spacing = 12;
-        this._tab_spacing = 5;
+        this._tab_spacing = 7;
 
         this._tables = [
             {'rows': 4, 'cols': [1, 1, 1.4, 1], 'row_headers': ['0-500 m', '0-1 km', '0-3 km', '0-6 km'], 'row_header_weight': 1.5,
@@ -315,10 +315,14 @@ class HodoPlot {
         **********************************/
         let tab_ylb = this._tab_top, tab_yub = tab_ylb + this._tab_line_spacing;
 
+        let x_pix = dpr * (this._tab_xlb + this._tab_xub) / 2;
+        let y_pix = dpr * (tab_ylb + tab_yub) / 2
+        const header_txt = 'Parameters'
+
         ctx_raw.font = 'bold ' + (10.5 * dpr) + 'px Trebuchet MS';
         ctx_raw.textBaseline = 'middle';
         ctx_raw.textAlign = 'center';
-        ctx_raw.fillText('Parameters', dpr * (this._tab_xlb + this._tab_xub) / 2, dpr * (tab_ylb + tab_yub) / 2);
+        ctx_raw.fillText(header_txt, x_pix, y_pix);
 
         contexts['table'].forEach((tab, idx) => {
             ctx_raw.lineWidth = dpr;
