@@ -76,6 +76,9 @@ class VWPApp {
         $('#refresh').mouseup(this.refresh.bind(this));
         $('#makegif').mouseup(this.make_gif.bind(this));
 
+        $('#displaydoc').mouseup(this.show_parameter_help.bind(this));
+        $('#parameter-help .modal-close').mouseup(this.hide_parameter_help.bind(this));
+
         $(document).keydown(ev => {
             switch(ev.which) {
                 case _KEY_SPACEBAR:
@@ -322,6 +325,14 @@ class VWPApp {
         }
 
         this.vwp_container.make_gif();
+    }
+
+    show_parameter_help() {
+        $('#parameter-help').css('display', 'flex');
+    }
+
+    hide_parameter_help() {
+        $('#parameter-help').css('display', 'none');
     }
 
     set_sr_available(is_available) {

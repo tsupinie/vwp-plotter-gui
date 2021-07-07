@@ -187,14 +187,22 @@ div#hododiv img {
     width:100%;
 }
 
-div#animcontrols {
+div#animcontrols, div#doccontrol {
+    display: inline-block;
     padding-top: 5px;
     padding-bottom: 5px;
     height:32px;
-    width:449px;
 }
 
-div#animcontrols .selectable {
+div#animcontrols {
+    width: 449px;
+}
+
+div#doccontrol {
+    width: 205px;
+}
+
+div#animcontrols .selectable, div#doccontrol .selectable {
     display: inline-block;
 
     float: right;
@@ -212,7 +220,7 @@ div#animcontrols .selectable {
     -ms-user-select: none;
 }
 
-#animspdup, #animspddn {
+#animspdup, #animspddn, #displaydoc {
     font-weight: bold;
 }
 
@@ -401,4 +409,119 @@ div#animcontrols .selectable {
     animation: fadein 0.2s;
     animation-delay: 1s;
     animation-fill-mode: forwards;
+}
+
+.modal {
+    z-index: 10;
+    position: fixed;
+
+/*  display: none; */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    left: 0px;
+    top: 0px;
+    width: 100%;
+    height: 100%;
+}
+
+.modal .modal-bg {
+    content: "";
+    position: absolute;
+    z-index: -1;
+    width: 100%;
+    height: 100%;
+    background-color: #aaaaff;
+    opacity: 0.7;
+}
+
+.modal .modal-content {
+    position: absolute;
+    z-index: 1;
+
+    background-color: #ffffff;
+
+    border:1px solid #000000;
+    margin-left:auto;
+    margin-right:auto;
+    padding: 10px;
+    border-radius:5px;
+    width: calc(90% - 20px);
+    height: calc(90% - 20px);
+    overflow-y: scroll;
+}
+
+.modal .modal-close {
+    position: fixed;
+    right: calc(5% + 10px);
+    top: calc(5% + 10px);
+    width: 25px;
+    height: 25px;
+    line-height: 25px;
+    text-align: center;
+    font-size: 2em;
+    cursor: pointer;
+
+    background-color: #ffffffbb;
+}
+
+.modal h2, .modal h3 {
+    text-align: center;
+}
+
+.modal p {
+    text-align: justify;
+}
+
+.twocol {
+   -webkit-column-count: 2;
+      -moz-column-count: 2;
+           column-count: 2;
+
+   -webkit-column-gap: 1em;
+      -moz-column-gap: 1em;
+           column-gap: 1em;
+}
+
+.twocol p, .twocol h4 {
+    margin-top: 0px;
+}
+
+.modal table {
+    width: 100%;
+
+    margin-top: 0;
+    margin-bottom: 1em;
+
+    border-collapse: collapse;
+}
+
+.modal tr {
+    border: solid;
+    border-width: 1px 0;
+}
+
+.modal tr:first-child {
+    border-top: none;
+}
+
+.modal tr:last-child {
+    border-bottom: none;
+}
+
+.modal td {
+    border: solid;
+    border-width: 0 1px;
+
+    padding-left: 3px;
+    padding-right: 3px;
+}
+
+.modal td:first-child {
+    border-left: none;
+}
+
+.modal td:last-child {
+    border-right: none;
 }
