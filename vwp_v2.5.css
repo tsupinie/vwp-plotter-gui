@@ -432,7 +432,7 @@ div#animcontrols .selectable, div#doccontrol .selectable {
     z-index: -1;
     width: 100%;
     height: 100%;
-    background-color: #aaaaff;
+    background-color: var(--bg-color);
     opacity: 0.7;
 }
 
@@ -454,8 +454,8 @@ div#animcontrols .selectable, div#doccontrol .selectable {
 
 .modal .modal-close {
     position: fixed;
-    right: calc(5% + 10px);
-    top: calc(5% + 10px);
+    right: calc(5% + 17px);
+    top: calc(5% + 17px);
     width: 25px;
     height: 25px;
     line-height: 25px;
