@@ -116,6 +116,7 @@ $script_name = "/home/autumn35/public_html/{$_SERVER['SCRIPT_NAME']}";
     <div class=modal-content>
       <h2>VWP Plotter Documentation</h2>
       <p style="text-align: center">Autumn Sky VWP Plotter <?php echo $version; ?>, released <?php echo date("d F Y", filemtime($script_name)); ?></p>
+      <p style="text-align: center">Author: Tim Supinie</p>
       <h3>Hodograph Description</h3>
       <div class='twocol'>
         <p>A hodograph is created by drawing a line between the tips of the wind vectors at many different altitudes.
@@ -155,7 +156,7 @@ $script_name = "/home/autumn35/public_html/{$_SERVER['SCRIPT_NAME']}";
         <p>The QLCS motion control is similar to the storm motion control.
            The QLCS motion is assumed to be a vector perpendular to the line with a magnitude equal to the forward speed of the line.
            The default is "None" (for no QLCS) with the "DDD/SS" button to allow you to place a vector manually similar to placing a storm motion manually.</p>
-        <p>Next, the default surface wind is from a nearby ASOS site ("ASOS", which will change to the 4-letter identifier of nearby the ASOS site after selecting a radar).
+        <p>Next, the default surface wind is from a nearby ASOS site (the button reads "ASOS" when the page is loaded but will change to the 4-letter identifier of nearby the ASOS site after selecting a radar).
            Additionally, you can place a surface wind manually ("DDD/SS", similar to the storm motion and QLCS motion) or remove it ("None").</p>
         <p>Finally, the "Auto-Update" is a toggle switch which controls whether to automatically update the profiles as they're available or to keep the profiles currently loaded. 
            Auto-update is on by default.</p>
@@ -165,10 +166,16 @@ $script_name = "/home/autumn35/public_html/{$_SERVER['SCRIPT_NAME']}";
            Start and stop the animation by clicking on the "<span style="font-size: 0.5em;">&#9654;&#9616;&#9616;</span>" button.
            Increase or decrease the speed of the animation by clicking on the "+" or "-" buttons.
            Force a refresh of the data by clicking on the refresh button to the right of the "<span style="font-size: 0.5em;">&#9654;&#9616;&#9616;</span>" button.</p>
+        <h4>Keyboard Controls</h4>
+        <table>
+          <tr><td>SPACE</td><td>Start/stop animation</td></tr>
+          <tr><td>&larr;</td><td>Move back one frame</td></tr>
+          <tr><td>&rarr;</td><td>Move forward one frame</td></tr>
+        </table>
         <h4>Downloading Images</h4>
         <p>Clicking on the hodograph plot while not doing a manual selection will open the current frame as an image in another tab.
            Download this as you would any other image.
-           To download the entire sequence as an animated gif, click on the "GIF" button to the bottom right of the hodograph plot.
+           To download the entire sequence as an animated <span class='needhelp' style='position: relative;'>gif<span class='help helptop'>Pronounced "gif"</span></span>, click on the "GIF" button to the bottom right of the hodograph plot.
            This will open a new tab with the gif in it, after a few seconds to render the gif.
            Then download the gif as you would any other image.</p>
       </div>
@@ -185,8 +192,8 @@ $script_name = "/home/autumn35/public_html/{$_SERVER['SCRIPT_NAME']}";
         <tr><td>Critical Angle</td><td>The angle between the surface storm-relative wind and the 0-500 m shear vector <a href="https://ejssm.org/ojs/index.php/ejssm/article/viewArticle/33" target="_blank">(Esterheld and Giuliano 2008)</a></td></tr>
       </table>
       <p>Many of these parameters use the surface wind. 
-         If the surface wind is unavailable, either because the user has selected "None" for the surface wind or the nearest ASOS station is not reporting, the parameters will use the lowest point in the VWP.
-         The lowest point is often ~100 m above radar level, but can be much higher.</p>
+         If the surface wind is unavailable, either because the user has selected "None" for the surface wind or the nearest ASOS station is not reporting, the parameters will use the lowest point in the VWP as the surface.
+         The lowest point is often ~100 m above radar level, but it can be much higher.</p>
       <h3>Acknowledgments</h3>
       <p style="text-align: center;">Cameron Nixon, John Peters, Greg Blumberg, and Heather Supinie have contributed feature ideas, encouragement, and page design advice.</p>
       <div class="modal-close">&times;</div>
