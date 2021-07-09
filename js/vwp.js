@@ -579,6 +579,41 @@ class VWP {
             ctx.strokeStyle = "#333333";
             ctx.fillStyle = "#333333";
 
+            const vec_pix_mag = 40;
+//          const vec_pix_mag = 1;
+            const arrow_pix_size = 8;
+
+/*
+            ctx.beginPath()
+            ctx.circle(annot_u, annot_v, 3, 'pixels');
+            ctx.fill();
+*/
+            [].forEach(lyr => {
+                const [bwd_u, bwd_v] = this.params['bwd_0_' + (lyr * 1000)];
+                const [bwd_dir, bwd_mag] = comp2vec(bwd_u, bwd_v);
+                const [tip_u, tip_v] = ctx.pixelOffset(0, 0, vec_pix_mag / 2, 0);
+                const [tail_u, tail_v] = ctx.pixelOffset(0, 0, -vec_pix_mag / 2 + arrow_pix_size / 2 * Math.sqrt(3), 0);
+                const [la_u, la_v] = ctx.pixelOffset(tip_u, tip_v, -arrow_pix_size / 2 * Math.sqrt(3), -arrow_pix_size / 2);
+                const [ra_u, ra_v] = ctx.pixelOffset(tip_u, tip_v, -arrow_pix_size / 2 * Math.sqrt(3), arrow_pix_size / 2);
+
+                ctx.save();
+                ctx.translate(annot_u, annot_v);
+                ctx.rotate((bwd_dir + 90) * Math.PI / 180);
+
+                ctx.beginPath();
+                ctx.moveTo(tail_u, tail_v);
+                ctx.lineTo(tip_u * 0.95, tip_v);
+                ctx.stroke();
+
+                ctx.beginPath();
+                ctx.moveTo(tip_u, tip_v);
+                ctx.lineTo(la_u, la_v);
+                ctx.lineTo(ra_u, ra_v);
+                ctx.lineTo(tip_u, tip_v);
+                ctx.fill();
+                ctx.restore();
+            });
+
             ctx.restore();
         }
 
