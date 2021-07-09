@@ -188,7 +188,7 @@ $script_name = "/home/autumn35/public_html/{$_SERVER['SCRIPT_NAME']}";
         <tr><td>SRH (storm-relative helicity)</td><td>Storm-relative helicity over a layer</td></tr>
         <tr><td>Mean Wind</td><td>The 0-6 km mean wind</td></tr>
         <tr><td>Bunkers Left Mover/Bunkers Right Mover</td><td>The <a href="https://journals.ametsoc.org/view/journals/wefo/15/1/1520-0434_2000_015_0061_psmuan_2_0_co_2.xml" target="_blank">Bunkers (2000)</a> left-moving and right-moving supercell motion estimates</td></tr>
-        <tr><td>Deviant Tornado Motion</td><td>The <a href="https://journals.ametsoc.org/view/journals/wefo/36/1/WAF-D-20-0056.1.xml" target="_blank">Nixon and Allen (2021)</a> estimate of tornado motion when the tornado deviates to the left of the parent supercell motion</td></tr>
+        <tr><td>Deviant Tornado Motion</td><td>The <a href="https://journals.ametsoc.org/view/journals/wefo/36/1/WAF-D-20-0056.1.xml" target="_blank">Nixon and Allen (2021)</a> estimate of tornado motion when the tornado deviates to the left of the parent supercell motion (DTM_obs is used regardless of the storm motion selection)</td></tr>
         <tr><td>Critical Angle</td><td>The angle between the surface storm-relative wind and the 0-500 m shear vector <a href="https://ejssm.org/ojs/index.php/ejssm/article/viewArticle/33" target="_blank">(Esterheld and Giuliano 2008)</a></td></tr>
       </table>
       <p>Many of these parameters use the surface wind. 
