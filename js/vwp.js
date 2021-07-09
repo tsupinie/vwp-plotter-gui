@@ -581,6 +581,27 @@ class VWP {
             ctx.fillText('QLCS: ' + format_vector(bdy_dir, bdy_mag, 'kts'), txt_u, txt_v);
             ctx.restore();
 
+            var [low_u, low_v] = [hodo_u[0], hodo_v[0]];
+            if (this.sfc_wind !== null) {
+                low_u = hodo_sfc_u;
+                low_v = hodo_sfc_v;
+            }
+
+            var mkr_val = 3;
+            let u3km, v3km;
+            for (var i = 1; i < hodo_u.length; i++) {
+                if (this.alt[i - 1] < mkr_val && mkr_val <= this.alt[i]) {
+                    u3km = linear_interp(mkr_val, this.alt[i - 1], this.alt[i], hodo_u[i - 1], hodo_u[i]);
+                    v3km = linear_interp(mkr_val, this.alt[i - 1], this.alt[i], hodo_v[i - 1], hodo_v[i]);
+                    break;
+                }
+            }
+
+            ctx.beginPath();
+            ctx.moveTo(low_u, low_v);
+            ctx.lineTo(u3km, v3km);
+            ctx.stroke();
+
             ctx.strokeStyle = "#333333";
             ctx.fillStyle = "#333333";
 

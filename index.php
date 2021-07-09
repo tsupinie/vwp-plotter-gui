@@ -155,7 +155,9 @@ $script_name = "/home/autumn35/public_html/{$_SERVER['SCRIPT_NAME']}";
            Additionally, you can select a storm motion manually by clicking on the "DDD/SS" button and clicking on the hodograph plot where you would like to place the storm motion vector.</p>
         <p>The QLCS motion control is similar to the storm motion control.
            The QLCS motion is assumed to be a vector perpendular to the line with a magnitude equal to the forward speed of the line.
-           The default is "None" (for no QLCS) with the "DDD/SS" button to allow you to place a vector manually similar to placing a storm motion manually.</p>
+           The default is "None" (for no QLCS) with the "DDD/SS" button to allow you to place a vector manually similar to placing a storm motion manually.
+           The QLCS motion is plotted as a line perpendicular to the motion (i.e. along the line).
+           When a QLCS motion is plotted, the 0-3 km shear vector will also be plotted in gray for reference in diagnosing QLCS tornado potential.</p>
         <p>Next, the default surface wind is from a nearby ASOS site (the button reads "ASOS" when the page is loaded but will change to the 4-letter identifier of nearby the ASOS site after selecting a radar).
            Additionally, you can place a surface wind manually ("DDD/SS", similar to the storm motion and QLCS motion) or remove it ("None").</p>
         <p>Finally, the "Auto-Update" is a toggle switch which controls whether to automatically update the profiles as they're available or to keep the profiles currently loaded. 
