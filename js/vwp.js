@@ -471,6 +471,11 @@ class VWP {
         ctx.fillStyle = '#000000';
 
         var [mkru, mkrv] = this.params['dtm_obs'];
+        if (this.origin == 'storm') {
+            var [stmu, stmv] = this.sm_vec;
+            mkru -= stmu;
+            mkrv -= stmv;
+        }
 
         ctx.beginPath();
         var [tri_u, tri_v] = ctx.pixelOffset(mkru, mkrv, marker_rad, -marker_rad / Math.sqrt(3));
