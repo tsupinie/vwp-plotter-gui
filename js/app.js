@@ -52,7 +52,7 @@ class VWPApp {
         this.vwp_container = new VWPContainer(this, this.hodo, age_limit);
         this.hodo.add_vwp_container(this.vwp_container);
 
-        this.toggle_autoupdate();
+        this.toggle_autoupdate(false);
 
         var select_func = this.select.bind(this);
         function bind_select() {
@@ -255,8 +255,16 @@ class VWPApp {
         this.vwp_container.set_anim_time(moment.utc(new_active.attr('data-datetime')));
     }
 
-    toggle_autoupdate() {
+    toggle_autoupdate(refresh) {
+        if (refresh === undefined) {
+            refresh = true;
+        }
+
         $('#autoupdate').toggleClass('selected');
+
+        if (!refresh) {
+            return;
+        }
 
         if (this._data_refresh_timer === null) {
             this._data_refresh_timer = window.setInterval(this.refresh.bind(this), this._vwp_refresh_intv);

@@ -106,8 +106,8 @@ class VWPContainer {
                         frame['dt'] = vwp.radar_dt;
                         frame['data'] = vwp;
 
-                        this.change_surface_wind(this._surface_wind);
-                        this.change_boundary(this._boundary);
+                        this.change_surface_wind(this._surface_wind, false);
+                        this.change_boundary(this._boundary, false);
                         this._update_ui_origin_selection();
                         this._update_hodo_bbox();
 
@@ -331,7 +331,11 @@ class VWPContainer {
         }
     }
 
-    change_surface_wind(new_vec) {
+    change_surface_wind(new_vec, redraw) {
+        if (redraw === undefined) {
+            redraw = true;
+        }
+
         this.frame_list.forEach((function(frame) {
             if (frame['status'] != 'notloaded') {
                 var vwp = frame['data'];
@@ -356,10 +360,17 @@ class VWPContainer {
         }).bind(this));
 
         this._surface_wind = new_vec;
-        this.draw_active_frame();
+
+        if (redraw) {
+            this.draw_active_frame();
+        }
     }
 
-    change_storm_motion(new_vec) {
+    change_storm_motion(new_vec, redraw) {
+        if (redraw === undefined) {
+            redraw = true;
+        }
+
         this.frame_list.forEach(function(frame) {
             if (frame['status'] != 'notloaded') {
                 frame['data'].change_storm_motion(new_vec);
@@ -369,10 +380,17 @@ class VWPContainer {
         this._storm_motion = new_vec;
         this._update_ui_origin_selection();
         this._update_hodo_bbox();
-        this.draw_active_frame();
+
+        if (redraw) {
+            this.draw_active_frame();
+        }
     }
 
-    change_origin(org) {
+    change_origin(org, redraw) {
+        if (redraw === undefined) {
+            redraw = true;
+        }
+
         this.frame_list.forEach(function(frame) {
             if (frame['status'] != 'notloaded') {
                 frame['data'].change_origin(org);
@@ -381,10 +399,17 @@ class VWPContainer {
 
         this._origin = org;
         this._update_hodo_bbox();
-        this.draw_active_frame();
+
+        if (redraw) {
+            this.draw_active_frame();
+        }
     }
 
-    change_boundary(new_vec) {
+    change_boundary(new_vec, redraw) {
+        if (redraw === undefined) {
+            redraw = true;
+        }
+
         this.frame_list.forEach(frame => {
             if (frame['status'] != 'notloaded') {
                 frame['data'].change_boundary(new_vec);
@@ -392,7 +417,10 @@ class VWPContainer {
         });
 
         this._boundary = new_vec;
-        this.draw_active_frame();
+
+        if (redraw) {
+            this.draw_active_frame();
+        }
     }
 
     draw_active_frame() {
