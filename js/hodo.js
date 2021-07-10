@@ -45,11 +45,13 @@ class HodoPlot {
         this._done_callback = null;
         this.selecting = false;
         this._selection_anim_bg = null;
-        this._need_anim_bg = false;
 
         this._canvas.onmousemove = this.mousemove.bind(this);
         this._canvas.onmouseup = this.mouseclick.bind(this);
         this._canvas.onmouseout = this.mouseleave.bind(this);
+
+        this._mouse_x = null;
+        this._mouse_y = null;
     }
 
     reset() {
@@ -86,17 +88,21 @@ class HodoPlot {
             this._clear_and_draw_background(this._canvas, this._contexts, this._dpr);
         }
 
-        if (this._need_anim_bg) {
-            this._selection_anim_bg = new Image();
-            this._selection_anim_bg.src = this._canvas.toDataURL();
-
-            this._need_anim_bg = false;
-        }
+        this._selection_anim_bg = new Image();
+        this._selection_anim_bg.src = this._canvas.toDataURL();
+        this._selection_anim_bg.onload = this.mousemove.bind(this);
     }
 
     mousemove(event) {
-        const mx = event.pageX - this._canvas.offsetLeft;
-        const my = event.pageY - this._canvas.offsetTop;
+        let mx, my;
+        if (event === undefined || event.pageX === undefined || event.pageY === undefined) {
+            [mx, my] = [this._mouse_x, this._mouse_y];
+        }
+        else {
+            mx = event.pageX - this._canvas.offsetLeft;
+            my = event.pageY - this._canvas.offsetTop;
+            [this._mouse_x, this._mouse_y] = [mx, my];
+        }
 
         if (this._move_callback === null) {
             if (this._contexts['hodo'].bbox_pixels.contains(mx, my)) {
@@ -155,7 +161,6 @@ class HodoPlot {
         this._move_callback = move_callback;
         this._done_callback = done_callback;
         this.selecting = true;
-        this._need_anim_bg = true;
     }
 
     selection_finish(mx, my) {
