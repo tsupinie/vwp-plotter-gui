@@ -554,8 +554,8 @@ class VWP {
 
             ctx.save();
 
-            ctx.strokeStyle = "#666666";
-            ctx.fillStyle = "#666666";
+            ctx.strokeStyle = "#4d4d4d";
+            ctx.fillStyle = "#4d4d4d";
 
             ctx.beginPath();
             ctx.moveTo(bdy_lbu, bdy_lbv);
