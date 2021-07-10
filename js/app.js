@@ -145,6 +145,8 @@ class VWPApp {
 
                     ctx.lineWidth = 0.5;
                     ctx.strokeStyle = '#666666';
+
+                    ctx.beginPath();
                     ctx.moveTo(bdy_lbu, bdy_lbv);
                     ctx.lineTo(bdy_ubu, bdy_ubv);
                     ctx.stroke();
