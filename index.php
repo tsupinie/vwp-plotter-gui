@@ -21,19 +21,19 @@ $script_name = "/home/autumn35/public_html/{$_SERVER['SCRIPT_NAME']}";
 <script src='https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.27.0/moment.min.js'></script>
 <script src="https://code.jquery.com/jquery-3.5.1.min.js" integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0=" crossorigin="anonymous"></script>
 
-<script type="text/javascript" src="<?php echo $root_url; ?>/vad/js/map_click.js"></script>
-<script type="text/javascript" src="<?php echo $root_url; ?>/vad/js/parms.js"></script>
-<script type="text/javascript" src="<?php echo $root_url; ?>/vad/js/utils.js"></script>
-<script type="text/javascript" src="<?php echo $root_url; ?>/vad/js/cookie.js"></script>
-<script type="text/javascript" src="<?php echo $root_url; ?>/vad/js/index.js"></script>
-<script type="text/javascript" src="<?php echo $root_url; ?>/vad/js/app.js"></script>
-<script type="text/javascript" src="<?php echo $root_url; ?>/vad/js/vwp_container.js"></script>
-<script type="text/javascript" src="<?php echo $root_url; ?>/vad/js/bbox.js"></script>
-<script type="text/javascript" src="<?php echo $root_url; ?>/vad/js/context.js"></script>
-<script type="text/javascript" src="<?php echo $root_url; ?>/vad/js/hodo.js"></script>
-<script type="text/javascript" src="<?php echo $root_url; ?>/vad/js/vwp.js"></script>
-<script type="text/javascript" src="<?php echo $root_url; ?>/vad/js/tabletabletable.js"></script>
-<script type="text/javascript" src="<?php echo $root_url; ?>/vad/js/gifjs/gif.js"></script>
+<script type="text/javascript" src="<?php echo $root_url; ?>/vad/js_<?php echo $version; ?>/map_click.js"></script>
+<script type="text/javascript" src="<?php echo $root_url; ?>/vad/js_<?php echo $version; ?>/parms.js"></script>
+<script type="text/javascript" src="<?php echo $root_url; ?>/vad/js_<?php echo $version; ?>/utils.js"></script>
+<script type="text/javascript" src="<?php echo $root_url; ?>/vad/js_<?php echo $version; ?>/cookie.js"></script>
+<script type="text/javascript" src="<?php echo $root_url; ?>/vad/js_<?php echo $version; ?>/index.js"></script>
+<script type="text/javascript" src="<?php echo $root_url; ?>/vad/js_<?php echo $version; ?>/app.js"></script>
+<script type="text/javascript" src="<?php echo $root_url; ?>/vad/js_<?php echo $version; ?>/vwp_container.js"></script>
+<script type="text/javascript" src="<?php echo $root_url; ?>/vad/js_<?php echo $version; ?>/bbox.js"></script>
+<script type="text/javascript" src="<?php echo $root_url; ?>/vad/js_<?php echo $version; ?>/context.js"></script>
+<script type="text/javascript" src="<?php echo $root_url; ?>/vad/js_<?php echo $version; ?>/hodo.js"></script>
+<script type="text/javascript" src="<?php echo $root_url; ?>/vad/js_<?php echo $version; ?>/vwp.js"></script>
+<script type="text/javascript" src="<?php echo $root_url; ?>/vad/js_<?php echo $version; ?>/tabletabletable.js"></script>
+<script type="text/javascript" src="<?php echo $root_url; ?>/vad/js_<?php echo $version; ?>/gifjs/gif.js"></script>
 
 <!--script type="text/javascript" src="<?php echo $root_url; ?>/vad/vwp.min.js"></script-->
 <link rel="stylesheet" type="text/css" href="<?php echo $root_url; ?>/main.css.php">
