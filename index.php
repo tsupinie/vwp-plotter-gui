@@ -33,6 +33,7 @@ $script_name = "/home/autumn35/public_html/{$_SERVER['SCRIPT_NAME']}";
 <script type="text/javascript" src="<?php echo $root_url; ?>/vad/js/hodo.js"></script>
 <script type="text/javascript" src="<?php echo $root_url; ?>/vad/js/vwp.js"></script>
 <script type="text/javascript" src="<?php echo $root_url; ?>/vad/js/tabletabletable.js"></script>
+<script type="text/javascript" src="<?php echo $root_url; ?>/vad/js/dataview.js"></script>
 <script type="text/javascript" src="<?php echo $root_url; ?>/vad/js/gifjs/gif.js"></script>
 
 <!--script type="text/javascript" src="<?php echo $root_url; ?>/vad/vwp.min.js"></script-->
@@ -48,11 +49,18 @@ $script_name = "/home/autumn35/public_html/{$_SERVER['SCRIPT_NAME']}";
     <p>Click on the map to select a radar</p>
     <div id="mapdiv">
       <ul class="tab-list">
-        <li class="selectable selected">WSR-88D</li>
+        <li class="selectable">WSR-88D</li>
         <li class="selectable">TDWR</li>
+        <li class="selectable selected">Local</li>
       </ul>
-      <canvas id="map" width=400 height=248></canvas>
+      <canvas id="map" width=400 height=248 style="display: none;"></canvas>
       <div id="mapoverlay"></div>
+      <div id="localsel">
+        <label for="local" style="display: block;">Choose Local Files</label>
+        <input type="file" id="local" name="local" multiple>
+        <ul id="file-list">
+        </ul>
+      </div>
     </div>
     <div id="mapsel">
       <p>Radar:</p>

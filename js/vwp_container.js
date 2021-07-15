@@ -39,7 +39,7 @@ class VWPContainer {
 
         this._want_latest_frame = (this.frame_list.size == 0 || Array.from(this.frame_list.values()).findIndex(f => f['status'] == 'active') == this.frame_list.size - 1);
 
-        check_files(radar_id, this._age_limit, (function(file_times) {
+        check_files(radar_id, this._age_limit).then(file_times => {
             // Check to see if this is still the radar we're looking for (user might have changed it while we were waiting for data).
             if (this._radar != file_times['radar']) {
                 return;
@@ -49,18 +49,18 @@ class VWPContainer {
             file_times = Object.entries(file_times).sort(([fn1, dt1], [fn2, dt2]) => compare_dt(dt1, dt2));
 
             // Add new frames to frame list
-            file_times.forEach((function([file_name, dt]) {
+            file_times.forEach(([file_name, dt]) => {
                 if (!this.frame_list.has(file_name)) {
                     this.frame_list.set(file_name, {'dt': dt, 'status': 'notloaded'});
                 }
-            }).bind(this));
+            });
 
             // Delete frames older than the age limit
-            this.frame_list.forEach((function(frame, file_name) {
+            this.frame_list.forEach((frame, file_name) => {
                 if (frame['dt'].isBefore(moment.utc().subtract(this._age_limit, 'seconds'))) {
                     this.frame_list.delete(file_name);
                 }
-            }).bind(this))
+            });
 
             // If we removed the active frame, make the latest frame the new active frame
             if (Array.from(this.frame_list.values()).findIndex(f => f['status'] == 'active') == -1) {
@@ -79,63 +79,29 @@ class VWPContainer {
             this._new_frames_loaded = 0;
             this._expected_new_frames = 0;
 
+            this._expected_new_frames = Array.from(this.frame_list.values()).filter(frame => frame['status'] == 'notloaded').length;
+
             // Load new frames
-            Array.from(this.frame_list.entries()).reverse().forEach(([file_name, frame]) => {
+            Array.from(this.frame_list.entries()).filter(([file_name, frame]) => frame['status'] == 'notloaded').reverse().forEach(([file_name, frame]) => {
                 var id = file_name.substring(3);
                 var dt_str = frame['dt'].format(this._dt_fmt);
 
-                if (frame['status'] == 'notloaded') {
-                    this._expected_new_frames++;
+                const _debug_missing_frames = false;
+                const _debug = _debug_missing_frames && (file_name == this.frame_list.keys().next().value);
+                const activate_last_frame = !is_refresh || this._want_latest_frame
 
-                    const _debug_missing_frames = false;
+                console.log('Downloading vwp at ' + frame['dt'].format(this._dt_format));
+                VWP.from_server(radar_id, id, _debug).then(vwp => {
+//                  let frame = this.frame_list.get(file_name);
+                    this._set_frame_vwp_data(vwp, frame, activate_last_frame);
 
-                    console.log('Downloading vwp at ' + frame['dt'].format(this._dt_format));
-                    VWP.from_server(radar_id, id, vwp => {
-                        // Check to see if this is still the radar we're looking for (user might have changed it while we were waiting for data).
-                        if (this._radar != vwp.radar_id) {
-                            return;
-                        }
+                    // Check to see if we've loaded all the frames we expect from this update and cancel the refresh animation if so.
+                    this._new_frames_loaded++;
 
-                        vwp.change_storm_motion(this._storm_motion);
-                        vwp.change_origin(this._origin);
-
-                        // Update frame data structure
-                        var frame = this.frame_list.get(file_name);
-
-                        frame['status'] = 'loaded';
-                        frame['dt'] = vwp.radar_dt;
-                        frame['data'] = vwp;
-
-                        this.change_surface_wind(this._surface_wind, false);
-                        this.change_boundary(this._boundary, false);
-                        this._update_ui_origin_selection();
-                        this._update_hodo_bbox();
-
-                        // Update hodograph
-                        if (!is_refresh || this._want_latest_frame) {
-                            var [latest_fn, latest_frame] = Array.from(this.frame_list.entries()).filter(([fn, frame]) => frame['status'] != 'notloaded').reverse()[0]
-                            this._set_active_frame(latest_frame);
-                        }
-
-                        this.draw_active_frame();
-
-                        // Update UI
-                        this._update_ui_frame_list();
-
-                        // Restart animation if it's paused
-                        if (this.is_animating && this._is_animation_paused && !this._is_hodo_selecting) {
-                            this.start_animation();
-                        }
-
-                        // Check to see if we've loaded all the frames we expect from this update and cancel the refresh animation if so.
-                        this._new_frames_loaded++;
-
-                        if (this._new_frames_loaded >= this._expected_new_frames) {
-                            this._ui.refresh_circle_stop();
-                        }
-
-                    }, _debug_missing_frames && (file_name == this.frame_list.keys().next().value));
-                }
+                    if (this._new_frames_loaded >= this._expected_new_frames) {
+                        this._ui.refresh_circle_stop();
+                    }
+                });
             });
 
             // If there are no new frames, stop the animation refresh
@@ -147,7 +113,23 @@ class VWPContainer {
             if (this.frame_list.size == 0) {
                 this._hodo.reset();
             }
-        }).bind(this));
+        });
+    }
+
+    set_local_files(local_files) {
+        this.frame_list.clear();
+        local_files.filter(file => file.status != 'error').forEach(file => {
+            this.frame_list.set(file.name, {'status': file.status == 'ok' ? 'loaded' : file.status});
+            if (file.status == 'ok') {
+                if (this._radar === null) {
+                    this._radar = file.vwp.radar_id;
+                }
+                let frame = this.frame_list.get(file.name);
+                frame['dt'] = file.vwp.radar_dt;
+
+                this._set_frame_vwp_data(file.vwp, frame, true);
+            }
+        });
     }
 
     set_metar_obs(metars) {
@@ -480,19 +462,58 @@ class VWPContainer {
     _update_ui_frame_list() {
         this._ui.set_frame_list(Array.from(this.frame_list.values()));
     }
+
+    _set_frame_vwp_data(vwp, frame, activate_last_frame) {
+        // Check to see if this is still the radar we're looking for (user might have changed it while we were waiting for data).
+        if (this._radar != vwp.radar_id) {
+            return;
+        }
+
+        vwp.change_storm_motion(this._storm_motion);
+        vwp.change_origin(this._origin);
+
+        frame['status'] = 'loaded';
+        frame['dt'] = vwp.radar_dt;
+        frame['data'] = vwp;
+
+        this.change_surface_wind(this._surface_wind, false);
+        this.change_boundary(this._boundary, false);
+        this._update_ui_origin_selection();
+        this._update_hodo_bbox();
+
+        // Update hodograph
+        if (activate_last_frame) {
+            const [latest_fn, latest_frame] = Array.from(this.frame_list.entries()).filter(([fn, frame]) => frame['status'] != 'notloaded').reverse()[0]
+            this._set_active_frame(latest_frame);
+        }
+
+        this.draw_active_frame();
+
+        // Update UI
+        this._update_ui_frame_list();
+
+        // Restart animation if it's paused
+        if (this.is_animating && this._is_animation_paused && !this._is_hodo_selecting) {
+            this.start_animation();
+        }
+    }
 }
 
-function check_files(radar_id, age_limit, callback) {
+function check_files(radar_id, age_limit) {
     var root_url = $('#root_url').val();
 
     if (!window.location.hostname.includes('www')) {
         root_url = root_url.replace('www.', '');
     }
 
-    $.getJSON(root_url + "/vad/get_radar_times.php?radar=" + radar_id + '&age=' + age_limit, function(json) {
+    return (new Promise((resolve, reject) => {
+        // Strictly speaking, wrapping it like this isn't necessary, but I don't want to have to care whether I need to use
+        //  a jQuery promise or a built-in promise elsewhere
+        $.getJSON(root_url + "/vad/get_radar_times.php?radar=" + radar_id + '&age=' + age_limit).done(resolve).fail(reject);
+    })).then(json => {
         for (fname in json['times']) {
             json['times'][fname] = moment.utc(json['times'][fname]);
         }
-        callback(json);
-    })
+        return json;
+    });
 }

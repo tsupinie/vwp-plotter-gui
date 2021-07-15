@@ -813,7 +813,7 @@ class VWP {
         this._compute_parameters();
     }
 
-    static from_server(radar_id, file_id, callback, _delay_debug) {
+    static from_server(radar_id, file_id, _delay_debug) {
         if (_delay_debug === undefined) {
             _delay_debug = false;
         }
@@ -830,16 +830,13 @@ class VWP {
             url += '&id=' + file_id;
         }
 
-        $.getJSON(url, json => {
+        // XXX: Figure out how to re-implement the delay debug later
+
+        return (new Promise((resolve, reject) => {
+            $.getJSON(url).done(resolve).fail(reject);
+        })).then(json => {
             json['warnings'].forEach(warn => console.warn(warn));
-            const vwp = VWP.from_json(json['response']);
-            if (_delay_debug) {
-                // Artificially delay calling the callback for debugging purposes
-                window.setTimeout(() => callback(vwp), 10000);
-            }
-            else {
-                callback(vwp);
-            }
+            return VWP.from_json(json['response']);
         });
     }
 
@@ -847,5 +844,109 @@ class VWP {
         var vwp = new VWP(json['radar_id'], moment.utc(json['datetime']),
                           json['data']['wind_dir'], json['data']['wind_spd'], json['data']['altitude'], json['data']['rms_error']);
         return vwp;
+    }
+
+    static from_blob(blob) {
+        return blob.arrayBuffer().then(buffer => {
+            let dataview = new DataView_(buffer);
+
+            const wmo_header = dataview.getUTF8String(30);
+            const match = wmo_header.match(/.* (\w)\w{3} .*NVW(\w{3})/s);
+            if (match === null) {
+                throw "Error parsing VWP: could not parse file headers. This is not a VWP data file.";
+            }
+            const radar_id = match[1] + match[2];
+
+            const msg_code = dataview.getInt16();
+            const msg_julian_date = dataview.getInt16();
+            const msg_secs_midnight = dataview.getInt32();
+            const msg_length = dataview.getInt32();
+            const source_id = dataview.getInt16();
+            const dest_id = dataview.getInt16();
+            const num_blocks = dataview.getInt16();
+
+            dataview.getInt16();
+
+            const radar_latitude = dataview.getInt32() / 1000.;
+            const radar_longitude = dataview.getInt32() / 1000.;
+            const radar_elevation = dataview.getInt16();
+            const product_code = dataview.getInt16();
+
+            if (product_code != 48) {
+                throw "Error parsing VWP: unexpected product code (" + product_code + "). This is not a VWP data file.";
+            }
+
+            dataview.getInt16();
+            const vcp = dataview.getInt16();
+            dataview.getInt16();
+            dataview.getInt16();
+
+            const scan_jul_date = dataview.getInt16();
+            const scan_secs_midnight = dataview.getInt32();
+            const prod_jul_date = dataview.getInt16();
+            const prod_secs_midnight = dataview.getInt32();
+
+            const dt = moment.utc('1969-12-31T00:00:00Z').add(scan_jul_date, 'days').add(scan_secs_midnight, 'seconds');
+
+            dataview.seek(56, DataView_.ANCH_CUR);
+            
+            const offset_symbology_block = dataview.getInt32();
+            const offset_graphic_block = dataview.getInt32();
+            const offset_tabular_block = dataview.getInt32();
+
+            dataview.seek(offset_tabular_block * 2 + 30);
+
+            dataview.getInt16();
+            const block_id = dataview.getInt16();
+
+            if (block_id != 3) {
+                throw "Error parsing VWP: unexpected block_id (" + block_id + "). File may be corrupt.";
+            }
+
+            const block_size = dataview.getInt32();
+            dataview.seek(120, DataView_.ANCH_CUR);
+
+            let text_msg = [];
+
+            dataview.getInt16();
+            const num_pages = dataview.getInt16();
+            for (let ipg = 0; ipg < num_pages; ipg++) {
+                let page = [];
+                let num_chars = dataview.getInt16();
+
+                while (num_chars != -1) {
+                    let msg = dataview.getUTF8String(num_chars);
+                    page.push(msg);
+
+                    num_chars = dataview.getInt16();
+                }
+
+                text_msg.push(page);
+            }
+            
+            const vad_list = text_msg.filter(page => page[0].trim().startsWith('VAD Algorithm Output')).map(page => page.slice(3)).flat();
+            const r_e = 4. / 3. * 6371;
+
+            let wind_dir = [];
+            let wind_spd = [];
+            let rms_error = [];
+            let divergence = [];
+            let altitude = [];
+
+            vad_list.forEach(line => {
+                const vals = line.trim().split(/\s+/);
+                wind_dir.push(parseFloat(vals[4]));
+                wind_spd.push(parseFloat(vals[5]));
+                rms_error.push(parseFloat(vals[6]));
+                divergence.push(vals[7] == 'NA' ? NaN : parseFloat(vals[7]));
+
+                const slant_range = parseFloat(vals[8]) * 6067.1 / 3281.;
+                const elev_angle = parseFloat(vals[9]);
+
+                altitude.push(Math.sqrt(Math.pow(r_e, 2) + Math.pow(slant_range, 2) + 2 * r_e * slant_range * Math.sin(elev_angle * Math.PI / 180)) - r_e);
+            });
+
+            return new VWP(radar_id, dt, wind_dir, wind_spd, altitude, rms_error);
+        })
     }
 }

@@ -24,6 +24,8 @@ class VWPApp {
         this._metar_button_text = null;
         this.metar_refresh();
 
+        this.local_file_list = [];
+
         this.file_times = {};
 
         this._dt_fmt = "YYYY-MM-DD[T]HH:mm:ss[Z]";
@@ -78,6 +80,8 @@ class VWPApp {
 
         $('#displaydoc').mouseup(this.show_parameter_help.bind(this));
         $('#parameter-help .modal-close').mouseup(this.hide_parameter_help.bind(this));
+
+        $('#local').change(this.load_local.bind(this));
 
         $(document).keydown(ev => {
             switch(ev.which) {
@@ -411,6 +415,50 @@ class VWPApp {
         }
     }
 
+    load_local() {
+        const files = $('#local').get(0).files;
+        for (const file of files) {
+            if (!this.local_file_list.map(f => f.name).includes(file.name)) {
+                file.status = "notloaded";
+                this.local_file_list.push(file);
+
+                VWP.from_blob(file).then(vwp => {
+                    file.status = "ok";
+                    file.vwp = vwp;
+                }).catch(error => {
+                    file.status = "error";
+                }).then(() => {
+                    this._update_local_file_list();
+                });
+            }
+        }
+
+        this.local_file_list.sort((a, b) => (a.name > b.name ? 1 : -1));
+        this._update_local_file_list();
+    }
+
+    remove_local_file_from_list(fname) {
+        this.local_file_list = this.local_file_list.filter(f => f.name != fname);
+        this._update_local_file_list();
+    }
+
+    _update_local_file_list() {
+        this.vwp_container.set_local_files(this.local_file_list);
+
+        $('#file-list').empty()
+        this.local_file_list.forEach(file => {
+            const status_char = {'notloaded': '&ctdot;', 'error': '!', 'ok': '&check;'}[file.status]
+
+            $('#file-list').append('<li data-filename="' + file.name + '">' + file.name + '<span class="file-rm">&times;</span><span>' + status_char + '</span></li>');
+        });
+
+        const this_ = this;
+        $('#file-list .file-rm').each(function() {
+            const elem = $(this);
+            elem.mouseup(() => this_.remove_local_file_from_list(elem.parent().attr('data-filename')));
+        });
+    }
+
     _select_box(obj) {
         var was_selected = null;
         var siblings = obj.parentElement.getElementsByTagName(obj.tagName);
@@ -442,7 +490,16 @@ class VWPApp {
             this.vwp_container.change_boundary(val);
         }
         else if (obj.parentElement.parentElement.id == "mapdiv") {
-            this.radars.set_type(val)
+            if (val == 'Local') {
+                $('#map').css('display', 'none');
+                $('#localsel').css('display', 'block');
+            }
+            else {
+                $('#map').css('display', 'block');
+                $('#localsel').css('display', 'none');
+
+                this.radars.set_type(val)
+            }
         }
     };
 
