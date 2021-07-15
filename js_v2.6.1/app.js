@@ -29,8 +29,8 @@ class VWPApp {
         this._dt_fmt = "YYYY-MM-DD[T]HH:mm:ss[Z]";
 
         var mapclick = (function(rad) {
-            $('#mapsel').html('<p>Radar:</p> <ul class="toggle-list"><li id="radarname">' + rad.id + ' (' + rad.name + ')</li>' +
-                              '<li id="default" class="selectable needhelp">' + _home_svg + '<span class="help helptop">Make Default</span></li></ul>');
+            $('#mapsel').html('<p>Radar:</p> <ul class="toggle-list"><li id="radarname">' + rad.id + ' (' + rad.name + ')' +
+                              '<span id="default" class="selectable needhelp">' + _home_svg + '<span class="help helptop">Make Default</span></span></li></ul>');
 
             if (get_cookie('default') == rad.id) {
                 $('#default').toggleClass('selected');
