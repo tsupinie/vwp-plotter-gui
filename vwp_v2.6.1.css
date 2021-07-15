@@ -104,12 +104,14 @@ div#selection > div {
     transform: translate(0px, 1px);
 }
 
-li#default {
-    height: 19px;
+span#default {
+    height: 16px;
     width: 12px;
     margin-top: -5px;
+    padding-top: 3px;
 
     transform: translate(0px, 4px);
+    float: right;
 }
 
 li#default svg {
@@ -128,6 +130,7 @@ div#mapsel p {
 
 div#mapsel ul {
     display:inline-block;
+    width: calc(100% - 115px);
 }
 
 div#mapsel li {
@@ -136,8 +139,7 @@ div#mapsel li {
 }
 
 div#mapsel li#radarname {
-    width: 256.2px;
-    margin-right: 5px;
+    width: 100%;
 }
 
 div#localsel {

@@ -31,8 +31,8 @@ class VWPApp {
         this._dt_fmt = "YYYY-MM-DD[T]HH:mm:ss[Z]";
 
         var mapclick = (function(rad) {
-            $('#mapsel').html('<p>Radar:</p> <ul class="toggle-list"><li id="radarname">' + rad.id + ' (' + rad.name + ')</li>' +
-                              '<li id="default" class="selectable needhelp">' + _home_svg + '<span class="help helptop">Make Default</span></li></ul>');
+            $('#mapsel').html('<p>Radar:</p> <ul class="toggle-list"><li id="radarname">' + rad.id + ' (' + rad.name + ')' +
+                              '<span id="default" class="selectable needhelp">' + _home_svg + '<span class="help helptop">Make Default</span></span></li></ul>');
 
             if (get_cookie('default') == rad.id) {
                 $('#default').toggleClass('selected');
@@ -268,14 +268,12 @@ class VWPApp {
 
         $('#autoupdate').toggleClass('selected');
 
-        if (!refresh) {
-            return;
-        }
-
         if (this._data_refresh_timer === null) {
             this._data_refresh_timer = window.setInterval(this.refresh.bind(this), this._vwp_refresh_intv);
 
-            this.refresh();
+            if (refresh) {
+                this.refresh();
+            }
         }
         else {
             window.clearInterval(this._data_refresh_timer);
@@ -285,7 +283,9 @@ class VWPApp {
         if (this._map_refresh_timer === null) {
             this._map_refresh_timer = window.setInterval(this.refresh_map.bind(this), this._map_refresh_intv);
 
-            this.refresh_map();
+            if (refresh) {
+                this.refresh_map();
+            }
         }
         else {
             window.clearInterval(this._map_refresh_timer);
