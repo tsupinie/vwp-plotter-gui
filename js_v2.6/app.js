@@ -264,14 +264,12 @@ class VWPApp {
 
         $('#autoupdate').toggleClass('selected');
 
-        if (!refresh) {
-            return;
-        }
-
         if (this._data_refresh_timer === null) {
             this._data_refresh_timer = window.setInterval(this.refresh.bind(this), this._vwp_refresh_intv);
 
-            this.refresh();
+            if (refresh) {
+                this.refresh();
+            }
         }
         else {
             window.clearInterval(this._data_refresh_timer);
@@ -281,7 +279,9 @@ class VWPApp {
         if (this._map_refresh_timer === null) {
             this._map_refresh_timer = window.setInterval(this.refresh_map.bind(this), this._map_refresh_intv);
 
-            this.refresh_map();
+            if (refresh) {
+                this.refresh_map();
+            }
         }
         else {
             window.clearInterval(this._map_refresh_timer);
