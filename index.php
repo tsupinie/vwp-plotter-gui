@@ -33,6 +33,7 @@ $script_name = "/home/autumn35/public_html/{$_SERVER['SCRIPT_NAME']}";
 <script type="text/javascript" src="<?php echo $root_url; ?>/vad/js/hodo.js?<?php echo $version; ?>"></script>
 <script type="text/javascript" src="<?php echo $root_url; ?>/vad/js/vwp.js?<?php echo $version; ?>"></script>
 <script type="text/javascript" src="<?php echo $root_url; ?>/vad/js/tabletabletable.js?<?php echo $version; ?>"></script>
+<script type="text/javascript" src="<?php echo $root_url; ?>/vad/js/dataview.js?<?php echo $version; ?>"></script>
 <script type="text/javascript" src="<?php echo $root_url; ?>/vad/js/gifjs/gif.js?<?php echo $version; ?>"></script>
 
 <!--script type="text/javascript" src="<?php echo $root_url; ?>/vad/vwp.min.js"></script-->
