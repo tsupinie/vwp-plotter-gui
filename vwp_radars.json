@@ -863,7 +863,7 @@
         "id": "KLRX",
         "latitude": 40.73972222222222,
         "longitude": -116.80278015136719,
-        "metar": "KBAM",
+        "metar": "KEKO",
         "name": "Elko, NV",
         "type": "WSR-88D",
         "x_pix": 123.31658916398368,
@@ -1430,10 +1430,164 @@
         "y_pix": 163.2879759658973
     },
     {
+        "id": "PABC",
+        "latitude": 60.79194444444444,
+        "longitude": -161.8763885498047,
+        "metar": "PABE",
+        "name": "Bethel, AK",
+        "type": "WSR-88D",
+        "x_pix": 36.53715334443991,
+        "y_pix": 48.83108731187063
+    },
+    {
+        "id": "PACG",
+        "latitude": 56.85277777777778,
+        "longitude": -135.52915954589844,
+        "metar": "PASI",
+        "name": "Biorka Island/Sitka, AK",
+        "type": "WSR-88D",
+        "x_pix": 132.85689717399333,
+        "y_pix": 22.721571358317703
+    },
+    {
+        "id": "PAEC",
+        "latitude": 64.51138888888889,
+        "longitude": -165.2949981689453,
+        "metar": "PAOM",
+        "name": "Nome, AK",
+        "type": "WSR-88D",
+        "x_pix": 29.24552860732181,
+        "y_pix": 77.35343235187791
+    },
+    {
+        "id": "PAHG",
+        "latitude": 60.725833333333334,
+        "longitude": -151.3513946533203,
+        "metar": "PAEN",
+        "name": "Anchorage/Kenai, AK",
+        "type": "WSR-88D",
+        "x_pix": 73.26253280241178,
+        "y_pix": 45.6795487256026
+    },
+    {
+        "id": "PAIH",
+        "latitude": 59.46138888888889,
+        "longitude": -146.3030548095703,
+        "metar": "PAMD",
+        "name": "Middleton Island, AK",
+        "type": "WSR-88D",
+        "x_pix": 91.32672074086756,
+        "y_pix": 36.9115556383159
+    },
+    {
+        "id": "PAKC",
+        "latitude": 58.67944444444444,
+        "longitude": -156.6294403076172,
+        "metar": "PAKN",
+        "name": "King Salmon, AK",
+        "type": "WSR-88D",
+        "x_pix": 53.717043154187394,
+        "y_pix": 32.00485388480398
+    },
+    {
+        "id": "PAPD",
+        "latitude": 65.035,
+        "longitude": -147.5016632080078,
+        "metar": "PAFB",
+        "name": "Fairbanks/Pedro Dome, AK",
+        "type": "WSR-88D",
+        "x_pix": 85.89423978544409,
+        "y_pix": 77.25289586411499
+    },
+    {
+        "id": "PHKI",
+        "latitude": 21.894166666666667,
+        "longitude": -159.55221557617188,
+        "metar": "PHLI",
+        "name": "South Kauai, HI",
+        "type": "WSR-88D",
+        "x_pix": 190.3131081566694,
+        "y_pix": 63.34021582252035
+    },
+    {
+        "id": "PHWA",
+        "latitude": 19.095,
+        "longitude": -155.5688934326172,
+        "metar": "PHSF",
+        "name": "South Shore, HI",
+        "type": "WSR-88D",
+        "x_pix": 258.72879390190815,
+        "y_pix": 12.13391653967932
+    },
+    {
+        "id": "PHKM",
+        "latitude": 20.125555555555557,
+        "longitude": -155.77777099609375,
+        "metar": "PHSF",
+        "name": "Kamuela/Kohala, HI",
+        "type": "WSR-88D",
+        "x_pix": 254.74079104873167,
+        "y_pix": 30.95899257870576
+    },
+    {
+        "id": "PHMO",
+        "latitude": 21.13277777777778,
+        "longitude": -157.17999267578125,
+        "metar": "PHMK",
+        "name": "Molokai, HI",
+        "type": "WSR-88D",
+        "x_pix": 230.47751592491818,
+        "y_pix": 49.08578535698928
+    },
+    {
+        "id": "PGUA",
+        "latitude": 13.453888888888889,
+        "longitude": 144.8077850341797,
+        "metar": "PGUM",
+        "name": "Anderson AFB, GU",
+        "type": "WSR-88D",
+        "x_pix": 24.815730661830422,
+        "y_pix": 159.48941134026586
+    },
+    {
+        "id": "TJUA",
+        "latitude": 18.115555555555556,
+        "longitude": -66.07805633544922,
+        "metar": "TJSJ",
+        "name": "San Juan, PR",
+        "type": "WSR-88D",
+        "x_pix": 765.9718204644694,
+        "y_pix": 20.817137985037448
+    },
+    {
+        "id": "RKSG",
+        "latitude": 37.207652,
+        "longitude": 127.285614,
+        "metar": "RKSM",
+        "name": "Camp Humphreys, KR",
+        "type": "WSR-88D"
+    },
+    {
+        "id": "RKJK",
+        "latitude": 35.92417,
+        "longitude": 126.62222,
+        "metar": "RKJK",
+        "name": "Kunsan, KR",
+        "type": "WSR-88D"
+    },
+    {
+        "id": "RODN",
+        "latitude": 26.307796,
+        "longitude": 127.903422,
+        "metar": "RODN",
+        "name": "Kadena, JP",
+        "type": "WSR-88D"
+    },
+    {
         "id": "TDEN",
         "latitude": 39.728,
         "longitude": -104.526,
-        "metar": "KCFO",
+        "metar": "KDEN",
         "name": "Denver, CO",
         "type": "TDWR",
         "x_pix": 290.7160162456049,
@@ -1868,5 +2022,15 @@
         "type": "TDWR",
         "x_pix": 131.69992218163839,
         "y_pix": 229.93684389816343
+    },
+    {
+        "id": "TSJU",
+        "latitude": 18.474,
+        "longitude": -66.179,
+        "metar": "TJSJ",
+        "name": "San Juan, PR",
+        "type": "TDWR",
+        "x_pix": 761.0273258526014,
+        "y_pix": 38.902729318892284
     }
 ]

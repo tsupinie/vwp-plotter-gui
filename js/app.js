@@ -46,7 +46,7 @@ class VWPApp {
         var age_limit = 2700;
 
         this.map_fname = 'imgs/map.png';
-        this.radars = new ClickableMap(this.map_fname, 'wsr88ds.json', mapclick, "WSR-88D");
+        this.radars = new ClickableMap(this.map_fname, 'vwp_radars.json', mapclick, "WSR-88D");
         if (get_cookie('default') !== undefined) {
             this.radars.select_point(get_cookie('default'));
         }
