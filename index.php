@@ -15,6 +15,7 @@ date_default_timezone_set('UTC');
 $script_name = "/home/autumn35/public_html/{$_SERVER['SCRIPT_NAME']}";
 
 ?>
+<!DOCTYPE html>
 <html>
 <head>
 <title>VWP Hodographs | Autumn Sky</title>

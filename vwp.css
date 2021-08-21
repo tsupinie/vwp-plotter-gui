@@ -107,10 +107,10 @@ div#selection > div {
 span#default {
     height: 16px;
     width: 12px;
-    margin-top: -5px;
-    padding-top: 3px;
+    margin-top: -1px;
+    padding-top: 1.5px;
+    padding-bottom: 1.5px;
 
-    transform: translate(0px, 4px);
     float: right;
 }
 
@@ -177,6 +177,8 @@ div#localsel label:hover {
 
 #file-list {
     margin: 0px;
+    margin-top: -19px;
+
     list-style-type: none;
     padding: 0px;
     overflow-x: hidden;
