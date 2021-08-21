@@ -427,6 +427,7 @@ class VWPApp {
                     file.vwp = vwp;
                 }).catch(error => {
                     file.status = "error";
+                    console.error(error);
                 }).then(() => {
                     this._update_local_file_list();
                 });

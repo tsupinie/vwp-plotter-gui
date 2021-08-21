@@ -118,18 +118,22 @@ class VWPContainer {
 
     set_local_files(local_files) {
         this.frame_list.clear();
-        local_files.filter(file => file.status != 'error').forEach(file => {
-            this.frame_list.set(file.name, {'status': file.status == 'ok' ? 'loaded' : file.status});
-            if (file.status == 'ok') {
-                if (this._radar === null) {
-                    this._radar = file.vwp.radar_id;
-                }
-                let frame = this.frame_list.get(file.name);
-                frame['dt'] = file.vwp.radar_dt;
+        local_files.filter(file => file.status == 'ok').forEach(file => {
+            this.frame_list.set(file.name, {'status': 'loaded'});
 
-                this._set_frame_vwp_data(file.vwp, frame, true);
+            if (this._radar === null) {
+                this._radar = file.vwp.radar_id;
             }
+            let frame = this.frame_list.get(file.name);
+            frame['dt'] = file.vwp.radar_dt;
+
+            this._set_frame_vwp_data(file.vwp, frame, true);
         });
+
+        if (local_files.length == 0) {
+            this._update_ui_frame_list();
+            this._hodo.reset();
+        }
     }
 
     set_metar_obs(metars) {
