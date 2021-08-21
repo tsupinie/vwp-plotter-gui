@@ -112,7 +112,7 @@ $script_name = "/home/autumn35/public_html/{$_SERVER['SCRIPT_NAME']}";
       <p id="animspdup", class='selectable needhelp'>+<span class='help helptop'>Animation Speed Up</span></p>
       <p id="animspddn", class='selectable needhelp'>-<span class='help helptop'>Animation Speed Down</span></p>
       <p id="refresh", class='selectable needhelp'>&nbsp;<span class='arrow'></span><span class='help helptop'>Refresh</span></p>
-      <p id="playpause", class='selectable needhelp'>&#9654;&#9616;&#9616;<span class='help helptop'>Start/Stop Animation</span></p>
+      <p id="playpause", class='selectable needhelp'>&#9654;&#xfe0e;&#9616;&#9616;<span class='help helptop'>Start/Stop Animation</span></p>
       <ul id='framelist'>
       </ul>
     </div>
