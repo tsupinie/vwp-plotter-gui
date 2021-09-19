@@ -4,6 +4,10 @@ class Context2DWrapper {
         this.bbox_pixels = bbox_pixels;
         this.bbox_data = bbox_data;
         this.dpr = dpr;
+
+        this._font_size = 10 * this.dpr;
+        this._font_face = 'sans-serif';
+        this._font_weight = 'normal';
     }
 
     get(target, prop) {
@@ -155,16 +159,36 @@ class Context2DWrapper {
     }
 
     __set_font(ctx, font) {
-        var font_size_regex = /([.\d]+)(?=px)/g
-        var font_size = font.match(font_size_regex);
-        var font_dpr = font;
+        var font_regex = /(?:(.*) )?([.\d]+)px (.*)/g
+        var font_matches = [...font.matchAll(font_regex)];
 
-        if (font_size) {
-            font_size = font_size[0] * this.dpr;
-            var font_dpr = font.replace(font_size_regex, font_size);
+        if (font_matches.length > 0) {
+            if (font_matches[0][1] !== undefined) {
+                this._font_weight = font_matches[0][1];
+            }
+            else {
+                this._font_weight = 'normal';
+            }
+            this._font_size = this.dpr * parseFloat(font_matches[0][2]);
+            this._font_face = font_matches[0][3];
         }
 
-        return (ctx.font = font_dpr);
+        return (ctx.font = this._font_weight + " " + this._font_size + "px " + this._font_face);
+    }
+
+    __set_fontweight(ctx, font_weight) {
+        this._font_weight = font_weight;
+        return (ctx.font = this._font_weight + " " + this._font_size + "px " + this._font_face);
+    }
+
+    __set_fontface(ctx, font_face) {
+        this._font_face = font_face;
+        return (ctx.font = this._font_weight + " " + this._font_size + "px " + this._font_face);
+    }
+
+    __set_fontsize(ctx, font_size) {
+        this._font_size = this.dpr * font_size;
+        return (ctx.font = this._font_weight + " " + this._font_size + "px " + this._font_face);
     }
 
     pixelOffset(_, x_data, y_data, x_offset, y_offset) {

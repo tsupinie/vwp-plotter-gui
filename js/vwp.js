@@ -261,7 +261,7 @@ class VWP {
         }
 
         if (this.alt.length == 0 || hodo_u.length == 0 || hodo_v.length == 0) {
-            ctx.font = "36px Trebuchet MS";
+            ctx.fontsize = 36;
             ctx.fillStyle = '#000000';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
@@ -659,7 +659,7 @@ class VWP {
             ctx.fill();
 
             ctx.fillStyle = '#ffffff';
-            ctx.font = "9px Trebuchet MS";
+            ctx.fontsize = 9;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
 
@@ -697,7 +697,7 @@ class VWP {
 
         var [txtu, txtv] = ctx.pixelOffset(lbu, lbv, 0, 2);
         ctx.fillStyle = '#000000';
-        ctx.font = '11px Trebuchet MS';
+        ctx.fontsize = 11;
         ctx.textBaseline = 'top';
         ctx.textAlign = 'left';
         var sfc_wind_src_txt = "Surface Wind: "

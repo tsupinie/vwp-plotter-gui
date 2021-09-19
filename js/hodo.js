@@ -244,7 +244,7 @@ class HodoPlot {
 
         if (draw_labels) {
             for (var irng = min_label; irng <= max_label; irng += hodo_ring_spacing) {
-                ctx.font = '11px Trebuchet MS';
+                ctx.fontsize = 11;
                 ctx.fillStyle = color;
                 ctx.textBaseline = 'top';
 
@@ -288,6 +288,7 @@ class HodoPlot {
         **********************************/
         var ctx = contexts['hodo'];
         var [lbu, lbv, ubu, ubv] = [ctx.bbox_data.lbx, ctx.bbox_data.lby, ctx.bbox_data.ubx, ctx.bbox_data.uby];
+        ctx.fontface = 'Trebuchet MS'
 
         this._draw_hodo_coordinates(ctx, 0, 0, '#999999', true);
 
@@ -312,7 +313,7 @@ class HodoPlot {
 
         var [txtu, txtv] = ctx.pixelOffset(ubu, lbv, 0, 2);
         ctx.fillStyle = '#000000';
-        ctx.font = '11px Trebuchet MS';
+        ctx.fontsize = 11;
         ctx.textBaseline = 'top';
         ctx.textAlign = 'right';
         ctx.fillText("http://www.autumnsky.us/vad/", txtu, txtv);
@@ -345,6 +346,7 @@ class HodoPlot {
         * Draw SR wind plot background
         **********************************/
         ctx = contexts['srwind'];
+        ctx.fontface = "Trebuchet MS";
         var [lbs, lbz, ubs, ubz] = [ctx.bbox_data.lbx, ctx.bbox_data.lby, ctx.bbox_data.ubx, ctx.bbox_data.uby];
 
         const peters_supercell_srw_cutoff = 19.44;
@@ -359,7 +361,7 @@ class HodoPlot {
         ctx.fillStyle = '#aaaaaa';
         ctx.textBaseline = 'middle';
         ctx.textAlign = 'center';
-        ctx.font = '10px Trebuchet MS';
+        ctx.fontsize = 10;
         ctx.fillText('Peters et al. (2020)\nSupercell', (peters_supercell_srw_cutoff + ubs) / 2, peters_supercell_srw_depth / 2);
         ctx.restore();
 
@@ -376,7 +378,7 @@ class HodoPlot {
         ctx.fillStyle = '#aaaaaa';
         ctx.textBaseline = 'middle';
         ctx.textAlign = 'center';
-        ctx.font = '10px Trebuchet MS';
+        ctx.fontsize = 10;
         ctx.fillText('Classic\nSupercell', (classic_supercell_srw_cutoff + ubs) / 2, (classic_supercell_srw_zlb + classic_supercell_srw_zub) / 2);
         ctx.restore();
 
@@ -406,7 +408,7 @@ class HodoPlot {
         ctx.stroke();
 
         ctx.fillStyle = '#000000';
-        ctx.font = '11px Trebuchet MS';
+        ctx.fontsize = 11;
         ctx.textAlign = 'right';
         ctx.textBaseline = 'middle';
         for (var iz = lbz; iz <= ubz; iz += srwind_z_spacing) {
@@ -426,7 +428,7 @@ class HodoPlot {
         }
 
         ctx.fillStyle = '#000000';
-        ctx.font = '11px Trebuchet MS';
+        ctx.fontsize = 11;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'alphabetic';
         var [txtu, txtv] = ctx.pixelOffset((lbs + ubs) / 2, ubz, 0, -5);
@@ -455,7 +457,7 @@ class HodoPlot {
         * Draw hodograph
         **********************************/
         ctx.lineWidth = 2;
-        ctx.font = "11px Trebuchet MS";
+        ctx.fontsize = 11;
 
         vwp.draw(contexts['hodo'], contexts['srwind']);
 
@@ -470,7 +472,7 @@ class HodoPlot {
         var [lbu, lbv, ubu, ubv] = [ctx.bbox_data.lbx, ctx.bbox_data.lby, ctx.bbox_data.ubx, ctx.bbox_data.uby];
         var [txtu, txtv] = ctx.pixelOffset((lbu + ubu) / 2, ubv, 0, -5);
 
-        ctx.font = "14px Trebuchet MS";
+        ctx.fontsize = 14;
         ctx.fillText(title_str, txtu, txtv);
 
        /**********************************
