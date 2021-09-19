@@ -1,3 +1,14 @@
+:root {
+    --selection-width: calc(var(--layout-width) * 0.37);
+    --map-height: calc(var(--selection-width) * 0.62);
+    --label-width: calc(var(--selection-width) * 0.275);
+
+    --hodo-width: calc(var(--layout-width) * 0.62);
+    --hodo-height: calc(var(--hodo-width) * 0.694);
+
+    --anim-width: calc(var(--layout-width) * 0.41574);
+    --doc-width: calc(var(--layout-width) * 0.1898);
+}
 
 div#mapoverlay {
     position: absolute;
@@ -12,10 +23,15 @@ div#mapoverlay p {
     margin: 0px;
 }
 
+canvas#map {
+    width: var(--selection-width);
+    height: var(--map-height);
+}
+
 div#selection {
     float:left;
 /*  width:37%; */
-    width: 400px;
+    width: var(--selection-width);
 }
 
 div#selection > p {
@@ -105,8 +121,8 @@ div#selection > div {
 }
 
 span#default {
-    height: 16px;
-    width: 12px;
+    height: 1em;
+    width: 0.75em;
     margin-top: -1px;
     padding-top: 1.5px;
     padding-bottom: 1.5px;
@@ -116,6 +132,8 @@ span#default {
 
 li#default svg {
     position: absolute;
+    width: 0.75em;
+    height: 0.75em;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
@@ -123,14 +141,14 @@ li#default svg {
 
 div#mapsel p {
     display:inline-block;
-    width: 110px;
+    width: var(--label-width);
     margin-top: 1px;
     margin-bottom: 1px;
 }
 
 div#mapsel ul {
     display:inline-block;
-    width: calc(100% - 115px);
+    width: calc(100% - var(--label-width) - 0.3125em);
 }
 
 div#mapsel li {
@@ -213,7 +231,7 @@ div#localsel label:hover {
 
 div#smsel p, div#sfcsel p, div#orgsel p, div#bdysel p {
     display:inline-block;
-    width:110px;
+    width: var(--label-width);
 }
 
 div#generate, div#autoupdate {
@@ -251,27 +269,31 @@ div#info p {
 div#hododiv {
     float:left;
     width:62%;
-/*  margin-top:-10px; */
-    margin-left:10px;
+    margin-left: 0.625em;
 }
 
 div#hododiv img {
     width:100%;
 }
 
+canvas#hodo {
+    width: var(--hodo-width);
+    height: var(--hodo-height);
+}
+
 div#animcontrols, div#doccontrol {
     display: inline-block;
     padding-top: 5px;
     padding-bottom: 5px;
-    height:32px;
+    height:2em;
 }
 
 div#animcontrols {
-    width: 449px;
+    width: var(--anim-width);
 }
 
 div#doccontrol {
-    width: 205px;
+    width: var(--doc-width);
 }
 
 div#animcontrols .selectable, div#doccontrol .selectable {
@@ -282,9 +304,9 @@ div#animcontrols .selectable, div#doccontrol .selectable {
     padding: 0px;
     margin: 0px;
     margin-left: 5px;
-    line-height: 30px;
-    height: 30px;
-    width: 30px;
+    line-height: 1.875em;
+    height: 1.875em;
+    width: 1.875em;
     text-align: center;
 
     -webkit-user-select: none;
@@ -308,10 +330,10 @@ div#animcontrols .selectable, div#doccontrol .selectable {
 #refresh span.arrow {
     display: inline-block;
     position: absolute;
-    bottom: 16px;
-    left: 16px;
+    bottom: 1em;
+    left: 1em;
 
-    transform: translate(-3.9px, 0.6px) rotate(0deg) translate(7.9px, 0);
+    transform: translate(-0.24375em, 0.1em) rotate(0deg) translate(0.49375em, 0);
     transform-origin: center bottom;
 
     width: 0; 
@@ -324,8 +346,8 @@ div#animcontrols .selectable, div#doccontrol .selectable {
 }
 
 @keyframes rotation {
-    0%   { transform: translate(-3.9px, 0.6px) rotate(360deg) translate(7.9px, 0); }
-    100% { transform: translate(-3.9px, 0.6px) rotate(0deg) translate(7.9px, 0); }
+    0%   { transform: translate(-0.24375em, 0.1em) rotate(360deg) translate(0.49375em, 0); }
+    100% { transform: translate(-0.24375em, 0.1em) rotate(0deg) translate(0.49375em, 0); }
 }
 
 #refresh span.arrow.animate {
@@ -357,8 +379,10 @@ div#animcontrols .selectable, div#doccontrol .selectable {
     border-top-color: #aacccc;
 }
 
-#playpause {
+#playpause span {
+    display: inline-block;
     font-size: 0.5em;
+    transform: translate(0em, -0.2em);
 }
 
 #framelist {
@@ -375,16 +399,15 @@ div#animcontrols .selectable, div#doccontrol .selectable {
     -moz-user-select: none;
     -ms-user-select: none;
 
-    height: 32px;
-    font-size: 1.8em;
+    height: 2em;
 }
 
 #framelist li {
     float: right;
 
-    height: 32px;
-    line-height: 32px;
-    width: 15px;
+    height: 2em;
+    line-height: 2em;
+    width: 0.9375em;
 
     cursor: pointer;
 

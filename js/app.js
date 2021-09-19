@@ -1,5 +1,5 @@
 
-const _home_svg = `<svg width="12" height="12" viewBox="15 12 70 70" xmlns="http://www.w3.org/2000/svg">
+const _home_svg = `<svg viewBox="15 12 70 70" xmlns="http://www.w3.org/2000/svg">
   <polygon points="25,80 45,80 45,60 55,60 55,80 75,80 75,50 25,50" />
   <polygon points="84,50 50,16 16,50" />
   <rect x="60" y="20" width="10" height="30"/>

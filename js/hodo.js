@@ -6,11 +6,13 @@ class HodoPlot {
         this._dpr = window.devicePixelRatio || 1;
 
         this._canvas = document.getElementById("hodo");
-        this._canvas.style.width = this._canvas.width + "px";
-        this._canvas.style.height = this._canvas.height + "px";
 
-        this._canvas.width *= this._dpr;
-        this._canvas.height *= this._dpr;
+        let rect = this._canvas.getBoundingClientRect();
+        this._canvas.width = rect.width * this._dpr;
+        this._canvas.height = rect.height * this._dpr;
+
+        const scale_fac = rect.width / 670;
+        this._dpr *= scale_fac;
 
         this._contexts = {};
 

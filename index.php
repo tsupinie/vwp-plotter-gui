@@ -54,7 +54,7 @@ $script_name = "/home/autumn35/public_html/{$_SERVER['SCRIPT_NAME']}";
         <li class="selectable">TDWR</li>
         <li class="selectable selected">Local</li>
       </ul>
-      <canvas id="map" width=400 height=248 style="display: none;"></canvas>
+      <canvas id="map" style="display: none;"></canvas>
       <div id="mapoverlay"></div>
       <div id="localsel">
         <label for="local" style="display: block;">Choose Local Files</label>
@@ -107,13 +107,13 @@ $script_name = "/home/autumn35/public_html/{$_SERVER['SCRIPT_NAME']}";
     </div>
   </div>
   <div id="hododiv">
-    <canvas id="hodo" width=670 height=465></canvas>
+    <canvas id="hodo"></canvas>
     <div id="animcontrols">
-      <p id="makegif", class='selectable needhelp'>GIF<span class='help helptop'>Create Animated GIF</span></p>
-      <p id="animspdup", class='selectable needhelp'>+<span class='help helptop'>Animation Speed Up</span></p>
-      <p id="animspddn", class='selectable needhelp'>-<span class='help helptop'>Animation Speed Down</span></p>
-      <p id="refresh", class='selectable needhelp'>&nbsp;<span class='arrow'></span><span class='help helptop'>Refresh</span></p>
-      <p id="playpause", class='selectable needhelp'>&#9654;&#xfe0e;&#9616;&#9616;<span class='help helptop'>Start/Stop Animation</span></p>
+      <p id="makegif" class='selectable needhelp'>GIF<span class='help helptop'>Create Animated GIF</span></p>
+      <p id="animspdup" class='selectable needhelp'>+<span class='help helptop'>Animation Speed Up</span></p>
+      <p id="animspddn" class='selectable needhelp'>-<span class='help helptop'>Animation Speed Down</span></p>
+      <p id="refresh" class='selectable needhelp'>&nbsp;<span class='arrow'></span><span class='help helptop'>Refresh</span></p>
+      <p id="playpause" class='selectable needhelp'><span>&#9654;&#xfe0e;&#9616;&#9616;</span><span class='help helptop'>Start/Stop Animation</span></p>
       <ul id='framelist'>
       </ul>
     </div>
