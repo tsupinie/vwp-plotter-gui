@@ -1,13 +1,21 @@
+
 :root {
     --selection-width: calc(var(--layout-width) * 0.37);
-    --map-height: calc(var(--selection-width) * 0.62);
-    --label-width: calc(var(--selection-width) * 0.275);
+    --map-width: var(--selection-width);
+    --map-height: calc(var(--map-width) * 0.62);
+
+    --toggle-width: var(--selection-width);
+    --label-width: calc(var(--toggle-width) * 0.275);
 
     --hodo-width: calc(var(--layout-width) * 0.62);
     --hodo-height: calc(var(--hodo-width) * 0.694);
 
     --anim-width: calc(var(--layout-width) * 0.41574);
     --doc-width: calc(var(--layout-width) * 0.1898);
+}
+
+div#hamburger {
+    display: none;
 }
 
 div#mapoverlay {
@@ -24,17 +32,18 @@ div#mapoverlay p {
 }
 
 canvas#map {
-    width: var(--selection-width);
+    width: var(--map-width);
     height: var(--map-height);
 }
 
 div#selection {
-    float:left;
-/*  width:37%; */
+    display: flex;
+    flex-direction: column;
+    float: left;
     width: var(--selection-width);
 }
 
-div#selection > p {
+div#selection > div > p {
     text-align:center;
     font-size:0.8em;
 }
@@ -43,7 +52,7 @@ div#selection p {
     margin:0px;
 }
 
-div#selection > div {
+div#selection > div > div {
     float:left;
     width:100%;
     margin-top:3px;
@@ -281,8 +290,14 @@ canvas#hodo {
     height: var(--hodo-height);
 }
 
+div#controlstrip {
+    display: flex;
+    gap: 4px;
+}
+
 div#animcontrols, div#doccontrol {
-    display: inline-block;
+    display: inline-flex;
+    flex-direction: row-reverse;
     padding-top: 5px;
     padding-bottom: 5px;
     height:2em;
@@ -298,8 +313,6 @@ div#doccontrol {
 
 div#animcontrols .selectable, div#doccontrol .selectable {
     display: inline-block;
-
-    float: right;
 
     padding: 0px;
     margin: 0px;
@@ -386,8 +399,6 @@ div#animcontrols .selectable, div#doccontrol .selectable {
 }
 
 #framelist {
-    float: right;
-
     list-style-type:none;
     display:inline;
     margin:0px;
@@ -498,6 +509,12 @@ div#animcontrols .selectable, div#doccontrol .selectable {
     0% { visibility: hidden; opacity: 0; }
     1% { visibility: visible; opacity: 0; }
     100% { visibility: visible; opacity: 1; }
+}
+
+@keyframes fadeout {
+    0% { visibility: visible; opacity: 1; }
+    99% { visibility: visible; opacity: 0; }
+    100% { visibility: hidden; opacity: 0; }
 }
 
 .needhelp:hover .help {

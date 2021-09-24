@@ -1,0 +1,130 @@
+
+@media only screen and (max-aspect-ratio: 10/7) {
+    /* Portrait */
+    :root {
+        --layout-width: 97vw;
+        --selection-height: calc(var(--layout-width) * 0.655);
+    }
+}
+
+@media only screen and (min-aspect-ratio: 10/7) {
+    /* Landscape */
+    :root {
+        --layout-width: calc(100vh / 0.7);
+        --selection-height: 94vh;
+    }
+}
+
+:root {
+    --selection-width: calc(var(--layout-width));
+    --map-width: calc(var(--selection-width) * 0.6);
+    --toggle-width: calc(var(--selection-width) * 0.4);
+
+    --hodo-width: calc(var(--layout-width) * 0.95);
+}
+
+div#main {
+    overflow: auto;
+}
+
+div#main > h1 {
+    display: none;
+}
+
+div#hamburger {
+    z-index: 20;
+    position: absolute;
+
+    display: inline-block;
+    width: 2em;
+    height: 2em;
+}
+
+div#hamburger span {
+    display: block;
+    width: 1.5em;
+    height: 0.25em;
+    margin: 0.25em auto;
+/*  -webkit-transition: all 0.3s ease-in-out;
+    transition: all 0.3s ease-in-out; */
+    background-color: #101010;
+}
+
+div#selection {
+    visibility: hidden;
+    flex-direction: row;
+    align-items: center;
+    column-gap: 5px;
+    position: absolute;
+    z-index: 10;
+
+    left: calc(50% - var(--layout-width) / 2 - 1px);
+    top: 1em;
+    height: var(--selection-height);
+
+    background-color: #ffffff;
+}
+
+div#selection.fadeout {
+    animation: fadeout 0.3s;
+    animation-direction: normal;
+    animation-fill-mode: forwards;
+}
+
+div#selection.fadein {
+    animation: fadein 0.3s;
+    animation-direction: normal;
+    animation-fill-mode: forwards;
+}
+
+#localbutton {
+    display: none;
+}
+
+div#hododiv {
+    float: right;
+    width: 100%;
+    overflow: auto;
+}
+
+div#hododiv canvas {
+    float: right;
+}
+
+div#controlstrip {
+    flex-direction: column-reverse;
+    margin-top: 2em;
+}
+
+div#animcontrols {
+    flex-direction: column;
+    width: 1.875em;
+}
+
+div#animcontrols .selectable, div#doccontrol .selectable {
+    margin-left: 0px;
+    margin-bottom: 5px;
+}
+
+div#doccontrol {
+    flex-direction: column;
+    width: 1.875em;
+}
+
+div#info {
+    display: none;
+}
+
+#framelist {
+    width: 2em;
+}
+
+#framelist li {
+    width: 2em;
+    height: 0.9375em;
+    line-height: 0.9375em;
+}
+
+.needhelp:hover .help {
+    animation: none;
+}

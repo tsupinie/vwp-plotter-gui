@@ -83,6 +83,8 @@ class VWPApp {
 
         $('#local').change(this.load_local.bind(this));
 
+        $('#hamburger').mouseup(this.hamburger_tap.bind(this));
+
         $(document).keydown(ev => {
             switch(ev.which) {
                 case _KEY_SPACEBAR:
@@ -347,6 +349,17 @@ class VWPApp {
 
     hide_parameter_help() {
         $('#parameter-help').css('display', 'none');
+    }
+
+    hamburger_tap() {
+        if ($('#selection').css('visibility') == 'hidden') {
+            $('#selection').addClass('fadein');
+            $('#selection').removeClass('fadeout');
+        }
+        else {
+            $('#selection').addClass('fadeout');
+            $('#selection').removeClass('fadein');
+        }
     }
 
     set_sr_available(is_available) {

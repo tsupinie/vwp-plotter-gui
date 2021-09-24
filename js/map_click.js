@@ -59,7 +59,7 @@ class ClickableMap {
         for (let i = 0; i < this.points.length; i++) {
             if (this.type_plot === undefined || this.type_plot == this.points[i].type) {
                 ctx.beginPath();
-                ctx.arc(this.points[i].x_pix, this._map.height / scale_factor - this.points[i].y_pix, 2.75 * this._dpr, 0, 2 * Math.PI);
+                ctx.arc(this.points[i].x_pix, this._map.height / scale_factor - this.points[i].y_pix, 5.5, 0, 2 * Math.PI);
                 if (this.points[i].id == this.selected) {
                     ctx.fillStyle = "#dddddd"; // "#aacccc";
                 }
@@ -80,8 +80,8 @@ class ClickableMap {
         const pix_buf = 4;
         const scale_factor = this._dpr / this._img_pr
 
-        x = (x - this._map.offsetLeft) * this._img_pr;
-        y = this._map.height / scale_factor - (y - this._map.offsetTop) * this._img_pr;
+        x = x * this._img_pr;
+        y = this._map.height / scale_factor - y * this._img_pr;
 
         const cutoff = (pix_buf * this._img_pr) * (pix_buf * this._img_pr)
         const rad = this.points.filter(pt => (this.type_plot === undefined || pt.type == this.type_plot)).find(pt => (pt.x_pix - x) * (pt.x_pix - x) + (pt.y_pix - y) * (pt.y_pix - y) <= cutoff);
@@ -100,7 +100,7 @@ class ClickableMap {
     }
 
     mousemove(event) {
-        const rad = this.check_point(event.pageX, event.pageY);
+        const rad = this.check_point(event.offsetX, event.offsetY);
 
         if (rad !== undefined) {
             this.show_overlay(event.pageX + 11, event.pageY + 5, rad.id);
@@ -111,7 +111,7 @@ class ClickableMap {
     }
 
     mouseclick(event) {
-        const rad = this.check_point(event.pageX, event.pageY);
+        const rad = this.check_point(event.offsetX, event.offsetY);
 
         if (rad !== undefined) {
             this.select_point(rad.id);
