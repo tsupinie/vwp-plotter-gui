@@ -10,17 +10,17 @@
 @media only screen and (min-aspect-ratio: 10/7) {
     /* Landscape */
     :root {
-        --layout-width: calc(100vh / 0.7);
+        --layout-width: calc(100vh / 0.705);
         --selection-height: 94vh;
     }
 }
 
 :root {
     --selection-width: calc(var(--layout-width));
-    --map-width: calc(var(--selection-width) * 0.6);
-    --toggle-width: calc(var(--selection-width) * 0.4);
+    --toggle-width: 14em;
+    --map-width: calc(var(--selection-width) - var(--toggle-width));
 
-    --hodo-width: calc(var(--layout-width) * 0.95);
+    --hodo-width: calc(var(--layout-width) - 1.9em);
 }
 
 div#main {
@@ -35,6 +35,9 @@ div#hamburger {
     z-index: 20;
     position: absolute;
 
+    margin-left: 0.4em;
+    margin-top: 0.4em;
+
     display: inline-block;
     width: 2em;
     height: 2em;
@@ -45,9 +48,21 @@ div#hamburger span {
     width: 1.5em;
     height: 0.25em;
     margin: 0.25em auto;
-/*  -webkit-transition: all 0.3s ease-in-out;
-    transition: all 0.3s ease-in-out; */
-    background-color: #101010;
+    -webkit-transition: all 0.3s ease-in-out;
+    transition: all 0.3s ease-in-out;
+    background-color: #000000;
+}
+
+div#hamburger.active span:nth-child(2) {
+    opacity: 0;
+}
+
+div#hamburger.active span:nth-child(1) {
+    transform: translateY(8px) rotate(45deg);
+}
+
+div#hamburger.active span:nth-child(3) {
+    transform: translateY(-8px) rotate(-45deg);
 }
 
 div#selection {
@@ -77,6 +92,11 @@ div#selection.fadein {
     animation-fill-mode: forwards;
 }
 
+div#smsel p, div#sfcsel p, div#orgsel p, div#bdysel p {
+    display: block;
+    width: 100%;
+}
+
 #localbutton {
     display: none;
 }
@@ -93,7 +113,8 @@ div#hododiv canvas {
 
 div#controlstrip {
     flex-direction: column-reverse;
-    margin-top: 2em;
+    margin-top: 2.4em;
+    margin-left: 0.4em;
 }
 
 div#animcontrols {

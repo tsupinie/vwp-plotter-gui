@@ -360,6 +360,7 @@ class VWPApp {
             $('#selection').addClass('fadeout');
             $('#selection').removeClass('fadein');
         }
+        $('#hamburger').toggleClass('active');
     }
 
     set_sr_available(is_available) {
