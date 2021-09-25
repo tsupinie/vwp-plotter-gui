@@ -1,8 +1,6 @@
 
 class HodoPlot {
     constructor() {
-        this._vwp_container = null;
-
         this._dpr = window.devicePixelRatio || 1;
 
         this._canvas = document.getElementById("hodo");
@@ -15,6 +13,8 @@ class HodoPlot {
         this._dpr *= scale_fac;
 
         this._contexts = {};
+
+        this.onscreenshot = null;
 
         this._default_hodo_bbox_uv = new BBox(-40, -40, 80, 80);
 
@@ -62,14 +62,15 @@ class HodoPlot {
         this._clear_and_draw_background(this._canvas, this._contexts, this._dpr);
     }
 
-    add_vwp_container(vwp_container) {
-        this._vwp_container = vwp_container;
-    }
-
     set_bbox(bbox) {
-        // Warning: this could let the display and ground-relative bboxes get out of sync. This doesn't happen
-        //  currently because the calling functions immediately draw a vwp, which updates the ground-relative bbox.
-        this._contexts['hodo'].bbox_data = bbox;
+        if (bbox == null) {
+            this.reset();
+        }
+        else {
+            // Warning: this could let the display and ground-relative bboxes get out of sync. This doesn't happen
+            //  currently because the calling functions immediately draw a vwp, which updates the ground-relative bbox.
+            this._contexts['hodo'].bbox_data = bbox;
+        }
     }
 
     draw_vwp(vwp) {
@@ -143,7 +144,9 @@ class HodoPlot {
 
         if (this._move_callback === null) {
             if (this._contexts['hodo'].bbox_pixels.contains(mx, my)) {
-                this._vwp_container.screenshot()
+                if (this.onscreenshot !== null) {
+                    this.onscreenshot()
+                }
             }
         }
         else {

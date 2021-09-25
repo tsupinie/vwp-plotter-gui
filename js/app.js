@@ -50,9 +50,20 @@ class VWPApp {
         if (get_cookie('default') !== undefined) {
             this.radars.select_point(get_cookie('default'));
         }
-        this.hodo = new HodoPlot(this);
-        this.vwp_container = new VWPContainer(this, this.hodo, age_limit);
-        this.hodo.add_vwp_container(this.vwp_container);
+        this.hodo = new HodoPlot();
+        this.vwp_container = new VWPContainer(age_limit);
+
+        this.vwp_container.onrefreshstart = this.refresh_circle_start.bind(this);
+        this.vwp_container.onrefreshend = this.refresh_circle_stop.bind(this);
+        this.vwp_container.onanimationplay = this.animation_play.bind(this);
+        this.vwp_container.onanimationpause = this.animation_pause.bind(this);
+        this.vwp_container.onsetsravail = this.set_sr_available.bind(this);
+        this.vwp_container.onnewframelist = this.set_frame_list.bind(this);
+
+        this.hodo.onscreenshot = this.vwp_container.screenshot.bind(this.vwp_container);
+        this.vwp_container.onsethodobbox = this.hodo.set_bbox.bind(this.hodo);
+        this.vwp_container.ondrawvwp = this.hodo.draw_vwp.bind(this.hodo);
+        this.vwp_container.onscreenshot = this.hodo.screenshot.bind(this.hodo);
 
         this.toggle_autoupdate(false);
 
