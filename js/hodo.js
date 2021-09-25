@@ -24,7 +24,11 @@ class HodoPlot {
         this._mouse_y = null;
 
         window.addEventListener('resize', () => {
+            const bbox = this._contexts['hodo'].bbox_data;
+
             this._setup_canvas();
+
+            this._contexts['hodo'].bbox_data = bbox;
 
             if (this.onhodorefresh !== null) {
                 this.onhodorefresh();
