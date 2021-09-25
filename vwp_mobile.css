@@ -149,3 +149,7 @@ div#info {
 .needhelp:hover .help {
     animation: none;
 }
+
+#mapoverlay {
+    display: none;
+}

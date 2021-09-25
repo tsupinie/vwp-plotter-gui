@@ -32,6 +32,7 @@ div#mapoverlay p {
 }
 
 canvas#map {
+    display: block;
     width: var(--map-width);
     height: var(--map-height);
 }
@@ -87,16 +88,20 @@ div#selection > div > div {
     background-color: #f3f3f3;
 }
 
-.selectable:hover {
-    background-color: #e3e3e3;
+@media (hover: hover) {
+    .selectable:hover {
+        background-color: #e3e3e3;
+    }
 }
 
 .selected {
     background-color: #aacccc;
 }
 
-.selected:hover {
-    background-color: #99bbbb;
+@media (hover: hover) {
+    .selected:hover {
+        background-color: #99bbbb;
+    }
 }
 
 .grayout {
@@ -370,15 +375,17 @@ div#animcontrols .selectable, div#doccontrol .selectable {
     animation-timing-function: linear;
 }
 
-#refresh:hover {
-    background: rgb(227,227,227);
-    background: radial-gradient(circle, rgba(227,227,227,1) 0%, rgba(227,227,227,1) 33%, rgba(0,0,0,1) 33%, rgba(0,0,0,1) 43%, rgba(227,227,227,1) 43%);
-}
+@media (hover: hover) {
+    #refresh:hover {
+        background: rgb(227,227,227);
+        background: radial-gradient(circle, rgba(227,227,227,1) 0%, rgba(227,227,227,1) 33%, rgba(0,0,0,1) 33%, rgba(0,0,0,1) 43%, rgba(227,227,227,1) 43%);
+    }
 
-#refresh:hover span.arrow {
-    border-left-color: #e3e3e3;
-    border-right-color: #e3e3e3;
-    border-top-color: #e3e3e3;
+    #refresh:hover span.arrow {
+        border-left-color: #e3e3e3;
+        border-right-color: #e3e3e3;
+        border-top-color: #e3e3e3;
+    }
 }
 
 #refresh:active {
@@ -392,7 +399,7 @@ div#animcontrols .selectable, div#doccontrol .selectable {
     border-top-color: #aacccc;
 }
 
-#playpause span {
+#playpause span:not(.help) {
     display: inline-block;
     font-size: 0.5em;
     transform: translate(0em, -0.2em);
