@@ -27,14 +27,14 @@ class ClickableMap {
  
         this.dl_json(points_fname, parse_pts);
 
-        window.onresize = () => {
+        window.addEventListener('resize', () => {
             this._setup_canvas();
 
             if (this.map_bg !== null) {
                 this._img_pr = this.map_bg.naturalWidth / this._elem_width;
                 this.draw_map();
             }
-        };
+        });
     }
 
     set_background(img_fname) {

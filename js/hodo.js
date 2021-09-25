@@ -1,24 +1,50 @@
 
 class HodoPlot {
     constructor() {
-        this._dpr = window.devicePixelRatio || 1;
+        this._default_hodo_bbox_uv = new BBox(-40, -40, 80, 80);
 
         this._canvas = document.getElementById("hodo");
+        this._setup_canvas();
+
+        this.onscreenshot = null;
+        this.onhodorefresh = null;
+
+        this._clear_and_draw_background(this._canvas, this._contexts, this._dpr);
+
+        this._move_callback = null;
+        this._done_callback = null;
+        this.selecting = false;
+        this._selection_anim_bg = null;
+
+        this._canvas.onmousemove = this.mousemove.bind(this);
+        this._canvas.onmouseup = this.mouseclick.bind(this);
+        this._canvas.onmouseout = this.mouseleave.bind(this);
+
+        this._mouse_x = null;
+        this._mouse_y = null;
+
+        window.addEventListener('resize', () => {
+            this._setup_canvas();
+
+            if (this.onhodorefresh !== null) {
+                this.onhodorefresh();
+            }
+        });
+    }
+
+    _setup_canvas() {
+        this._dpr = window.devicePixelRatio || 1;
 
         let rect = this._canvas.getBoundingClientRect();
         this._canvas.width = rect.width * this._dpr;
         this._canvas.height = rect.height * this._dpr;
 
-        const scale_fac = rect.width / 670;
-        this._dpr *= scale_fac;
+        this._scale_fac = rect.width / 670;
+        this._dpr *= this._scale_fac;
 
         this._contexts = {};
 
-        this.onscreenshot = null;
-
-        this._default_hodo_bbox_uv = new BBox(-40, -40, 80, 80);
-
-        var hodo_bbox_pixels = new BBox(17.28, 17.92, 449.28, 449.92);
+        const hodo_bbox_pixels = new BBox(17.28, 17.92, 449.28, 449.92);
         this._contexts['hodo'] = Context2DWrapper.create_proxy(this._canvas, hodo_bbox_pixels, this._default_hodo_bbox_uv, this._dpr);
         this._contexts['hodo_gr'] = Context2DWrapper.create_proxy(this._canvas, hodo_bbox_pixels, this._default_hodo_bbox_uv, this._dpr);
 
@@ -37,23 +63,9 @@ class HodoPlot {
 
         [this._contexts['table'], this._tab_spacer_ys] = this._generate_table_proxies(this._canvas, this._dpr);
 
-        var srwind_bbox_pixels = new BBox(470, 210, 658.36, 449.92);
-        var srwind_bbox_data = new BBox(0, 0, 70, 12);
+        const srwind_bbox_pixels = new BBox(470, 210, 658.36, 449.92);
+        const srwind_bbox_data = new BBox(0, 0, 70, 12);
         this._contexts['srwind'] = Context2DWrapper.create_proxy(this._canvas, srwind_bbox_pixels, srwind_bbox_data, this._dpr);
-
-        this._clear_and_draw_background(this._canvas, this._contexts, this._dpr);
-
-        this._move_callback = null;
-        this._done_callback = null;
-        this.selecting = false;
-        this._selection_anim_bg = null;
-
-        this._canvas.onmousemove = this.mousemove.bind(this);
-        this._canvas.onmouseup = this.mouseclick.bind(this);
-        this._canvas.onmouseout = this.mouseleave.bind(this);
-
-        this._mouse_x = null;
-        this._mouse_y = null;
     }
 
     reset() {
@@ -102,8 +114,8 @@ class HodoPlot {
             [mx, my] = [this._mouse_x, this._mouse_y];
         }
         else {
-            mx = event.pageX - this._canvas.offsetLeft;
-            my = event.pageY - this._canvas.offsetTop;
+            mx = event.offsetX / this._scale_fac;
+            my = event.offsetY / this._scale_fac;
             [this._mouse_x, this._mouse_y] = [mx, my];
         }
 
@@ -139,8 +151,8 @@ class HodoPlot {
     }
 
     mouseclick(event) {
-        const mx = event.pageX - hodo.offsetLeft;
-        const my = event.pageY - hodo.offsetTop;
+        const mx = event.offsetX / this._scale_fac;
+        const my = event.offsetY / this._scale_fac;
 
         if (this._move_callback === null) {
             if (this._contexts['hodo'].bbox_pixels.contains(mx, my)) {

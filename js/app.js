@@ -61,6 +61,8 @@ class VWPApp {
         this.vwp_container.onnewframelist = this.set_frame_list.bind(this);
 
         this.hodo.onscreenshot = this.vwp_container.screenshot.bind(this.vwp_container);
+        this.hodo.onhodorefresh = this.vwp_container.draw_active_frame.bind(this.vwp_container);
+
         this.vwp_container.onsethodobbox = this.hodo.set_bbox.bind(this.hodo);
         this.vwp_container.ondrawvwp = this.hodo.draw_vwp.bind(this.hodo);
         this.vwp_container.onscreenshot = this.hodo.screenshot.bind(this.hodo);
