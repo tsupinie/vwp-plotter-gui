@@ -31,7 +31,7 @@ class HodoPlot {
         this._tables = [
             {'rows': 4, 'cols': [1, 1, 1.4, 1], 'row_headers': ['0-500 m', '0-1 km', '0-3 km', '0-6 km'], 'row_header_weight': 1.5,
                 'col_headers': ['BWD\n(kts)', 'LNBS\n(kts)', 'SR Flow\n(kts)', 'SRH\n(m\u{00b2}/s\u{00b2})'], 'col_header_weight': 2},
-            {'rows': 5, 'cols': [1], 'row_headers': ['Storm Motion:', 'Bunkers Left Mover:', 'Bunkers Right Mover:', 'Mean Wind:', 'Deviant Tornado Motion:'], 'row_header_weight': 3},
+            {'rows': 5, 'cols': [1], 'row_headers': ['Storm Motion (SM):', 'Bunkers Left Mover (LM):', 'Bunkers Right Mover (RM):', 'Mean Wind (MEAN):', 'Deviant Tor Motion (DTM):'], 'row_header_weight': 3},
             {'rows': 1, 'cols': 1, 'row_headers': ['Critical Angle:'], 'row_header_weight': 3}
         ];
 
