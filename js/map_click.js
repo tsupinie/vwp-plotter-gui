@@ -4,18 +4,12 @@ class ClickableMap {
         this._dpr = window.devicePixelRatio || 1;
 
         this.selected = null;
+        this.map_bg = null;
         this.type_plot = type_plot;
         this._click_callback = click_callback
 
         this._map = document.getElementById("map");
-
-        let rect = this._map.getBoundingClientRect();
-
-        this._elem_width = rect.width;
-        this._elem_height = rect.height;
-
-        this._map.width = rect.width * this._dpr;
-        this._map.height = rect.height * this._dpr;
+        this._setup_canvas();
 
         let parse_pts = text => {
             this.points = JSON.parse(text);
@@ -32,6 +26,15 @@ class ClickableMap {
         };
  
         this.dl_json(points_fname, parse_pts);
+
+        window.onresize = () => {
+            this._setup_canvas();
+
+            if (this.map_bg !== null) {
+                this._img_pr = this.map_bg.naturalWidth / this._elem_width;
+                this.draw_map();
+            }
+        };
     }
 
     set_background(img_fname) {
@@ -48,6 +51,16 @@ class ClickableMap {
         this.type_plot = type_plot;
 
         this.draw_map();
+    }
+
+    _setup_canvas() {
+        let rect = this._map.getBoundingClientRect();
+
+        this._elem_width = rect.width;
+        this._elem_height = rect.height;
+
+        this._map.width = rect.width * this._dpr;
+        this._map.height = rect.height * this._dpr;
     }
 
     draw_map() {
