@@ -3,7 +3,7 @@
     /* Portrait */
     :root {
         --layout-width: 97vw;
-        --selection-height: calc(var(--layout-width) * 0.655);
+        --selection-height: calc(var(--layout-width) * 0.67);
     }
 }
 
@@ -17,7 +17,7 @@
 
 :root {
     --selection-width: calc(var(--layout-width));
-    --toggle-width: 14em;
+    --toggle-width: 15em;
     --map-width: calc(var(--selection-width) - var(--toggle-width));
 
     --hodo-width: calc(var(--layout-width) - 1.9em);
