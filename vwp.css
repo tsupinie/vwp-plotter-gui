@@ -18,6 +18,14 @@ div#hamburger {
     display: none;
 }
 
+.mobile {
+    display: none;
+}
+
+.local-src {
+    display: none;
+}
+
 div#mapoverlay {
     position: absolute;
     visibility: hidden;

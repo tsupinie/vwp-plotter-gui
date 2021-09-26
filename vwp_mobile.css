@@ -92,6 +92,14 @@ div#selection.fadein {
     animation-fill-mode: forwards;
 }
 
+.desktop {
+    display: none;
+}
+
+.mobile {
+    display: revert;
+}
+
 div#smsel p, div#sfcsel p, div#orgsel p, div#bdysel p {
     display: block;
     width: 100%;
