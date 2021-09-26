@@ -476,8 +476,9 @@ class VWPApp {
         $('#file-list').empty()
         this.local_file_list.forEach(file => {
             const status_char = {'notloaded': '&ctdot;', 'error': '!', 'ok': '&check;'}[file.status]
+            const status_color = {'notaloded': 'black', 'error': 'red', 'ok': 'green'}[file.status]
 
-            $('#file-list').append('<li data-filename="' + file.name + '">' + file.name + '<span class="file-rm">&times;</span><span>' + status_char + '</span></li>');
+            $('#file-list').append('<li data-filename="' + file.name + '">' + file.name + '<span class="file-rm">&times;</span><span style="color: ' + status_color + ';">' + status_char + '</span></li>');
         });
 
         const this_ = this;
