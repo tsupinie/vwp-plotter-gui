@@ -175,7 +175,7 @@ div#mapsel li#radarname {
 }
 
 div#localsel {
-/*  display: none; */
+    display: none;
     
     height: 246px;
     border: 1px solid black;

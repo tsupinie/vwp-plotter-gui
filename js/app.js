@@ -30,18 +30,26 @@ class VWPApp {
 
         this._dt_fmt = "YYYY-MM-DD[T]HH:mm:ss[Z]";
 
-        var mapclick = (function(rad) {
-            $('#mapsel').html('<p>Radar:</p> <ul class="toggle-list"><li id="radarname">' + rad.id + ' (' + rad.name + ')' +
-                              '<span id="default" class="selectable needhelp">' + _home_svg + '<span class="help helptop">Make Default</span></span></li></ul>');
-
-            if (get_cookie('default') == rad.id) {
-                $('#default').toggleClass('selected');
+        var mapclick = rad => {
+            if (rad === null) {
+                $('#mapsel').html('<p>Radar:</p>');
             }
-            $('#default').click(this.toggle_default.bind(this));
+            else {
+                this.local_file_list = [];
+                this._update_local_file_list();
 
-            this.vwp_container.check_file_times(rad.id, false);
+                $('#mapsel').html('<p>Radar:</p> <ul class="toggle-list"><li id="radarname">' + rad.id + ' (' + rad.name + ')' +
+                                  '<span id="default" class="selectable needhelp">' + _home_svg + '<span class="help helptop">Make Default</span></span></li></ul>');
+
+                if (get_cookie('default') == rad.id) {
+                    $('#default').toggleClass('selected');
+                }
+                $('#default').click(this.toggle_default.bind(this));
+
+                this.vwp_container.check_file_times(rad.id, false);
+            }
             this.update_asos_wind();
-        }).bind(this);
+        };
 
         var age_limit = 2700;
 
@@ -213,13 +221,19 @@ class VWPApp {
         }
     }
 
-    set_frame_list(frames) {
+    set_frame_list(frames, expect_data) {
+        if (expect_data === undefined) {
+            expect_data = true;
+        }
+
         var anim_controls = $('#animcontrols');
         $('#framelist').remove();
         $('#datamissing').remove();
 
         if (frames.length == 0) {
-            anim_controls.append('<p id="datamissing">No Data</p>');
+            if (expect_data) {
+                anim_controls.append('<p id="datamissing">No Data</p>');
+            }
         }
         else {
             anim_controls.append('<ul id="framelist"></ul>');
@@ -399,6 +413,7 @@ class VWPApp {
 
     update_asos_wind() {
         if (this.radars.selected === null || this._metars === null) {
+            $('#asoswind').html("ASOS");
             return;
         }
 
@@ -443,6 +458,7 @@ class VWPApp {
     }
 
     load_local() {
+        this.radars.clear_selection();
         const files = $('#local').get(0).files;
         for (const file of files) {
             if (!this.local_file_list.map(f => f.name).includes(file.name)) {
@@ -522,10 +538,14 @@ class VWPApp {
             if (val == 'Local') {
                 $('#map').css('display', 'none');
                 $('#localsel').css('display', 'block');
+                $('#selection .web-src').css('display', 'none');
+                $('#selection .local-src').css('display', 'revert');
             }
             else {
                 $('#map').css('display', 'block');
                 $('#localsel').css('display', 'none');
+                $('#selection .web-src').css('display', 'revert');
+                $('#selection .local-src').css('display', 'none');
 
                 this.radars.set_type(val)
             }

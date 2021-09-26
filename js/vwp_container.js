@@ -106,7 +106,10 @@ class VWPContainer {
                 console.log('Downloading vwp at ' + frame['dt'].format(this._dt_format));
                 VWP.from_server(radar_id, id, _debug).then(vwp => {
 //                  let frame = this.frame_list.get(file_name);
-                    this._set_frame_vwp_data(vwp, frame, activate_last_frame);
+                    if (this._radar == vwp.radar_id) {
+                        // Check to see if this is still the radar we're looking for (user might have changed it while we were waiting for data).
+                        this._set_frame_vwp_data(vwp, frame, activate_last_frame);
+                    }
 
                     // Check to see if we've loaded all the frames we expect from this update and cancel the refresh animation if so.
                     this._new_frames_loaded++;
@@ -140,9 +143,6 @@ class VWPContainer {
         local_files.filter(file => file.status == 'ok').forEach(file => {
             this.frame_list.set(file.name, {'status': 'loaded'});
 
-            if (this._radar === null) {
-                this._radar = file.vwp.radar_id;
-            }
             let frame = this.frame_list.get(file.name);
             frame['dt'] = file.vwp.radar_dt;
 
@@ -150,7 +150,7 @@ class VWPContainer {
         });
 
         if (local_files.length == 0) {
-            this._update_ui_frame_list();
+            this._update_ui_frame_list(false);
             if (this.onsethodobbox !== null) {
                 this.onsethodobbox(null);
             }
@@ -510,17 +510,13 @@ class VWPContainer {
         }
     }
 
-    _update_ui_frame_list() {
+    _update_ui_frame_list(expect_data) {
         if (this.onnewframelist !== null) {
-            this.onnewframelist(Array.from(this.frame_list.values()));
+            this.onnewframelist(Array.from(this.frame_list.values()), expect_data);
         }
     }
 
     _set_frame_vwp_data(vwp, frame, activate_last_frame) {
-        // Check to see if this is still the radar we're looking for (user might have changed it while we were waiting for data).
-        if (this._radar != vwp.radar_id) {
-            return;
-        }
 
         vwp.change_storm_motion(this._storm_motion);
         vwp.change_origin(this._origin);

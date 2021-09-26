@@ -53,6 +53,13 @@ class ClickableMap {
         this.draw_map();
     }
 
+    clear_selection() {
+        this.selected = null;
+
+        this._click_callback(null);
+        this.draw_map();
+    }
+
     _setup_canvas() {
         let rect = this._map.getBoundingClientRect();
 
