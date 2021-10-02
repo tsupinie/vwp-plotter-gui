@@ -54,18 +54,18 @@ $script_name = "/home/autumn35/public_html/{$_SERVER['SCRIPT_NAME']}";
   <div id="selection">
     <div>
       <p class="desktop web-src">Click on the map to select a radar</p>
-      <p class="desktop local-src">Click to load data from your hard disk</p>
+      <p class="desktop local-src">Click to load data from your device</p>
       <p class="mobile">Tap on the map to select a radar</p>
       <div id="mapdiv">
         <ul class="tab-list">
           <li id="defaultsource" class="selectable selected">WSR-88D</li>
           <li class="selectable">TDWR</li>
-          <li id="localbutton" class="selectable">Local</li>
+          <li id="localbutton" class="selectable">From Device</li>
         </ul>
         <canvas id="map"></canvas>
         <div id="mapoverlay"></div>
         <div id="localsel">
-          <label for="local" style="display: block;">Choose Local Files</label>
+          <label for="local" style="display: block;">Choose files from device</label>
           <input type="file" id="local" name="local" multiple>
           <ul id="file-list">
           </ul>

@@ -554,7 +554,7 @@ class VWPApp {
             this.vwp_container.change_boundary(val);
         }
         else if (list_obj.id == "mapdiv") {
-            if (val == 'Local') {
+            if (val == $('#localbutton')[0].childNodes[0].textContent) {
                 $('#map').css('display', 'none');
                 $('#localsel').css('display', 'block');
                 $('#selection .web-src').css('display', 'none');
