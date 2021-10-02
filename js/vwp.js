@@ -946,6 +946,13 @@ class VWP {
                 altitude.push(Math.sqrt(Math.pow(r_e, 2) + Math.pow(slant_range, 2) + 2 * r_e * slant_range * Math.sin(elev_angle * Math.PI / 180)) - r_e);
             });
 
+            const keysort = function() {
+                const zip = arys => arys[0].map((_, idx) => arys.map(ary => ary[idx]));
+                return zip(zip([...arguments]).sort((elem1, elem2) => elem1[0] - elem2[0]));
+            };
+
+            [altitude, wind_dir, wind_spd, rms_error] = keysort(altitude, wind_dir, wind_spd, rms_error);
+
             return new VWP(radar_id, dt, wind_dir, wind_spd, altitude, rms_error);
         })
     }
