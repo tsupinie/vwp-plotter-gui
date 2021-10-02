@@ -173,3 +173,7 @@ div#selecthelp {
 #tapreadout {
     display: block;
 }
+
+div#footer {
+    display: none;
+}
