@@ -17,6 +17,34 @@ class HodoPlot {
         this._selection_anim_bg = null;
 
         this._tap_moved = false;
+        this._setup_event_handlers();
+
+        this._mouse_x = null;
+        this._mouse_y = null;
+
+        window.addEventListener('resize', () => {
+            const bbox = this._contexts['hodo'].bbox_data;
+
+            this._setup_canvas();
+            this._setup_event_handlers();
+
+            this._contexts['hodo'].bbox_data = bbox;
+
+            if (this.onhodorefresh !== null) {
+                this.onhodorefresh();
+            }
+        });
+    }
+
+    _setup_event_handlers() {
+        this._canvas.onmousemove = () => {};
+        this._canvas.onmouseup = () => {};
+        this._canvas.onmouseout = () => {};
+
+        this._canvas.ontouchstart = () => {};
+        this._canvas.ontouchmove = () => {};
+        this._canvas.ontouchcancel = () => {};
+        this._canvas.ontouchend = () => {};
 
         if (get_media() == 'desktop') {
             this._canvas.onmousemove = this.mousemove.bind(this);
@@ -41,21 +69,6 @@ class HodoPlot {
             this._canvas.ontouchcancel = event => this.mouseclick(event.changedTouches[0]);
             this._canvas.ontouchend = event => this.mouseclick(event.changedTouches[0]);
         }
-
-        this._mouse_x = null;
-        this._mouse_y = null;
-
-        window.addEventListener('resize', () => {
-            const bbox = this._contexts['hodo'].bbox_data;
-
-            this._setup_canvas();
-
-            this._contexts['hodo'].bbox_data = bbox;
-
-            if (this.onhodorefresh !== null) {
-                this.onhodorefresh();
-            }
-        });
     }
 
     _setup_canvas() {
