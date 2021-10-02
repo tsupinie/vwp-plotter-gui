@@ -89,3 +89,7 @@ function compute_boundary_segment(bbox, [bdy_u, bdy_v]) {
 
     return [[bdy_lbu, bdy_lbv], [bdy_ubu, bdy_ubv]];
 }
+
+function get_media() {
+    return window.getComputedStyle(document.querySelector('#screenstate'), ':before').getPropertyValue('content').replace(/['"]/g, '');
+}

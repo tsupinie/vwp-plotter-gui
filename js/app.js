@@ -147,7 +147,7 @@ class VWPApp {
             help.style.left = target_pos.x + 70;
             help.style.top = target_pos.y;
 
-            const vector_callback = (wspd, wdir) => {
+            const vector_callback = (wspd, wdir, x, y) => {
                 let vec_str;
 
                 if (wspd !== null && wdir !== null) {
@@ -157,16 +157,19 @@ class VWPApp {
                     vec_str = "DDD/SS";
                 }
 
+                $('#tapreadout').css('visibility', 'visible');
+                $('#tapreadout').css('left', x);
+                $('#tapreadout').css('top', y);
+                $('#tapreadout').html(vec_str);
+
                 const txt = document.createTextNode(vec_str);
                 target.replaceChild(txt, target.childNodes[0]);
             };
 
-            const vector_callback_boundary = (wspd, wdir, ctx) => {
-                let vec_str;
+            const vector_callback_boundary = (wspd, wdir, x, y, ctx) => {
+                vector_callback(wspd, wdir, x, y);
 
                 if (wspd !== null && wdir !== null) {
-                    vec_str = format_vector(wdir, wspd);
-
                     const [[bdy_lbu, bdy_lbv], [bdy_ubu, bdy_ubv]] = compute_boundary_segment(ctx.bbox_data, vec2comp(wdir, wspd));
                     ctx.save();
 
@@ -180,12 +183,6 @@ class VWPApp {
 
                     ctx.restore();
                 }
-                else {
-                    vec_str = "DDD/SS";
-                }
-
-                const txt = document.createTextNode(vec_str);
-                target.replaceChild(txt, target.childNodes[0]);
             };
 
             const done_callback = (wspd, wdir) => {
@@ -197,6 +194,14 @@ class VWPApp {
                     this.vwp_container.start_animation(true);
                 }
 
+                if (get_media() == 'mobile') {
+                    this.hamburger_tap();
+                }
+
+                $('#tapreadout').css('visibility', 'hidden');
+                $('#tapreadout').css('left', 0);
+                $('#tapreadout').css('top', 0);
+
                 help.style.visibility = "hidden";
                 help.style.offsetLeft = 0;
                 help.style.offsetTop = 0;
@@ -207,12 +212,14 @@ class VWPApp {
             if (this.vwp_container.is_animating) {
                 this.vwp_container.pause_animation(true);
             }
-            if (target.parentElement.parentElement.id == "bdysel") {
-                this.hodo.selection_start(vector_callback_boundary, done_callback);
+
+            const cb = target.parentElement.parentElement.id == "bdysel" ? vector_callback_boundary : vector_callback;
+            this.hodo.selection_start(cb, done_callback);
+
+            if (get_media() == 'mobile') {
+                this.hamburger_tap();
             }
-            else {
-                this.hodo.selection_start(vector_callback, done_callback);
-            }
+
             this.vwp_container.draw_active_frame();
         }
         else {
@@ -553,6 +560,9 @@ class VWPApp {
     };
 
     _abort_selection() {
+        if (get_media() == 'mobile') {
+            this.hamburger_tap();
+        }
         if (this.prev_selection !== null) {
             this._select_box(this.prev_selection)
             this._update_state(this.prev_selection, this.prev_selection.childNodes[0].textContent);

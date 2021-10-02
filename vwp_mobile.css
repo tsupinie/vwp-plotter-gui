@@ -161,3 +161,15 @@ div#info {
 #mapoverlay {
     display: none;
 }
+
+div#selecthelp {
+    display: none;
+}
+
+#screenstate:before {
+    content: 'mobile';
+}
+
+#tapreadout {
+    display: block;
+}

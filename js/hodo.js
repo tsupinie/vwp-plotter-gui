@@ -16,9 +16,31 @@ class HodoPlot {
         this.selecting = false;
         this._selection_anim_bg = null;
 
-        this._canvas.onmousemove = this.mousemove.bind(this);
-        this._canvas.onmouseup = this.mouseclick.bind(this);
-        this._canvas.onmouseout = this.mouseleave.bind(this);
+        this._tap_moved = false;
+
+        if (get_media() == 'desktop') {
+            this._canvas.onmousemove = this.mousemove.bind(this);
+            this._canvas.onmouseup = this.mouseclick.bind(this);
+            this._canvas.onmouseout = this.mouseleave.bind(this);
+        }
+        else {
+            this._canvas.ontouchstart = event => {
+                this._tap_moved = false;
+                if (this.selecting) {
+                    event.preventDefault();
+                    this.mousemove(event.changedTouches[0]);
+                }
+            };
+            this._canvas.ontouchmove = event => {
+                this._tap_moved = true;
+                if (this.selecting) {
+                    event.preventDefault();
+                    this.mousemove(event.changedTouches[0]);
+                }
+            };
+            this._canvas.ontouchcancel = event => this.mouseclick(event.changedTouches[0]);
+            this._canvas.ontouchend = event => this.mouseclick(event.changedTouches[0]);
+        }
 
         this._mouse_x = null;
         this._mouse_y = null;
@@ -118,8 +140,9 @@ class HodoPlot {
             [mx, my] = [this._mouse_x, this._mouse_y];
         }
         else {
-            mx = event.offsetX / this._scale_fac;
-            my = event.offsetY / this._scale_fac;
+            const rect = event.target.getBoundingClientRect();
+            mx = (event.pageX - rect.left) / this._scale_fac;
+            my = (event.pageY - rect.top) / this._scale_fac;
             [this._mouse_x, this._mouse_y] = [mx, my];
         }
 
@@ -145,21 +168,22 @@ class HodoPlot {
             if (this._contexts['hodo_gr'].bbox_data.contains(u, v)) {
                 hodo.style.cursor = "crosshair";
                 const [wdir, wspd] = comp2vec(u, v);
-                this._move_callback(wspd, wdir, this._contexts['hodo_gr']);
+                this._move_callback(wspd, wdir, event.pageX, event.pageY, this._contexts['hodo_gr']);
             }
             else {
                 hodo.style.cursor = "default";
-                this._move_callback(null, null, null);
+                this._move_callback(null, null, null, null, null);
             }
         }
     }
 
     mouseclick(event) {
-        const mx = event.offsetX / this._scale_fac;
-        const my = event.offsetY / this._scale_fac;
+        const rect = event.target.getBoundingClientRect();
+        const mx = (event.pageX - rect.left) / this._scale_fac;
+        const my = (event.pageY - rect.top) / this._scale_fac;
 
         if (this._move_callback === null) {
-            if (this._contexts['hodo'].bbox_pixels.contains(mx, my)) {
+            if (this._contexts['hodo'].bbox_pixels.contains(mx, my) && !this._tap_moved) {
                 if (this.onscreenshot !== null) {
                     this.onscreenshot()
                 }
@@ -174,7 +198,7 @@ class HodoPlot {
 
     mouseleave(event) {
         if (this._move_callback !== null) {
-            this._move_callback(null, null, null);
+            this._move_callback(null, null, null, null, null);
         }
     }
 

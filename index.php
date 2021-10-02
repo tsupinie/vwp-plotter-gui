@@ -45,6 +45,7 @@ $script_name = "/home/autumn35/public_html/{$_SERVER['SCRIPT_NAME']}";
 <body>
 <input type='hidden' id='root_url' value='<?php echo $root_url; ?>'>
 <input type='hidden' id='session_id' value='<?php echo $session_id; ?>'>
+<div id="screenstate"></div>
 <div id="main">
   <h1>VWP Hodographs</h1>
   <div id="hamburger">
@@ -226,6 +227,7 @@ $script_name = "/home/autumn35/public_html/{$_SERVER['SCRIPT_NAME']}";
   <div id="selecthelp">
     <p>&#8594;</p>
   </div>
+  <div id="tapreadout"></div>
   <div id="info">
     <p>
     <script type="text/javascript">

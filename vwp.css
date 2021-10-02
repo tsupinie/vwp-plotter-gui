@@ -150,6 +150,7 @@ span#default {
     padding-bottom: 1.5px;
 
     float: right;
+    transform: translate(1px, 0px);
 }
 
 li#default svg {
@@ -651,4 +652,26 @@ div#animcontrols .selectable, div#doccontrol .selectable {
 
 .modal td:last-child {
     border-right: none;
+}
+
+#screenstate {
+    position: absolute;
+    top: -999em;
+    left: -999em;
+}
+
+#screenstate:before {
+    content: 'desktop';
+}
+
+#tapreadout {
+    display: none;
+    visibility: hidden;
+    position: absolute;
+
+    border: 1px solid black;
+    background-color: #f3f3f3;
+    padding-left: 5px;
+    padding-right: 5px;
+    transform: translate(-50%, -160%);
 }
