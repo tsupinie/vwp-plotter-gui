@@ -149,15 +149,14 @@ class VWPApp {
 
         if (target.vector_select) {
             this.prev_selection = this._select_box(target);
-            let help = document.getElementById("selecthelp");
+            let help = $("#selecthelp");
+            let tapreadout = $('#tapreadout');
 
-            help.style.visibility = "visible";
             let target_pos = _page_pos(target);
 
-            help.style.offsetLeft = target_pos.x + 70;
-            help.style.offsetTop = target_pos.y;
-            help.style.left = target_pos.x + 70;
-            help.style.top = target_pos.y;
+            help.css('visibility', 'visible');
+            help.css('left', target_pos.x + 70);
+            help.css('top', target_pos.y);
 
             const vector_callback = (wspd, wdir, x, y) => {
                 let vec_str;
@@ -169,10 +168,10 @@ class VWPApp {
                     vec_str = "DDD/SS";
                 }
 
-                $('#tapreadout').css('visibility', 'visible');
-                $('#tapreadout').css('left', x);
-                $('#tapreadout').css('top', y);
-                $('#tapreadout').html(vec_str);
+                tapreadout.css('visibility', 'visible');
+                tapreadout.css('left', x);
+                tapreadout.css('top', y);
+                tapreadout.html(vec_str);
 
                 const txt = document.createTextNode(vec_str);
                 target.replaceChild(txt, target.childNodes[0]);
@@ -210,15 +209,13 @@ class VWPApp {
                     this.hamburger_tap();
                 }
 
-                $('#tapreadout').css('visibility', 'hidden');
-                $('#tapreadout').css('left', 0);
-                $('#tapreadout').css('top', 0);
+                tapreadout.css('visibility', 'hidden');
+                tapreadout.css('left', 0);
+                tapreadout.css('top', 0);
 
-                help.style.visibility = "hidden";
-                help.style.offsetLeft = 0;
-                help.style.offsetTop = 0;
-                help.style.left = 0;
-                help.style.top = 0;
+                help.css('visibility', 'hidden');
+                help.css('left', 0);
+                help.css('top', 0);
             };
 
             if (this.vwp_container.is_animating) {
