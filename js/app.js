@@ -53,6 +53,16 @@ class VWPApp {
 
         var age_limit = 2700;
 
+        // This has to go before we construct the the map so this resize event fires first. 
+        // This re-displays the map before the map class tries to get the size of the element and stuff.
+        window.addEventListener('resize', () => {
+            if ($('#map').css('display') == 'none') {
+                const elem = $('#defaultsource')[0];
+                this._select_box(elem);
+                this._update_state(elem.parentElement.parentElement, elem.childNodes[0].textContent);
+            }
+        });
+
         this.map_fname = 'imgs/map.png';
         this.radars = new ClickableMap(this.map_fname, 'vwp_radars.json', mapclick, "WSR-88D");
         if (get_cookie('default') !== undefined) {
@@ -122,10 +132,12 @@ class VWPApp {
             }
             ev.preventDefault();
         });
+
     }
 
     select(event) {
         const target = event.target;
+        const target_list = target.parentElement.parentElement;
 
         if (target.classList.contains("grayout")) {
             return;
@@ -187,7 +199,7 @@ class VWPApp {
 
             const done_callback = (wspd, wdir) => {
                 if (wdir !== null && wspd !== null) {
-                    this._update_state(target, [wdir, wspd]);
+                    this._update_state(target_list, [wdir, wspd]);
                 }
 
                 if (this.vwp_container.is_animating) {
@@ -213,7 +225,7 @@ class VWPApp {
                 this.vwp_container.pause_animation(true);
             }
 
-            const cb = target.parentElement.parentElement.id == "bdysel" ? vector_callback_boundary : vector_callback;
+            const cb = target_list.id == "bdysel" ? vector_callback_boundary : vector_callback;
             this.hodo.selection_start(cb, done_callback);
 
             if (get_media() == 'mobile') {
@@ -224,7 +236,7 @@ class VWPApp {
         }
         else {
             this._select_box(target);
-            this._update_state(target, target.childNodes[0].textContent);
+            this._update_state(target_list, target.childNodes[0].textContent);
         }
     }
 
@@ -407,7 +419,7 @@ class VWPApp {
             var target = $('#gr_origin')[0];
 
             this._select_box(target);
-            this._update_state(target, target.childNodes[0].textContent);
+            this._update_state(target.parentElement.parentElement, target.childNodes[0].textContent);
         }
     }
 
@@ -525,36 +537,44 @@ class VWPApp {
         return was_selected;
     };
 
-    _update_state(obj, val) {
-        if (obj.parentElement.parentElement.id == "smsel") {
+    _update_state(list_obj, val) {
+        if (list_obj.id == "smsel") {
             this.vwp_container.change_storm_motion(val);
         }
-        else if (obj.parentElement.parentElement.id == "sfcsel") {
+        else if (list_obj.id == "sfcsel") {
             if (typeof val == 'string' && val != "None") {
                 val = 'metar';
             }
             this.vwp_container.change_surface_wind(val);
         }
-        else if (obj.parentElement.parentElement.id == "orgsel") {
+        else if (list_obj.id == "orgsel") {
             this.vwp_container.change_origin(val.toLowerCase());
         }
-        else if (obj.parentElement.parentElement.id == "bdysel") {
+        else if (list_obj.id == "bdysel") {
             this.vwp_container.change_boundary(val);
         }
-        else if (obj.parentElement.parentElement.id == "mapdiv") {
+        else if (list_obj.id == "mapdiv") {
             if (val == 'Local') {
                 $('#map').css('display', 'none');
                 $('#localsel').css('display', 'block');
                 $('#selection .web-src').css('display', 'none');
                 $('#selection .local-src').css('display', 'revert');
+                $('#selection .mobile').css('display', 'none');
             }
             else {
                 $('#map').css('display', 'block');
                 $('#localsel').css('display', 'none');
-                $('#selection .web-src').css('display', 'revert');
-                $('#selection .local-src').css('display', 'none');
-
-                this.radars.set_type(val)
+                if (get_media() == 'desktop') {
+                    $('#selection .web-src').css('display', 'revert');
+                    $('#selection .local-src').css('display', 'none');
+                    $('#selection .mobile').css('display', 'none');
+                }
+                else {
+                    $('#selection .web-src').css('display', 'none');
+                    $('#selection .local-src').css('display', 'none');
+                    $('#selection .mobile').css('display', 'revert');
+                }
+                this.radars.set_type(val);
             }
         }
     };
@@ -565,7 +585,7 @@ class VWPApp {
         }
         if (this.prev_selection !== null) {
             this._select_box(this.prev_selection)
-            this._update_state(this.prev_selection, this.prev_selection.childNodes[0].textContent);
+            this._update_state(this.prev_selection.parentElement.parentElement, this.prev_selection.childNodes[0].textContent);
         }
         this.hodo.selection_finish(null, null);
     }

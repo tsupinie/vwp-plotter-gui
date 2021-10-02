@@ -58,7 +58,7 @@ $script_name = "/home/autumn35/public_html/{$_SERVER['SCRIPT_NAME']}";
       <p class="mobile">Tap on the map to select a radar</p>
       <div id="mapdiv">
         <ul class="tab-list">
-          <li class="selectable selected">WSR-88D</li>
+          <li id="defaultsource" class="selectable selected">WSR-88D</li>
           <li class="selectable">TDWR</li>
           <li id="localbutton" class="selectable">Local</li>
         </ul>
