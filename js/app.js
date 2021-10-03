@@ -580,6 +580,7 @@ class VWPApp {
                 }
                 this.radars.set_type(val);
             }
+            this.vwp_container.draw_active_frame();
         }
     };
 
