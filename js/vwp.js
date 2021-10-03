@@ -830,11 +830,15 @@ class VWP {
             url += '&id=' + file_id;
         }
 
-        // XXX: Figure out how to re-implement the delay debug later
-
         return (new Promise((resolve, reject) => {
             $.getJSON(url).done(resolve).fail(reject);
         })).then(json => {
+            if (!_delay_debug) {
+                return json;
+            }
+
+            return new Promise((resolve, reject) => { settimeout(() => resolve(json), 10000); });
+        }).then(json => {
             json['warnings'].forEach(warn => console.warn(warn));
             return VWP.from_json(json['response']);
         });
