@@ -481,12 +481,19 @@ class VWPApp {
                 file.status = "notloaded";
                 this.local_file_list.push(file);
 
+                console.log("Loading local file '" + file.name + "'");
+
                 VWP.from_blob(file).then(vwp => {
                     file.status = "ok";
+                    file.message = "File OK";
                     file.vwp = vwp;
                 }).catch(error => {
                     file.status = "error";
-                    console.error(error);
+                    file.message = error['short'];
+                    console.error("Error in '" + file.name + "': " + error['long']);
+                }).then(() => {
+                    // A 50 ms delay to give the browser time to draw
+                    return new Promise((resolve, reject) => { setTimeout(() => resolve(), 50); });
                 }).then(() => {
                     this._update_local_file_list();
                 });
@@ -508,9 +515,9 @@ class VWPApp {
         $('#file-list').empty()
         this.local_file_list.forEach(file => {
             const status_char = {'notloaded': '&ctdot;', 'error': '!', 'ok': '&check;'}[file.status]
-            const status_color = {'notaloded': 'black', 'error': 'red', 'ok': 'green'}[file.status]
+            const status_color = {'notloaded': 'black', 'error': 'red', 'ok': 'green'}[file.status]
 
-            $('#file-list').append('<li data-filename="' + file.name + '">' + file.name + '<span class="file-rm">&times;</span><span style="color: ' + status_color + ';">' + status_char + '</span></li>');
+            $('#file-list').append('<li data-filename="' + file.name + '"><span>' + file.name + '</span><div class="file-rm">&times;</div><div class="file-status" style="color: ' + status_color + ';"><span class="needhelp" style="position: relative; cursor: help;">' + status_char + '<span class="help helpleft">' + file.message + '</span></span></div></li>');
         });
 
         const this_ = this;

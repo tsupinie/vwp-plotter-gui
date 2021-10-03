@@ -218,14 +218,15 @@ div#localsel label:hover {
 
 #file-list {
     margin: 0px;
-    margin-top: -19px;
+    margin-top: -1.1875em;
 
     list-style-type: none;
     padding: 0px;
+    padding-top: 0.25em;
     overflow-x: hidden;
     overflow-y: scroll;
 
-    height: calc(100% - 31px);
+    height: calc(100% - 2.0625em);
 }
 
 #file-list li {
@@ -236,9 +237,17 @@ div#localsel label:hover {
     margin-right: -1px;
     margin-top: -1px;
     cursor: default;
+
+    height: 1.25em;
 }
 
-#file-list li span {
+#file-list li > span {
+    width: 90%;
+    display: inline-block;
+    overflow: hidden;
+}
+
+#file-list li div {
     float: right;
     margin-left: 5px;
 
@@ -250,6 +259,11 @@ div#localsel label:hover {
 
 #file-list .file-rm {
     cursor: pointer;
+}
+
+#file-list .file-status {
+    width: 0.75em;
+    text-align: center;
 }
 
 div#smsel p, div#sfcsel p, div#orgsel p, div#bdysel p {
@@ -504,21 +518,21 @@ div#animcontrols .selectable, div#doccontrol .selectable {
     border-color: black transparent transparent transparent;
 }
 
-.helpright {
+.helpleft {
     top: 50%;
     margin-top: -15px;
-    left: calc(100% + 6px);
+    right: calc(100% + 6px);
 }
 
-.helpright::after {
+.helpleft::after {
     content: " ";
     position: absolute;
     top: 50%;
-    right: 100%;
+    left: 100%;
     margin-top: -5px;
     border-width: 5px;
     border-style: solid;
-    border-color: transparent black transparent transparent;
+    border-color: transparent transparent transparent black;
 }
 
 @keyframes fadein {

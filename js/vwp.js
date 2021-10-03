@@ -853,7 +853,7 @@ class VWP {
             const wmo_header = dataview.getUTF8String(30);
             const match = wmo_header.match(/.* (\w)\w{3} .*NVW(\w{3})/s);
             if (match === null) {
-                throw "Error parsing VWP: could not parse file headers. This is not a VWP data file.";
+                throw {'long': "Error parsing VWP: could not parse WMO headers. This is not a VWP data file.", 'short': "Couldn't parse WMO headers"};
             }
             const radar_id = match[1] + match[2];
 
@@ -873,7 +873,7 @@ class VWP {
             const product_code = dataview.getInt16();
 
             if (product_code != 48) {
-                throw "Error parsing VWP: unexpected product code (" + product_code + "). This is not a VWP data file.";
+                throw {'long': "Error parsing VWP: unexpected product code (" + product_code + "). This is not a VWP data file.", 'short': "Unexpected product code"};
             }
 
             dataview.getInt16();
@@ -900,7 +900,7 @@ class VWP {
             const block_id = dataview.getInt16();
 
             if (block_id != 3) {
-                throw "Error parsing VWP: unexpected block_id (" + block_id + "). File may be corrupt.";
+                throw {'long': "Error parsing VWP: unexpected block_id (" + block_id + "). File may be corrupt.", 'short': "Unexpected block_id"};
             }
 
             const block_size = dataview.getInt32();
