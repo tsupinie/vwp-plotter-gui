@@ -56,7 +56,7 @@ class VWPApp {
         // This has to go before we construct the the map so this resize event fires first. 
         // This re-displays the map before the map class tries to get the size of the element and stuff.
         window.addEventListener('resize', () => {
-            if ($('#map').css('display') == 'none') {
+            if ($('#map').css('display') == 'none' && get_media() == 'mobile') {
                 const elem = $('#defaultsource')[0];
                 this._select_box(elem);
                 this._update_state(elem.parentElement.parentElement, elem.childNodes[0].textContent);
