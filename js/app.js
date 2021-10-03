@@ -541,21 +541,25 @@ class VWPApp {
         return was_selected;
     };
 
-    _update_state(list_obj, val) {
+    _update_state(list_obj, val, redraw) {
+        if (redraw === undefined) {
+            redraw = true;
+        }
+
         if (list_obj.id == "smsel") {
-            this.vwp_container.change_storm_motion(val);
+            this.vwp_container.change_storm_motion(val, redraw);
         }
         else if (list_obj.id == "sfcsel") {
             if (typeof val == 'string' && val != "None") {
                 val = 'metar';
             }
-            this.vwp_container.change_surface_wind(val);
+            this.vwp_container.change_surface_wind(val, redraw);
         }
         else if (list_obj.id == "orgsel") {
-            this.vwp_container.change_origin(val.toLowerCase());
+            this.vwp_container.change_origin(val.toLowerCase(), redraw);
         }
         else if (list_obj.id == "bdysel") {
-            this.vwp_container.change_boundary(val);
+            this.vwp_container.change_boundary(val, redraw);
         }
         else if (list_obj.id == "mapdiv") {
             if (val == $('#localbutton')[0].childNodes[0].textContent) {
@@ -580,7 +584,9 @@ class VWPApp {
                 }
                 this.radars.set_type(val);
             }
-            this.vwp_container.draw_active_frame();
+            if (redraw) {
+                this.vwp_container.draw_active_frame();
+            }
         }
     };
 
@@ -590,7 +596,7 @@ class VWPApp {
         }
         if (this.prev_selection !== null) {
             this._select_box(this.prev_selection)
-            this._update_state(this.prev_selection.parentElement.parentElement, this.prev_selection.childNodes[0].textContent);
+            this._update_state(this.prev_selection.parentElement.parentElement, this.prev_selection.childNodes[0].textContent, false);
         }
         this.hodo.selection_finish(null, null);
     }
