@@ -1,0 +1,179 @@
+
+@media only screen and (max-aspect-ratio: 10/7) {
+    /* Portrait */
+    :root {
+        --layout-width: 97vw;
+        --selection-height: calc(var(--layout-width) * 0.67);
+    }
+}
+
+@media only screen and (min-aspect-ratio: 10/7) {
+    /* Landscape */
+    :root {
+        --layout-width: calc(100vh / 0.705);
+        --selection-height: 94vh;
+    }
+}
+
+:root {
+    --selection-width: calc(var(--layout-width));
+    --toggle-width: 15em;
+    --map-width: calc(var(--selection-width) - var(--toggle-width));
+
+    --hodo-width: calc(var(--layout-width) - 1.9em);
+}
+
+div#main {
+    overflow: auto;
+}
+
+div#main > h1 {
+    display: none;
+}
+
+div#hamburger {
+    z-index: 20;
+    position: absolute;
+
+    margin-left: 0.4em;
+    margin-top: 0.4em;
+
+    display: inline-block;
+    width: 2em;
+    height: 2em;
+}
+
+div#hamburger span {
+    display: block;
+    width: 1.5em;
+    height: 0.25em;
+    margin: 0.25em auto;
+    -webkit-transition: all 0.3s ease-in-out;
+    transition: all 0.3s ease-in-out;
+    background-color: #000000;
+}
+
+div#hamburger.active span:nth-child(2) {
+    opacity: 0;
+}
+
+div#hamburger.active span:nth-child(1) {
+    transform: translateY(8px) rotate(45deg);
+}
+
+div#hamburger.active span:nth-child(3) {
+    transform: translateY(-8px) rotate(-45deg);
+}
+
+div#selection {
+    visibility: hidden;
+    flex-direction: row;
+    align-items: center;
+    column-gap: 5px;
+    position: absolute;
+    z-index: 10;
+
+    left: calc(50% - var(--layout-width) / 2 - 1px);
+    top: 1em;
+    height: var(--selection-height);
+
+    background-color: #ffffff;
+}
+
+div#selection.fadeout {
+    animation: fadeout 0.3s;
+    animation-direction: normal;
+    animation-fill-mode: forwards;
+}
+
+div#selection.fadein {
+    animation: fadein 0.3s;
+    animation-direction: normal;
+    animation-fill-mode: forwards;
+}
+
+.desktop {
+    display: none;
+}
+
+.mobile {
+    display: revert;
+}
+
+div#smsel p, div#sfcsel p, div#orgsel p, div#bdysel p {
+    display: block;
+    width: 100%;
+}
+
+#localbutton {
+    display: none;
+}
+
+div#hododiv {
+    float: right;
+    width: 100%;
+    overflow: auto;
+}
+
+div#hododiv canvas {
+    float: right;
+}
+
+div#controlstrip {
+    flex-direction: column-reverse;
+    margin-top: 2.4em;
+    margin-left: 0.4em;
+}
+
+div#animcontrols {
+    flex-direction: column;
+    width: 1.875em;
+}
+
+div#animcontrols .selectable, div#doccontrol .selectable {
+    margin-left: 0px;
+    margin-bottom: 5px;
+}
+
+div#doccontrol {
+    flex-direction: column;
+    width: 1.875em;
+}
+
+div#info {
+    display: none;
+}
+
+#framelist {
+    width: 2em;
+}
+
+#framelist li {
+    width: 2em;
+    height: 0.9375em;
+    line-height: 0.9375em;
+}
+
+.needhelp:hover .help {
+    animation: none;
+}
+
+#mapoverlay {
+    display: none;
+}
+
+div#selecthelp {
+    display: none;
+}
+
+#screenstate:before {
+    content: 'mobile';
+}
+
+#tapreadout {
+    display: block;
+}
+
+div#footer {
+    display: none;
+}

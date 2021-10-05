@@ -1,22 +1,89 @@
 
 class HodoPlot {
     constructor() {
-        this._vwp_container = null;
-
-        this._dpr = window.devicePixelRatio || 1;
+        this._default_hodo_bbox_uv = new BBox(-40, -40, 80, 80);
 
         this._canvas = document.getElementById("hodo");
-        this._canvas.style.width = this._canvas.width + "px";
-        this._canvas.style.height = this._canvas.height + "px";
+        this._setup_canvas();
 
-        this._canvas.width *= this._dpr;
-        this._canvas.height *= this._dpr;
+        this.onscreenshot = null;
+        this.onhodorefresh = null;
+
+        this._clear_and_draw_background(this._canvas, this._contexts, this._dpr);
+
+        this._move_callback = null;
+        this._done_callback = null;
+        this.selecting = false;
+        this._selection_anim_bg = null;
+
+        this._tap_moved = false;
+        this._setup_event_handlers();
+
+        this._mouse_x = null;
+        this._mouse_y = null;
+
+        window.addEventListener('resize', () => {
+            const bbox = this._contexts['hodo'].bbox_data;
+
+            this._setup_canvas();
+            this._setup_event_handlers();
+
+            this._contexts['hodo'].bbox_data = bbox;
+
+            if (this.onhodorefresh !== null) {
+                this.onhodorefresh();
+            }
+        });
+    }
+
+    _setup_event_handlers() {
+        this._canvas.onmousemove = () => {};
+        this._canvas.onmouseup = () => {};
+        this._canvas.onmouseout = () => {};
+
+        this._canvas.ontouchstart = () => {};
+        this._canvas.ontouchmove = () => {};
+        this._canvas.ontouchcancel = () => {};
+        this._canvas.ontouchend = () => {};
+
+        if (get_media() == 'desktop') {
+            this._canvas.onmousemove = this.mousemove.bind(this);
+            this._canvas.onmouseup = this.mouseclick.bind(this);
+            this._canvas.onmouseout = this.mouseleave.bind(this);
+        }
+        else {
+            this._canvas.ontouchstart = event => {
+                this._tap_moved = false;
+                if (this.selecting) {
+                    event.preventDefault();
+                    this.mousemove(event.changedTouches[0]);
+                }
+            };
+            this._canvas.ontouchmove = event => {
+                this._tap_moved = true;
+                if (this.selecting) {
+                    event.preventDefault();
+                    this.mousemove(event.changedTouches[0]);
+                }
+            };
+            this._canvas.ontouchcancel = event => this.mouseclick(event.changedTouches[0]);
+            this._canvas.ontouchend = event => this.mouseclick(event.changedTouches[0]);
+        }
+    }
+
+    _setup_canvas() {
+        this._dpr = window.devicePixelRatio || 1;
+
+        let rect = this._canvas.getBoundingClientRect();
+        this._canvas.width = rect.width * this._dpr;
+        this._canvas.height = rect.height * this._dpr;
+
+        this._scale_fac = rect.width / 670;
+        this._dpr *= this._scale_fac;
 
         this._contexts = {};
 
-        this._default_hodo_bbox_uv = new BBox(-40, -40, 80, 80);
-
-        var hodo_bbox_pixels = new BBox(17.28, 17.92, 449.28, 449.92);
+        const hodo_bbox_pixels = new BBox(17.28, 17.92, 449.28, 449.92);
         this._contexts['hodo'] = Context2DWrapper.create_proxy(this._canvas, hodo_bbox_pixels, this._default_hodo_bbox_uv, this._dpr);
         this._contexts['hodo_gr'] = Context2DWrapper.create_proxy(this._canvas, hodo_bbox_pixels, this._default_hodo_bbox_uv, this._dpr);
 
@@ -29,29 +96,15 @@ class HodoPlot {
         this._tables = [
             {'rows': 4, 'cols': [1, 1, 1.4, 1], 'row_headers': ['0-500 m', '0-1 km', '0-3 km', '0-6 km'], 'row_header_weight': 1.5,
                 'col_headers': ['BWD\n(kts)', 'LNBS\n(kts)', 'SR Flow\n(kts)', 'SRH\n(m\u{00b2}/s\u{00b2})'], 'col_header_weight': 2},
-            {'rows': 5, 'cols': [1], 'row_headers': ['Storm Motion:', 'Bunkers Left Mover:', 'Bunkers Right Mover:', 'Mean Wind:', 'Deviant Tornado Motion:'], 'row_header_weight': 3},
+            {'rows': 5, 'cols': [1], 'row_headers': ['Storm Motion (SM):', 'Bunkers Left Mover (LM):', 'Bunkers Right Mover (RM):', 'Mean Wind (MEAN):', 'Deviant Tor Motion (DTM):'], 'row_header_weight': 3},
             {'rows': 1, 'cols': 1, 'row_headers': ['Critical Angle:'], 'row_header_weight': 3}
         ];
 
         [this._contexts['table'], this._tab_spacer_ys] = this._generate_table_proxies(this._canvas, this._dpr);
 
-        var srwind_bbox_pixels = new BBox(470, 210, 658.36, 449.92);
-        var srwind_bbox_data = new BBox(0, 0, 70, 12);
+        const srwind_bbox_pixels = new BBox(470, 210, 658.36, 449.92);
+        const srwind_bbox_data = new BBox(0, 0, 70, 12);
         this._contexts['srwind'] = Context2DWrapper.create_proxy(this._canvas, srwind_bbox_pixels, srwind_bbox_data, this._dpr);
-
-        this._clear_and_draw_background(this._canvas, this._contexts, this._dpr);
-
-        this._move_callback = null;
-        this._done_callback = null;
-        this.selecting = false;
-        this._selection_anim_bg = null;
-
-        this._canvas.onmousemove = this.mousemove.bind(this);
-        this._canvas.onmouseup = this.mouseclick.bind(this);
-        this._canvas.onmouseout = this.mouseleave.bind(this);
-
-        this._mouse_x = null;
-        this._mouse_y = null;
     }
 
     reset() {
@@ -60,14 +113,15 @@ class HodoPlot {
         this._clear_and_draw_background(this._canvas, this._contexts, this._dpr);
     }
 
-    add_vwp_container(vwp_container) {
-        this._vwp_container = vwp_container;
-    }
-
     set_bbox(bbox) {
-        // Warning: this could let the display and ground-relative bboxes get out of sync. This doesn't happen
-        //  currently because the calling functions immediately draw a vwp, which updates the ground-relative bbox.
-        this._contexts['hodo'].bbox_data = bbox;
+        if (bbox == null) {
+            this.reset();
+        }
+        else {
+            // Warning: this could let the display and ground-relative bboxes get out of sync. This doesn't happen
+            //  currently because the calling functions immediately draw a vwp, which updates the ground-relative bbox.
+            this._contexts['hodo'].bbox_data = bbox;
+        }
     }
 
     draw_vwp(vwp) {
@@ -99,8 +153,9 @@ class HodoPlot {
             [mx, my] = [this._mouse_x, this._mouse_y];
         }
         else {
-            mx = event.pageX - this._canvas.offsetLeft;
-            my = event.pageY - this._canvas.offsetTop;
+            const rect = event.target.getBoundingClientRect();
+            mx = (event.pageX - rect.left) / this._scale_fac;
+            my = (event.pageY - rect.top) / this._scale_fac;
             [this._mouse_x, this._mouse_y] = [mx, my];
         }
 
@@ -126,22 +181,25 @@ class HodoPlot {
             if (this._contexts['hodo_gr'].bbox_data.contains(u, v)) {
                 hodo.style.cursor = "crosshair";
                 const [wdir, wspd] = comp2vec(u, v);
-                this._move_callback(wspd, wdir, this._contexts['hodo_gr']);
+                this._move_callback(wspd, wdir, event.pageX, event.pageY, this._contexts['hodo_gr']);
             }
             else {
                 hodo.style.cursor = "default";
-                this._move_callback(null, null, null);
+                this._move_callback(null, null, null, null, null);
             }
         }
     }
 
     mouseclick(event) {
-        const mx = event.pageX - hodo.offsetLeft;
-        const my = event.pageY - hodo.offsetTop;
+        const rect = event.target.getBoundingClientRect();
+        const mx = (event.pageX - rect.left) / this._scale_fac;
+        const my = (event.pageY - rect.top) / this._scale_fac;
 
         if (this._move_callback === null) {
-            if (this._contexts['hodo'].bbox_pixels.contains(mx, my)) {
-                this._vwp_container.screenshot()
+            if (this._contexts['hodo'].bbox_pixels.contains(mx, my) && !this._tap_moved) {
+                if (this.onscreenshot !== null) {
+                    this.onscreenshot()
+                }
             }
         }
         else {
@@ -153,7 +211,7 @@ class HodoPlot {
 
     mouseleave(event) {
         if (this._move_callback !== null) {
-            this._move_callback(null, null, null);
+            this._move_callback(null, null, null, null, null);
         }
     }
 
@@ -242,7 +300,7 @@ class HodoPlot {
 
         if (draw_labels) {
             for (var irng = min_label; irng <= max_label; irng += hodo_ring_spacing) {
-                ctx.font = '11px Trebuchet MS';
+                ctx.fontsize = 11;
                 ctx.fillStyle = color;
                 ctx.textBaseline = 'top';
 
@@ -286,6 +344,7 @@ class HodoPlot {
         **********************************/
         var ctx = contexts['hodo'];
         var [lbu, lbv, ubu, ubv] = [ctx.bbox_data.lbx, ctx.bbox_data.lby, ctx.bbox_data.ubx, ctx.bbox_data.uby];
+        ctx.fontface = 'Trebuchet MS'
 
         this._draw_hodo_coordinates(ctx, 0, 0, '#999999', true);
 
@@ -310,7 +369,7 @@ class HodoPlot {
 
         var [txtu, txtv] = ctx.pixelOffset(ubu, lbv, 0, 2);
         ctx.fillStyle = '#000000';
-        ctx.font = '11px Trebuchet MS';
+        ctx.fontsize = 11;
         ctx.textBaseline = 'top';
         ctx.textAlign = 'right';
         ctx.fillText("http://www.autumnsky.us/vad/", txtu, txtv);
@@ -343,6 +402,7 @@ class HodoPlot {
         * Draw SR wind plot background
         **********************************/
         ctx = contexts['srwind'];
+        ctx.fontface = "Trebuchet MS";
         var [lbs, lbz, ubs, ubz] = [ctx.bbox_data.lbx, ctx.bbox_data.lby, ctx.bbox_data.ubx, ctx.bbox_data.uby];
 
         const peters_supercell_srw_cutoff = 19.44;
@@ -357,7 +417,7 @@ class HodoPlot {
         ctx.fillStyle = '#aaaaaa';
         ctx.textBaseline = 'middle';
         ctx.textAlign = 'center';
-        ctx.font = '10px Trebuchet MS';
+        ctx.fontsize = 10;
         ctx.fillText('Peters et al. (2020)\nSupercell', (peters_supercell_srw_cutoff + ubs) / 2, peters_supercell_srw_depth / 2);
         ctx.restore();
 
@@ -374,7 +434,7 @@ class HodoPlot {
         ctx.fillStyle = '#aaaaaa';
         ctx.textBaseline = 'middle';
         ctx.textAlign = 'center';
-        ctx.font = '10px Trebuchet MS';
+        ctx.fontsize = 10;
         ctx.fillText('Classic\nSupercell', (classic_supercell_srw_cutoff + ubs) / 2, (classic_supercell_srw_zlb + classic_supercell_srw_zub) / 2);
         ctx.restore();
 
@@ -404,7 +464,7 @@ class HodoPlot {
         ctx.stroke();
 
         ctx.fillStyle = '#000000';
-        ctx.font = '11px Trebuchet MS';
+        ctx.fontsize = 11;
         ctx.textAlign = 'right';
         ctx.textBaseline = 'middle';
         for (var iz = lbz; iz <= ubz; iz += srwind_z_spacing) {
@@ -424,7 +484,7 @@ class HodoPlot {
         }
 
         ctx.fillStyle = '#000000';
-        ctx.font = '11px Trebuchet MS';
+        ctx.fontsize = 11;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'alphabetic';
         var [txtu, txtv] = ctx.pixelOffset((lbs + ubs) / 2, ubz, 0, -5);
@@ -453,7 +513,7 @@ class HodoPlot {
         * Draw hodograph
         **********************************/
         ctx.lineWidth = 2;
-        ctx.font = "11px Trebuchet MS";
+        ctx.fontsize = 11;
 
         vwp.draw(contexts['hodo'], contexts['srwind']);
 
@@ -468,7 +528,7 @@ class HodoPlot {
         var [lbu, lbv, ubu, ubv] = [ctx.bbox_data.lbx, ctx.bbox_data.lby, ctx.bbox_data.ubx, ctx.bbox_data.uby];
         var [txtu, txtv] = ctx.pixelOffset((lbu + ubu) / 2, ubv, 0, -5);
 
-        ctx.font = "14px Trebuchet MS";
+        ctx.fontsize = 14;
         ctx.fillText(title_str, txtu, txtv);
 
        /**********************************

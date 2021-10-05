@@ -1,5 +1,5 @@
 
-const _home_svg = `<svg width="12" height="12" viewBox="15 12 70 70" xmlns="http://www.w3.org/2000/svg">
+const _home_svg = `<svg viewBox="15 12 70 70" xmlns="http://www.w3.org/2000/svg">
   <polygon points="25,80 45,80 45,60 55,60 55,80 75,80 75,50 25,50" />
   <polygon points="84,50 50,16 16,50" />
   <rect x="60" y="20" width="10" height="30"/>
@@ -24,33 +24,66 @@ class VWPApp {
         this._metar_button_text = null;
         this.metar_refresh();
 
+        this.local_file_list = [];
+
         this.file_times = {};
 
         this._dt_fmt = "YYYY-MM-DD[T]HH:mm:ss[Z]";
 
-        var mapclick = (function(rad) {
-            $('#mapsel').html('<p>Radar:</p> <ul class="toggle-list"><li id="radarname">' + rad.id + ' (' + rad.name + ')</li>' +
-                              '<li id="default" class="selectable needhelp">' + _home_svg + '<span class="help helptop">Make Default</span></li></ul>');
-
-            if (get_cookie('default') == rad.id) {
-                $('#default').toggleClass('selected');
+        var mapclick = rad => {
+            if (rad === null) {
+                $('#mapsel').html('<p>Radar:</p>');
             }
-            $('#default').click(this.toggle_default.bind(this));
+            else {
+                this.local_file_list = [];
+                this._update_local_file_list();
 
-            this.vwp_container.check_file_times(rad.id, false);
+                $('#mapsel').html('<p>Radar:</p> <ul class="toggle-list"><li id="radarname">' + rad.id + ' (' + rad.name + ')' +
+                                  '<span id="default" class="selectable needhelp">' + _home_svg + '<span class="help helptop">Make Default</span></span></li></ul>');
+
+                if (get_cookie('default') == rad.id) {
+                    $('#default').toggleClass('selected');
+                }
+                $('#default').click(this.toggle_default.bind(this));
+
+                this.vwp_container.check_file_times(rad.id, false);
+            }
             this.update_asos_wind();
-        }).bind(this);
+        };
 
         var age_limit = 2700;
 
+        // This has to go before we construct the the map so this resize event fires first. 
+        // This re-displays the map before the map class tries to get the size of the element and stuff.
+        window.addEventListener('resize', () => {
+            if ($('#map').css('display') == 'none' && get_media() == 'mobile') {
+                const elem = $('#defaultsource')[0];
+                this._select_box(elem);
+                this._update_state(elem.parentElement.parentElement, elem.childNodes[0].textContent);
+            }
+        });
+
         this.map_fname = 'imgs/map.png';
-        this.radars = new ClickableMap(this.map_fname, 'wsr88ds.json', mapclick, "WSR-88D");
+        this.radars = new ClickableMap(this.map_fname, 'vwp_radars.json', mapclick, "WSR-88D");
         if (get_cookie('default') !== undefined) {
             this.radars.select_point(get_cookie('default'));
         }
-        this.hodo = new HodoPlot(this);
-        this.vwp_container = new VWPContainer(this, this.hodo, age_limit);
-        this.hodo.add_vwp_container(this.vwp_container);
+        this.hodo = new HodoPlot();
+        this.vwp_container = new VWPContainer(age_limit);
+
+        this.vwp_container.onrefreshstart = this.refresh_circle_start.bind(this);
+        this.vwp_container.onrefreshend = this.refresh_circle_stop.bind(this);
+        this.vwp_container.onanimationplay = this.animation_play.bind(this);
+        this.vwp_container.onanimationpause = this.animation_pause.bind(this);
+        this.vwp_container.onsetsravail = this.set_sr_available.bind(this);
+        this.vwp_container.onnewframelist = this.set_frame_list.bind(this);
+
+        this.hodo.onscreenshot = this.vwp_container.screenshot.bind(this.vwp_container);
+        this.hodo.onhodorefresh = this.vwp_container.draw_active_frame.bind(this.vwp_container);
+
+        this.vwp_container.onsethodobbox = this.hodo.set_bbox.bind(this.hodo);
+        this.vwp_container.ondrawvwp = this.hodo.draw_vwp.bind(this.hodo);
+        this.vwp_container.onscreenshot = this.hodo.screenshot.bind(this.hodo);
 
         this.toggle_autoupdate(false);
 
@@ -79,6 +112,10 @@ class VWPApp {
         $('#displaydoc').mouseup(this.show_parameter_help.bind(this));
         $('#parameter-help .modal-close').mouseup(this.hide_parameter_help.bind(this));
 
+        $('#local').change(this.load_local.bind(this));
+
+        $('#hamburger').mouseup(this.hamburger_tap.bind(this));
+
         $(document).keydown(ev => {
             switch(ev.which) {
                 case _KEY_SPACEBAR:
@@ -95,10 +132,12 @@ class VWPApp {
             }
             ev.preventDefault();
         });
+
     }
 
     select(event) {
         const target = event.target;
+        const target_list = target.parentElement.parentElement;
 
         if (target.classList.contains("grayout")) {
             return;
@@ -110,17 +149,16 @@ class VWPApp {
 
         if (target.vector_select) {
             this.prev_selection = this._select_box(target);
-            let help = document.getElementById("selecthelp");
+            let help = $("#selecthelp");
+            let tapreadout = $('#tapreadout');
 
-            help.style.visibility = "visible";
             let target_pos = _page_pos(target);
 
-            help.style.offsetLeft = target_pos.x + 70;
-            help.style.offsetTop = target_pos.y;
-            help.style.left = target_pos.x + 70;
-            help.style.top = target_pos.y;
+            help.css('visibility', 'visible');
+            help.css('left', target_pos.x + 70);
+            help.css('top', target_pos.y);
 
-            const vector_callback = (wspd, wdir) => {
+            const vector_callback = (wspd, wdir, x, y) => {
                 let vec_str;
 
                 if (wspd !== null && wdir !== null) {
@@ -130,16 +168,19 @@ class VWPApp {
                     vec_str = "DDD/SS";
                 }
 
+                tapreadout.css('visibility', 'visible');
+                tapreadout.css('left', x);
+                tapreadout.css('top', y);
+                tapreadout.html(vec_str);
+
                 const txt = document.createTextNode(vec_str);
                 target.replaceChild(txt, target.childNodes[0]);
             };
 
-            const vector_callback_boundary = (wspd, wdir, ctx) => {
-                let vec_str;
+            const vector_callback_boundary = (wspd, wdir, x, y, ctx) => {
+                vector_callback(wspd, wdir, x, y);
 
                 if (wspd !== null && wdir !== null) {
-                    vec_str = format_vector(wdir, wspd);
-
                     const [[bdy_lbu, bdy_lbv], [bdy_ubu, bdy_ubv]] = compute_boundary_segment(ctx.bbox_data, vec2comp(wdir, wspd));
                     ctx.save();
 
@@ -153,54 +194,62 @@ class VWPApp {
 
                     ctx.restore();
                 }
-                else {
-                    vec_str = "DDD/SS";
-                }
-
-                const txt = document.createTextNode(vec_str);
-                target.replaceChild(txt, target.childNodes[0]);
             };
 
             const done_callback = (wspd, wdir) => {
                 if (wdir !== null && wspd !== null) {
-                    this._update_state(target, [wdir, wspd]);
+                    this._update_state(target_list, [wdir, wspd]);
                 }
 
                 if (this.vwp_container.is_animating) {
                     this.vwp_container.start_animation(true);
                 }
 
-                help.style.visibility = "hidden";
-                help.style.offsetLeft = 0;
-                help.style.offsetTop = 0;
-                help.style.left = 0;
-                help.style.top = 0;
+                if (get_media() == 'mobile') {
+                    this.hamburger_tap();
+                }
+
+                tapreadout.css('visibility', 'hidden');
+                tapreadout.css('left', 0);
+                tapreadout.css('top', 0);
+
+                help.css('visibility', 'hidden');
+                help.css('left', 0);
+                help.css('top', 0);
             };
 
             if (this.vwp_container.is_animating) {
                 this.vwp_container.pause_animation(true);
             }
-            if (target.parentElement.parentElement.id == "bdysel") {
-                this.hodo.selection_start(vector_callback_boundary, done_callback);
+
+            const cb = target_list.id == "bdysel" ? vector_callback_boundary : vector_callback;
+            this.hodo.selection_start(cb, done_callback);
+
+            if (get_media() == 'mobile') {
+                this.hamburger_tap();
             }
-            else {
-                this.hodo.selection_start(vector_callback, done_callback);
-            }
+
             this.vwp_container.draw_active_frame();
         }
         else {
             this._select_box(target);
-            this._update_state(target, target.childNodes[0].textContent);
+            this._update_state(target_list, target.childNodes[0].textContent);
         }
     }
 
-    set_frame_list(frames) {
+    set_frame_list(frames, expect_data) {
+        if (expect_data === undefined) {
+            expect_data = true;
+        }
+
         var anim_controls = $('#animcontrols');
         $('#framelist').remove();
         $('#datamissing').remove();
 
         if (frames.length == 0) {
-            anim_controls.append('<p id="datamissing">No Data</p>');
+            if (expect_data) {
+                anim_controls.append('<p id="datamissing">No Data</p>');
+            }
         }
         else {
             anim_controls.append('<ul id="framelist"></ul>');
@@ -345,6 +394,18 @@ class VWPApp {
         $('#parameter-help').css('display', 'none');
     }
 
+    hamburger_tap() {
+        if ($('#selection').css('visibility') == 'hidden') {
+            $('#selection').addClass('fadein');
+            $('#selection').removeClass('fadeout');
+        }
+        else {
+            $('#selection').addClass('fadeout');
+            $('#selection').removeClass('fadein');
+        }
+        $('#hamburger').toggleClass('active');
+    }
+
     set_sr_available(is_available) {
         if (is_available) {
             $('#sr_origin').removeClass('grayout');
@@ -355,7 +416,7 @@ class VWPApp {
             var target = $('#gr_origin')[0];
 
             this._select_box(target);
-            this._update_state(target, target.childNodes[0].textContent);
+            this._update_state(target.parentElement.parentElement, target.childNodes[0].textContent);
         }
     }
 
@@ -368,6 +429,7 @@ class VWPApp {
 
     update_asos_wind() {
         if (this.radars.selected === null || this._metars === null) {
+            $('#asoswind').html("ASOS");
             return;
         }
 
@@ -411,6 +473,60 @@ class VWPApp {
         }
     }
 
+    load_local() {
+        this.radars.clear_selection();
+        const files = $('#local').get(0).files;
+        for (const file of files) {
+            if (!this.local_file_list.map(f => f.name).includes(file.name)) {
+                file.status = "notloaded";
+                this.local_file_list.push(file);
+
+                console.log("Loading local file '" + file.name + "'");
+
+                VWP.from_blob(file).then(vwp => {
+                    file.status = "ok";
+                    file.message = "File OK";
+                    file.vwp = vwp;
+                }).catch(error => {
+                    file.status = "error";
+                    file.message = error['short'];
+                    console.error("Error in '" + file.name + "': " + error['long']);
+                }).then(() => {
+                    // A 50 ms delay to give the browser time to draw
+                    return new Promise((resolve, reject) => { setTimeout(() => resolve(), 50); });
+                }).then(() => {
+                    this._update_local_file_list();
+                });
+            }
+        }
+
+        this.local_file_list.sort((a, b) => (a.name > b.name ? 1 : -1));
+        this._update_local_file_list();
+    }
+
+    remove_local_file_from_list(fname) {
+        this.local_file_list = this.local_file_list.filter(f => f.name != fname);
+        this._update_local_file_list();
+    }
+
+    _update_local_file_list() {
+        this.vwp_container.set_local_files(this.local_file_list);
+
+        $('#file-list').empty()
+        this.local_file_list.forEach(file => {
+            const status_char = {'notloaded': '&ctdot;', 'error': '!', 'ok': '&check;'}[file.status]
+            const status_color = {'notloaded': 'black', 'error': 'red', 'ok': 'green'}[file.status]
+
+            $('#file-list').append('<li data-filename="' + file.name + '"><span>' + file.name + '</span><div class="file-rm">&times;</div><div class="file-status" style="color: ' + status_color + ';"><span class="needhelp" style="position: relative; cursor: help;">' + status_char + '<span class="help helpleft">' + file.message + '</span></span></div></li>');
+        });
+
+        const this_ = this;
+        $('#file-list .file-rm').each(function() {
+            const elem = $(this);
+            elem.mouseup(() => this_.remove_local_file_from_list(elem.parent().attr('data-filename')));
+        });
+    }
+
     _select_box(obj) {
         var was_selected = null;
         var siblings = obj.parentElement.getElementsByTagName(obj.tagName);
@@ -425,31 +541,62 @@ class VWPApp {
         return was_selected;
     };
 
-    _update_state(obj, val) {
-        if (obj.parentElement.parentElement.id == "smsel") {
-            this.vwp_container.change_storm_motion(val);
+    _update_state(list_obj, val, redraw) {
+        if (redraw === undefined) {
+            redraw = true;
         }
-        else if (obj.parentElement.parentElement.id == "sfcsel") {
+
+        if (list_obj.id == "smsel") {
+            this.vwp_container.change_storm_motion(val, redraw);
+        }
+        else if (list_obj.id == "sfcsel") {
             if (typeof val == 'string' && val != "None") {
                 val = 'metar';
             }
-            this.vwp_container.change_surface_wind(val);
+            this.vwp_container.change_surface_wind(val, redraw);
         }
-        else if (obj.parentElement.parentElement.id == "orgsel") {
-            this.vwp_container.change_origin(val.toLowerCase());
+        else if (list_obj.id == "orgsel") {
+            this.vwp_container.change_origin(val.toLowerCase(), redraw);
         }
-        else if (obj.parentElement.parentElement.id == "bdysel") {
-            this.vwp_container.change_boundary(val);
+        else if (list_obj.id == "bdysel") {
+            this.vwp_container.change_boundary(val, redraw);
         }
-        else if (obj.parentElement.parentElement.id == "mapdiv") {
-            this.radars.set_type(val)
+        else if (list_obj.id == "mapdiv") {
+            if (val == $('#localbutton')[0].childNodes[0].textContent) {
+                $('#map').css('display', 'none');
+                $('#localsel').css('display', 'block');
+                $('#selection .web-src').css('display', 'none');
+                $('#selection .local-src').css('display', 'revert');
+                $('#selection .mobile').css('display', 'none');
+            }
+            else {
+                $('#map').css('display', 'block');
+                $('#localsel').css('display', 'none');
+                if (get_media() == 'desktop') {
+                    $('#selection .web-src').css('display', 'revert');
+                    $('#selection .local-src').css('display', 'none');
+                    $('#selection .mobile').css('display', 'none');
+                }
+                else {
+                    $('#selection .web-src').css('display', 'none');
+                    $('#selection .local-src').css('display', 'none');
+                    $('#selection .mobile').css('display', 'revert');
+                }
+                this.radars.set_type(val);
+            }
+            if (redraw) {
+                this.vwp_container.draw_active_frame();
+            }
         }
     };
 
     _abort_selection() {
+        if (get_media() == 'mobile') {
+            this.hamburger_tap();
+        }
         if (this.prev_selection !== null) {
             this._select_box(this.prev_selection)
-            this._update_state(this.prev_selection, this.prev_selection.childNodes[0].textContent);
+            this._update_state(this.prev_selection.parentElement.parentElement, this.prev_selection.childNodes[0].textContent, false);
         }
         this.hodo.selection_finish(null, null);
     }

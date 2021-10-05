@@ -1,4 +1,31 @@
 
+:root {
+    --selection-width: calc(var(--layout-width) * 0.37);
+    --map-width: var(--selection-width);
+    --map-height: calc(var(--map-width) * 0.62);
+
+    --toggle-width: var(--selection-width);
+    --label-width: calc(var(--toggle-width) * 0.275);
+
+    --hodo-width: calc(var(--layout-width) * 0.62);
+    --hodo-height: calc(var(--hodo-width) * 0.694);
+
+    --anim-width: calc(var(--layout-width) * 0.41574);
+    --doc-width: calc(var(--layout-width) * 0.1898);
+}
+
+div#hamburger {
+    display: none;
+}
+
+.mobile {
+    display: none;
+}
+
+.local-src {
+    display: none;
+}
+
 div#mapoverlay {
     position: absolute;
     visibility: hidden;
@@ -12,12 +39,20 @@ div#mapoverlay p {
     margin: 0px;
 }
 
-div#selection {
-    float:left;
-    width:37%;
+canvas#map {
+    display: block;
+    width: var(--map-width);
+    height: var(--map-height);
 }
 
-div#selection > p {
+div#selection {
+    display: flex;
+    flex-direction: column;
+    float: left;
+    width: var(--selection-width);
+}
+
+div#selection > div > p {
     text-align:center;
     font-size:0.8em;
 }
@@ -26,7 +61,7 @@ div#selection p {
     margin:0px;
 }
 
-div#selection > div {
+div#selection > div > div {
     float:left;
     width:100%;
     margin-top:3px;
@@ -61,16 +96,20 @@ div#selection > div {
     background-color: #f3f3f3;
 }
 
-.selectable:hover {
-    background-color: #e3e3e3;
+@media (hover: hover) {
+    .selectable:hover {
+        background-color: #e3e3e3;
+    }
 }
 
 .selected {
     background-color: #aacccc;
 }
 
-.selected:hover {
-    background-color: #99bbbb;
+@media (hover: hover) {
+    .selected:hover {
+        background-color: #99bbbb;
+    }
 }
 
 .grayout {
@@ -103,16 +142,21 @@ div#selection > div {
     transform: translate(0px, 1px);
 }
 
-li#default {
-    height: 19px;
-    width: 12px;
-    margin-top: -5px;
+span#default {
+    height: 1em;
+    width: 0.75em;
+    margin-top: -1px;
+    padding-top: 1.5px;
+    padding-bottom: 1.5px;
 
-    transform: translate(0px, 4px);
+    float: right;
+    transform: translate(1px, 0px);
 }
 
 li#default svg {
     position: absolute;
+    width: 0.75em;
+    height: 0.75em;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
@@ -120,13 +164,14 @@ li#default svg {
 
 div#mapsel p {
     display:inline-block;
-    width: 110px;
+    width: var(--label-width);
     margin-top: 1px;
     margin-bottom: 1px;
 }
 
 div#mapsel ul {
     display:inline-block;
+    width: calc(100% - var(--label-width) - 0.3125em);
 }
 
 div#mapsel li {
@@ -135,13 +180,95 @@ div#mapsel li {
 }
 
 div#mapsel li#radarname {
-    width: 255.7px;
-    margin-right: 5px;
+    width: 100%;
+}
+
+div#localsel {
+    display: none;
+    
+    height: 246px;
+    border: 1px solid black;
+}
+
+div#localsel label {
+    display: block;
+    padding-top: 5px;
+    padding-bottom: 5px;
+
+    margin-left: -1px;
+    margin-right: -1px;
+    margin-top: -1px;
+
+    text-align: center;
+
+    border: 1px solid black;
+    background-color: #f3f3f3;
+    cursor: pointer;
+}
+
+div#localsel label:hover {
+    background-color: #e3e3e3;
+}
+
+#local {
+    opacity: 0;
+    width: 0px;
+    height: 0px;
+}
+
+#file-list {
+    margin: 0px;
+    margin-top: -1.1875em;
+
+    list-style-type: none;
+    padding: 0px;
+    padding-top: 0.25em;
+    overflow-x: hidden;
+    overflow-y: scroll;
+
+    height: calc(100% - 2.0625em);
+}
+
+#file-list li {
+    padding: 2px;
+    border: 1px solid black;
+
+    margin-left: -1px;
+    margin-right: -1px;
+    margin-top: -1px;
+    cursor: default;
+
+    height: 1.25em;
+}
+
+#file-list li > span {
+    width: 90%;
+    display: inline-block;
+    overflow: hidden;
+}
+
+#file-list li div {
+    float: right;
+    margin-left: 5px;
+
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+
+}
+
+#file-list .file-rm {
+    cursor: pointer;
+}
+
+#file-list .file-status {
+    width: 0.75em;
+    text-align: center;
 }
 
 div#smsel p, div#sfcsel p, div#orgsel p, div#bdysel p {
     display:inline-block;
-    width:110px;
+    width: var(--label-width);
 }
 
 div#generate, div#autoupdate {
@@ -179,40 +306,48 @@ div#info p {
 div#hododiv {
     float:left;
     width:62%;
-/*  margin-top:-10px; */
-    margin-left:10px;
+    margin-left: 0.625em;
 }
 
 div#hododiv img {
     width:100%;
 }
 
+canvas#hodo {
+    width: var(--hodo-width);
+    height: var(--hodo-height);
+}
+
+div#controlstrip {
+    display: flex;
+    gap: 4px;
+}
+
 div#animcontrols, div#doccontrol {
-    display: inline-block;
+    display: inline-flex;
+    flex-direction: row-reverse;
     padding-top: 5px;
     padding-bottom: 5px;
-    height:32px;
+    height:2em;
 }
 
 div#animcontrols {
-    width: 449px;
+    width: var(--anim-width);
 }
 
 div#doccontrol {
-    width: 205px;
+    width: var(--doc-width);
 }
 
 div#animcontrols .selectable, div#doccontrol .selectable {
     display: inline-block;
 
-    float: right;
-
     padding: 0px;
     margin: 0px;
     margin-left: 5px;
-    line-height: 30px;
-    height: 30px;
-    width: 30px;
+    line-height: 1.875em;
+    height: 1.875em;
+    width: 1.875em;
     text-align: center;
 
     -webkit-user-select: none;
@@ -236,10 +371,10 @@ div#animcontrols .selectable, div#doccontrol .selectable {
 #refresh span.arrow {
     display: inline-block;
     position: absolute;
-    bottom: 16px;
-    left: 16px;
+    bottom: 1em;
+    left: 1em;
 
-    transform: translate(-3.9px, 0.6px) rotate(0deg) translate(7.9px, 0);
+    transform: translate(-0.24375em, 0.1em) rotate(0deg) translate(0.49375em, 0);
     transform-origin: center bottom;
 
     width: 0; 
@@ -252,8 +387,8 @@ div#animcontrols .selectable, div#doccontrol .selectable {
 }
 
 @keyframes rotation {
-    0%   { transform: translate(-3.9px, 0.6px) rotate(360deg) translate(7.9px, 0); }
-    100% { transform: translate(-3.9px, 0.6px) rotate(0deg) translate(7.9px, 0); }
+    0%   { transform: translate(-0.24375em, 0.1em) rotate(360deg) translate(0.49375em, 0); }
+    100% { transform: translate(-0.24375em, 0.1em) rotate(0deg) translate(0.49375em, 0); }
 }
 
 #refresh span.arrow.animate {
@@ -263,15 +398,17 @@ div#animcontrols .selectable, div#doccontrol .selectable {
     animation-timing-function: linear;
 }
 
-#refresh:hover {
-    background: rgb(227,227,227);
-    background: radial-gradient(circle, rgba(227,227,227,1) 0%, rgba(227,227,227,1) 33%, rgba(0,0,0,1) 33%, rgba(0,0,0,1) 43%, rgba(227,227,227,1) 43%);
-}
+@media (hover: hover) {
+    #refresh:hover {
+        background: rgb(227,227,227);
+        background: radial-gradient(circle, rgba(227,227,227,1) 0%, rgba(227,227,227,1) 33%, rgba(0,0,0,1) 33%, rgba(0,0,0,1) 43%, rgba(227,227,227,1) 43%);
+    }
 
-#refresh:hover span.arrow {
-    border-left-color: #e3e3e3;
-    border-right-color: #e3e3e3;
-    border-top-color: #e3e3e3;
+    #refresh:hover span.arrow {
+        border-left-color: #e3e3e3;
+        border-right-color: #e3e3e3;
+        border-top-color: #e3e3e3;
+    }
 }
 
 #refresh:active {
@@ -285,13 +422,13 @@ div#animcontrols .selectable, div#doccontrol .selectable {
     border-top-color: #aacccc;
 }
 
-#playpause {
+#playpause span:not(.help) {
+    display: inline-block;
     font-size: 0.5em;
+    transform: translate(0em, -0.2em);
 }
 
 #framelist {
-    float: right;
-
     list-style-type:none;
     display:inline;
     margin:0px;
@@ -303,16 +440,15 @@ div#animcontrols .selectable, div#doccontrol .selectable {
     -moz-user-select: none;
     -ms-user-select: none;
 
-    height: 32px;
-    font-size: 1.8em;
+    height: 2em;
 }
 
 #framelist li {
     float: right;
 
-    height: 32px;
-    line-height: 32px;
-    width: 15px;
+    height: 2em;
+    line-height: 2em;
+    width: 0.9375em;
 
     cursor: pointer;
 
@@ -382,27 +518,33 @@ div#animcontrols .selectable, div#doccontrol .selectable {
     border-color: black transparent transparent transparent;
 }
 
-.helpright {
+.helpleft {
     top: 50%;
     margin-top: -15px;
-    left: calc(100% + 6px);
+    right: calc(100% + 6px);
 }
 
-.helpright::after {
+.helpleft::after {
     content: " ";
     position: absolute;
     top: 50%;
-    right: 100%;
+    left: 100%;
     margin-top: -5px;
     border-width: 5px;
     border-style: solid;
-    border-color: transparent black transparent transparent;
+    border-color: transparent transparent transparent black;
 }
 
 @keyframes fadein {
     0% { visibility: hidden; opacity: 0; }
     1% { visibility: visible; opacity: 0; }
     100% { visibility: visible; opacity: 1; }
+}
+
+@keyframes fadeout {
+    0% { visibility: visible; opacity: 1; }
+    99% { visibility: visible; opacity: 0; }
+    100% { visibility: hidden; opacity: 0; }
 }
 
 .needhelp:hover .help {
@@ -412,7 +554,7 @@ div#animcontrols .selectable, div#doccontrol .selectable {
 }
 
 .modal {
-    z-index: 10;
+    z-index: 100;
     position: fixed;
 
     display: none;
@@ -524,4 +666,26 @@ div#animcontrols .selectable, div#doccontrol .selectable {
 
 .modal td:last-child {
     border-right: none;
+}
+
+#screenstate {
+    position: absolute;
+    top: -999em;
+    left: -999em;
+}
+
+#screenstate:before {
+    content: 'desktop';
+}
+
+#tapreadout {
+    display: none;
+    visibility: hidden;
+    position: absolute;
+
+    border: 1px solid black;
+    background-color: #f3f3f3;
+    padding-left: 5px;
+    padding-right: 5px;
+    transform: translate(-50%, -160%);
 }

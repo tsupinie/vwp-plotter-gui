@@ -101,7 +101,7 @@ function download_metars($cycle, $stations) {
 }
 
 function load_wsr88d_info() {
-    $wsr88d_json = file_get_contents('wsr88ds.json');
+    $wsr88d_json = file_get_contents('vwp_radars.json');
     $wsr88d_info = json_decode($wsr88d_json);
     return $wsr88d_info;
 }
