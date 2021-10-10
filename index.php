@@ -65,8 +65,9 @@ $script_name = "/home/autumn35/public_html/{$_SERVER['SCRIPT_NAME']}";
         <canvas id="map"></canvas>
         <div id="mapoverlay"></div>
         <div id="localsel">
-          <label for="local" style="display: block;">Choose files from device</label>
+          <label for="local">Choose files from device</label>
           <input type="file" id="local" name="local" multiple>
+          <div id='remove-all' class='grayout needhelp'>&times;<span class="help helptop">Remove All</span></div>
           <ul id="file-list">
           </ul>
         </div>

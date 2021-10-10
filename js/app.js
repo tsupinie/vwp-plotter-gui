@@ -114,6 +114,7 @@ class VWPApp {
         $('#parameter-help .modal-close').mouseup(this.hide_parameter_help.bind(this));
 
         $('#local').change(this.load_local.bind(this));
+        $('#remove-all').mouseup(this.remove_all_local.bind(this));
 
         $('#hamburger').mouseup(this.hamburger_tap.bind(this));
 
@@ -509,6 +510,11 @@ class VWPApp {
         this._update_local_file_list();
     }
 
+    remove_all_local() {
+        this.local_file_list = [];
+        this._update_local_file_list();
+    }
+
     remove_local_file_from_list(fname) {
         this.local_file_list = this.local_file_list.filter(f => f.name != fname);
         this._update_local_file_list();
@@ -516,6 +522,14 @@ class VWPApp {
 
     _update_local_file_list() {
         this.vwp_container.set_local_files(this.local_file_list);
+
+        let remove_all = $('#remove-all');
+        if (this.local_file_list.length > 0 && remove_all.hasClass('grayout')) {
+            remove_all.removeClass('grayout');
+        }
+        else if (this.local_file_list.length == 0 && !remove_all.hasClass('grayout')) {
+            remove_all.addClass('grayout');
+        }
 
         $('#file-list').empty()
         this.local_file_list.forEach(file => {

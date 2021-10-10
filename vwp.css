@@ -186,14 +186,19 @@ div#mapsel li#radarname {
 div#localsel {
     display: none;
     
-    height: 246px;
+    height: calc(var(--map-height) - 2px);
     border: 1px solid black;
 }
 
 div#localsel label {
-    display: block;
+    float: left;
+    width: calc(100% - 1.8rem - 1px);
+    height: 1.2rem;
+    line-height: 1.2rem;
     padding-top: 5px;
     padding-bottom: 5px;
+
+/*  transform: translate(0px, -3px); */
 
     margin-left: -1px;
     margin-right: -1px;
@@ -206,9 +211,35 @@ div#localsel label {
     cursor: pointer;
 }
 
-div#localsel label:hover {
+div#localsel label:hover, div#remove-all:hover {
     background-color: #e3e3e3;
 }
+
+div#remove-all {
+    position: relative;
+    float: left;
+    width: 1.8rem;
+    height: 1.2rem;
+    line-height: 1.2rem;
+
+    padding-top: 5px;
+    padding-bottom: 5px;
+
+    border: 1px solid black;
+    background-color: #f3f3f3;
+    cursor: pointer;
+    text-align: center;
+    font-size: 1.5em;
+/*  margin-left: -1px; */
+    margin-right: -1px;
+    margin-top: -1px;
+}
+
+div#remove-all.grayout:hover {
+    background-color: #f3f3f3;
+    cursor:default;
+}
+
 
 #local {
     opacity: 0;
@@ -218,7 +249,7 @@ div#localsel label:hover {
 
 #file-list {
     margin: 0px;
-    margin-top: -1.1875em;
+    margin-top: 0.7em;
 
     list-style-type: none;
     padding: 0px;
