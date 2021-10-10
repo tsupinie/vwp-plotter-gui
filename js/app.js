@@ -475,12 +475,16 @@ class VWPApp {
     }
 
     load_local() {
+        const _local_file_cap = 15;
         this.radars.clear_selection();
         const files = $('#local').get(0).files;
         for (const file of files) {
             if (!this.local_file_list.map(f => f.name).includes(file.name)) {
                 file.status = "notloaded";
                 this.local_file_list.push(file);
+                if (this.local_file_list.length > _local_file_cap) {
+                    this.local_file_list.shift();
+                }
 
                 console.log("Loading local file '" + file.name + "'");
 
