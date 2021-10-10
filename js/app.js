@@ -61,6 +61,7 @@ class VWPApp {
                 this._select_box(elem);
                 this._update_state(elem.parentElement.parentElement, elem.childNodes[0].textContent);
             }
+            this.vwp_container.update_frame_cap();
         });
 
         this.map_fname = 'imgs/map.png';

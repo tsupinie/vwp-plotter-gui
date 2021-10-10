@@ -35,6 +35,25 @@ class VWPContainer {
 
         this.frame_list = new Map();
         this._radar = null;
+
+        this.update_frame_cap();
+    }
+
+    trim_frames(update_ui) {
+        if (update_ui === undefined) {
+            update_ui = true;
+        }
+
+        this.frame_list.forEach((frame, fname) => {
+            if (this.frame_list.size > this._n_frame_cap) {
+                this.frame_list.delete(fname);
+            }
+        });
+
+        if (update_ui) {
+            // Update the UI
+            this._update_ui_frame_list();
+        }
     }
 
     check_file_times(radar_id, is_refresh) {
@@ -58,6 +77,7 @@ class VWPContainer {
 
             file_times = file_times['times'];
             file_times = Object.entries(file_times).sort(([fn1, dt1], [fn2, dt2]) => compare_dt(dt1, dt2));
+            file_times = file_times.slice(-this._n_frame_cap);
 
             // Add new frames to frame list
             file_times.forEach(([file_name, dt]) => {
@@ -66,12 +86,14 @@ class VWPContainer {
                 }
             });
 
-            // Delete frames older than the age limit
-            this.frame_list.forEach((frame, file_name) => {
-                if (frame['dt'].isBefore(moment.utc().subtract(this._age_limit, 'seconds'))) {
-                    this.frame_list.delete(file_name);
-                }
-            });
+            const dt_cutoff = moment.utc().subtract(this._age_limit, 'seconds');
+
+            // Sort frame list by time and delete old frames
+            this.frame_list = new Map([...this.frame_list.entries()].sort(([fn1, f1], [fn2, f2]) => compare_dt(f1['dt'], f2['dt']))
+                                      .filter(([fn, f]) => f['dt'].isSameOrAfter(dt_cutoff)));
+
+            // Enforce the frame cap
+            this.trim_frames(false);
 
             // If we removed the active frame, make the latest frame the new active frame
             if (Array.from(this.frame_list.values()).findIndex(f => f['status'] == 'active') == -1) {
@@ -463,6 +485,23 @@ class VWPContainer {
         else {
             if (this.ondrawvwp !== null) {
                 this.ondrawvwp(null);
+            }
+        }
+    }
+
+    update_frame_cap() {
+        const new_n_frame_cap = get_media() == 'mobile' ? 8 : 99;
+        const need_more = new_n_frame_cap > this._n_frame_cap;
+        const need_trim = new_n_frame_cap < this._n_frame_cap;
+
+        this._n_frame_cap = new_n_frame_cap;
+
+        if (this.frame_list.size > 0) {
+            if (need_more) {
+                this.check_file_times(this._radar, true);
+            }
+            else if (need_trim) {
+                this.trim_frames();
             }
         }
     }
