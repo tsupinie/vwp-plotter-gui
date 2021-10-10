@@ -813,9 +813,13 @@ class VWP {
         this._compute_parameters();
     }
 
-    static from_server(radar_id, file_id, _delay_debug) {
+    static from_server(radar_id, file_id, _delay_debug, _fail_debug) {
         if (_delay_debug === undefined) {
             _delay_debug = false;
+        }
+
+        if (_fail_debug === undefined) {
+            _fail_debug = false;
         }
 
         var root_url = $('#root_url').val();
@@ -838,6 +842,12 @@ class VWP {
             }
 
             return new Promise((resolve, reject) => { settimeout(() => resolve(json), 10000); });
+        }).then(json => {
+            if (_fail_debug) {
+                throw "Some error happened";
+            }
+
+            return json;
         }).then(json => {
             json['warnings'].forEach(warn => console.warn(warn));
             return VWP.from_json(json['response']);

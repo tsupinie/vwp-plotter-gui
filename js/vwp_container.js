@@ -126,16 +126,19 @@ class VWPContainer {
                 const activate_last_frame = !is_refresh || this._want_latest_frame
 
                 console.log('Downloading vwp at ' + frame['dt'].format(this._dt_format));
-                VWP.from_server(radar_id, id, _debug).then(vwp => {
+                VWP.from_server(radar_id, id, false, _debug).then(vwp => {
 //                  let frame = this.frame_list.get(file_name);
                     if (this._radar == vwp.radar_id) {
                         // Check to see if this is still the radar we're looking for (user might have changed it while we were waiting for data).
                         this._set_frame_vwp_data(vwp, frame, activate_last_frame);
                     }
 
-                    // Check to see if we've loaded all the frames we expect from this update and cancel the refresh animation if so.
                     this._new_frames_loaded++;
-
+                }).catch(error => {
+                    console.error(error);
+                    this._expected_new_frames--;
+                }).finally(() => {
+                    // Check to see if we've loaded all the frames we expect from this update and cancel the refresh animation if so.
                     if (this._new_frames_loaded >= this._expected_new_frames) {
                         if (this.onrefreshend !== null) {
                             this.onrefreshend();
