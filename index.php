@@ -37,7 +37,6 @@ $script_name = "/home/autumn35/public_html/{$_SERVER['SCRIPT_NAME']}";
 <script type="text/javascript" src="<?php echo $root_url; ?>/vad/js/dataview.js?<?php echo $version; ?>"></script>
 <script type="text/javascript" src="<?php echo $root_url; ?>/vad/js/gifjs/gif.js?<?php echo $version; ?>"></script>
 
-<!--script type="text/javascript" src="<?php echo $root_url; ?>/vad/vwp.min.js"></script-->
 <link rel="stylesheet" type="text/css" href="<?php echo $root_url; ?>/main.css.php">
 <link rel="stylesheet" type="text/css" href="<?php echo $root_url; ?>/vad/vwp.css?<?php echo $version; ?>">
 <link rel="stylesheet" media="screen and (max-width: 1200px)" type="text/css" href="<?php echo $root_url; ?>/vad/vwp_mobile.css?<?php echo $version; ?>">
@@ -201,7 +200,8 @@ $script_name = "/home/autumn35/public_html/{$_SERVER['SCRIPT_NAME']}";
            Each entry will have a status icon: a green "&check;" if the file loaded without errors or a red "!" if there was an error loading the file.
            Mouse over this icon to see the status of the file, including error messages, if there are any.
            If there's a file that gives errors that you think should be a valid VWP file, send me the file, and I will try to find the error.
-           There is also the "&times;", which will remove the VWP from the page when clicked.</p>
+           There is also the "&times;" next to each file name, which will remove the VWP from the page when clicked.
+           The large "&times;" at the top, to the right of the "Choose files from this device" button, removes all the VWPs from the page.</p>
         <h4>Animation Controls</h4>
         <p>When profiles are loaded, dots representing the frames will appear to the left of the "<span style="font-size: 0.5em;">&#9654;&#9616;&#9616;</span>" button.
            Click or tap on one of these dots to jump to a particular frame.
