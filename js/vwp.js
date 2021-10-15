@@ -861,6 +861,8 @@ class VWP {
     }
 
     static from_blob(blob) {
+        const zip = arys => arys[0].map((_, idx) => arys.map(ary => ary[idx]));
+
         return blob.arrayBuffer().then(buffer => {
             let dataview = new DataView_(buffer);
 
@@ -908,66 +910,155 @@ class VWP {
             const offset_graphic_block = dataview.getInt32();
             const offset_tabular_block = dataview.getInt32();
 
-            dataview.seek(offset_tabular_block * 2 + 30);
+            function parse_symbology_block(dataview) {
+                dataview.seek(offset_symbology_block * 2 + 30);
+                dataview.getInt16()
+                let block_id = dataview.getInt16();
 
-            dataview.getInt16();
-            const block_id = dataview.getInt16();
-
-            if (block_id != 3) {
-                throw {'long': "Error parsing VWP: unexpected block_id (" + block_id + "). File may be corrupt.", 'short': "Unexpected block_id"};
-            }
-
-            const block_size = dataview.getInt32();
-            dataview.seek(120, DataView_.ANCH_CUR);
-
-            let text_msg = [];
-
-            dataview.getInt16();
-            const num_pages = dataview.getInt16();
-            for (let ipg = 0; ipg < num_pages; ipg++) {
-                let page = [];
-                let num_chars = dataview.getInt16();
-
-                while (num_chars != -1) {
-                    let msg = dataview.getUTF8String(num_chars);
-                    page.push(msg);
-
-                    num_chars = dataview.getInt16();
+                if (block_id != 1) {
+                    throw {'long': "Error parsing VWP: unexpected block_id (" + block_id + "). File may be corrupt.", 'short': "Unexpected block_id"};
                 }
 
-                text_msg.push(page);
+                const block_len = dataview.getInt32();
+                let num_layers = dataview.getInt16();
+
+                const packet_readers = {
+                    4: dv => {
+                        const packet_len = dataview.getInt16();
+                        let ret = {'color': dv.getInt16(), 'i': dv.getInt16(), 'j': dv.getInt16(),
+                                   'drct': dv.getInt16(), 'sknt': dv.getInt16()};
+                        return ret;
+                    },
+                    8: dv => {
+                        const packet_len = dataview.getInt16();
+                        let ret = {'color': dv.getInt16(), 'i': dv.getInt16(), 'j': dv.getInt16(), 
+                                   'str': dv.getUTF8String(packet_len - 6)};
+                        return ret;
+                    },
+                    10: dv => {
+                        const packet_len = dataview.getInt16();
+                        const n_vects = (packet_len - 2) / 8;
+
+                        let ret = {'color': dv.getInt16(), 'istart': [], 'jstart': [], 'iend': [], 'jend': []};
+                        for (let ivct = 0; ivct < n_vects; ivct++) {
+                            ret['istart'].push(dv.getInt16());
+                            ret['jstart'].push(dv.getInt16());
+                            ret['iend'].push(dv.getInt16());
+                            ret['jend'].push(dv.getInt16());
+                        }
+
+                        return ret; 
+                    }
+                }
+
+                let packets = [];
+
+                for (let ilyr = 0; ilyr < num_layers; ilyr++) {
+                    dataview.getInt16();
+                    const layer_len = dataview.getInt32();
+
+                    while (dataview.tell() < offset_tabular_block * 2 + 30) {
+                        let packet_type = dataview.getInt16();
+                        let packet = packet_readers[packet_type](dataview);
+                        packet['type'] = packet_type;
+                        packets.push(packet);
+                    }
+                }
+
+                const j_ticks = packets[1]['jstart'].reverse();
+                const j_alts = packets.filter(p => p['type'] == 8).filter(p => p['i'] == 31).map(p => parseInt(p['str']));
+                const alt_map = Object.fromEntries(zip([j_ticks, j_alts]));
+                const rms_map = {1: 2, 2: 6, 3: 10, 4: 14, 5: 18};
+                const stack_i = packets.filter(p => p['type'] == 8).filter(p => p['str'] == dt.format('HHmm'))[0]['i'];
+                let prof_packets = packets.filter(p => p['type'] == 4).filter(p => p['i'] >= stack_i);
+
+                let altitude = [];
+                let wind_dir = [];
+                let wind_spd = [];
+                let rms_error = [];
+
+                prof_packets.forEach(p => {
+                    altitude.push(alt_map[p['j']] / 3.281);
+                    wind_dir.push(p['drct']);
+                    wind_spd.push(p['sknt']);
+                    rms_error.push(rms_map[p['color']]);
+                });
+
+                return [altitude, wind_dir, wind_spd, rms_error];
             }
-            
-            const vad_list = text_msg.filter(page => page[0].trim().startsWith('VAD Algorithm Output')).map(page => page.slice(3)).flat();
-            const r_e = 4. / 3. * 6371;
 
-            let wind_dir = [];
-            let wind_spd = [];
-            let rms_error = [];
-            let divergence = [];
-            let altitude = [];
+            function parse_tabular_block(dataview) {
+                dataview.seek(offset_tabular_block * 2 + 30);
 
-            vad_list.forEach(line => {
-                const vals = line.trim().split(/\s+/);
-                wind_dir.push(parseFloat(vals[4]));
-                wind_spd.push(parseFloat(vals[5]));
-                rms_error.push(parseFloat(vals[6]));
-                divergence.push(vals[7] == 'NA' ? NaN : parseFloat(vals[7]));
+                dataview.getInt16();
+                block_id = dataview.getInt16();
 
-                const slant_range = parseFloat(vals[8]) * 6067.1 / 3281.;
-                const elev_angle = parseFloat(vals[9]);
+                if (block_id != 3) {
+                    throw {'long': "Error parsing VWP: unexpected block_id (" + block_id + "). File may be corrupt.", 'short': "Unexpected block_id"};
+                }
 
-                altitude.push(Math.sqrt(Math.pow(r_e, 2) + Math.pow(slant_range, 2) + 2 * r_e * slant_range * Math.sin(elev_angle * Math.PI / 180)) - r_e);
-            });
+                const block_size = dataview.getInt32();
+                dataview.seek(120, DataView_.ANCH_CUR);
+
+                let text_msg = [];
+
+                dataview.getInt16();
+                const num_pages = dataview.getInt16();
+                for (let ipg = 0; ipg < num_pages; ipg++) {
+                    let page = [];
+                    let num_chars = dataview.getInt16();
+
+                    while (num_chars != -1) {
+                        let msg = dataview.getUTF8String(num_chars);
+                        page.push(msg);
+
+                        num_chars = dataview.getInt16();
+                    }
+
+                    text_msg.push(page);
+                }
+
+                const vad_list = text_msg.filter(page => page[0].trim().startsWith('VAD Algorithm Output')).map(page => page.slice(3)).flat();
+                const r_e = 4. / 3. * 6371;
+
+                let wind_dir = [];
+                let wind_spd = [];
+                let rms_error = [];
+                let divergence = [];
+                let altitude = [];
+
+                vad_list.forEach(line => {
+                    const vals = line.trim().split(/\s+/);
+                    wind_dir.push(parseFloat(vals[4]));
+                    wind_spd.push(parseFloat(vals[5]));
+                    rms_error.push(parseFloat(vals[6]));
+                    divergence.push(vals[7] == 'NA' ? NaN : parseFloat(vals[7]));
+
+                    const slant_range = parseFloat(vals[8]) * 6067.1 / 3281.;
+                    const elev_angle = parseFloat(vals[9]);
+
+                    altitude.push(Math.sqrt(Math.pow(r_e, 2) + Math.pow(slant_range, 2) + 2 * r_e * slant_range * Math.sin(elev_angle * Math.PI / 180)) - r_e);
+                });
+
+                return [altitude, wind_dir, wind_spd, rms_error];
+            }
+
+            let altitude, wind_dir, wind_spd, rms_error;
+
+            try {
+                [altitude, wind_dir, wind_spd, rms_error] = parse_tabular_block(dataview);
+            }
+            catch (error) {
+                [altitude, wind_dir, wind_spd, rms_error] = parse_symbology_block(dataview);
+            }
 
             const keysort = function() {
-                const zip = arys => arys[0].map((_, idx) => arys.map(ary => ary[idx]));
                 return zip(zip([...arguments]).sort((elem1, elem2) => elem1[0] - elem2[0]));
             };
 
             [altitude, wind_dir, wind_spd, rms_error] = keysort(altitude, wind_dir, wind_spd, rms_error);
 
             return new VWP(radar_id, dt, wind_dir, wind_spd, altitude, rms_error);
-        })
+        });
     }
 }

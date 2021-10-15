@@ -495,8 +495,16 @@ class VWPApp {
                     file.vwp = vwp;
                 }).catch(error => {
                     file.status = "error";
-                    file.message = error['short'];
-                    console.error("Error in '" + file.name + "': " + error['long']);
+                    let console_msg;
+                    if ('short' in error) {
+                        file.message = error['short'];
+                        console_msg = error['long'];
+                    }
+                    else {
+                        file.message = "See Console";
+                        console_msg = error;
+                    }
+                    console.error("Error in '" + file.name + "': " + console_msg);
                 }).then(() => {
                     // A 50 ms delay to give the browser time to draw
                     return new Promise((resolve, reject) => { setTimeout(() => resolve(), 50); });

@@ -4,7 +4,7 @@ window.onload = function() {
 
 /*
     var oReq = new XMLHttpRequest();
-    oReq.open("GET", 'http://www.autumnsky.us/dev/vad/KOUN_SDUS34_NVWTLX_201605092058', true);
+    oReq.open("GET", 'http://www.autumnsky.us/dev/vad/KEAX_SDUS33_NVWEAX_200305042114', true);
     oReq.responseType = "arraybuffer";
 
     oReq.onload = (oEvent) => {

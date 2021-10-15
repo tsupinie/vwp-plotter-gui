@@ -33,6 +33,10 @@ class DataView_ {
         }
     }
 
+    tell() {
+        return this._ptr;
+    }
+
     getUTF8String(length) {
         const val = this._dv.getUTF8String(this._ptr, length);
         this._ptr += length;
