@@ -53,7 +53,7 @@ $script_name = "/home/autumn35/public_html/{$_SERVER['SCRIPT_NAME']}";
   <div id="selection">
     <div>
       <p class="desktop web-src">Click on the map to select a radar</p>
-      <p class="desktop local-src">Click to load data from your device</p>
+      <p class="desktop local-src">Click below to load data from your device</p>
       <p class="mobile">Tap on the map to select a radar</p>
       <div id="mapdiv">
         <ul class="tab-list">
