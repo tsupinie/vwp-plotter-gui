@@ -991,7 +991,7 @@ class VWP {
                 dataview.seek(offset_tabular_block * 2 + 30);
 
                 dataview.getInt16();
-                block_id = dataview.getInt16();
+                const block_id = dataview.getInt16();
 
                 if (block_id != 3) {
                     throw {'long': "Error parsing VWP: unexpected block_id (" + block_id + "). File may be corrupt.", 'short': "Unexpected block_id"};
@@ -1058,7 +1058,8 @@ class VWP {
 
             [altitude, wind_dir, wind_spd, rms_error] = keysort(altitude, wind_dir, wind_spd, rms_error);
 
-            return new VWP(radar_id, dt, wind_dir, wind_spd, altitude, rms_error);
+            const vwp = new VWP(radar_id, dt, wind_dir, wind_spd, altitude, rms_error);
+            return vwp;
         });
     }
 }
