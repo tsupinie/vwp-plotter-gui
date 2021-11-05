@@ -9,7 +9,7 @@ $session_time = date('c');
 $session_source = $_SERVER['REMOTE_ADDR'];
 $session_id = md5("{$session_time}{$session_source}");
 
-$version = 'v3.0';
+$version = 'v3.0.1';
 
 date_default_timezone_set('UTC');
 $script_name = "/home/autumn35/public_html/{$_SERVER['SCRIPT_NAME']}";
