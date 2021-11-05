@@ -978,7 +978,7 @@ class VWP {
                 let rms_error = [];
 
                 prof_packets.forEach(p => {
-                    altitude.push(alt_map[p['j']] / 3.281);
+                    altitude.push((alt_map[p['j']] - radar_elevation / 1000) / 3.281);
                     wind_dir.push(p['drct']);
                     wind_spd.push(p['sknt']);
                     rms_error.push(rms_map[p['color']]);
