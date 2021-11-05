@@ -1,6 +1,6 @@
 <?php
 
-require "../utils.php";
+require "utils.php";
 
 $root_url = root_url();
 $root_path = root_path();
@@ -37,7 +37,7 @@ $script_name = "/home/autumn35/public_html/{$_SERVER['SCRIPT_NAME']}";
 <script type="text/javascript" src="<?php echo $root_url; ?>/vad/js/dataview.js?<?php echo $version; ?>"></script>
 <script type="text/javascript" src="<?php echo $root_url; ?>/vad/js/gifjs/gif.js?<?php echo $version; ?>"></script>
 
-<link rel="stylesheet" type="text/css" href="<?php echo $root_url; ?>/main.css.php">
+<link rel="stylesheet" type="text/css" href="<?php echo $root_url; ?>/vad/main.css.php">
 <link rel="stylesheet" type="text/css" href="<?php echo $root_url; ?>/vad/vwp.css?<?php echo $version; ?>">
 <link rel="stylesheet" media="screen and (max-width: 1200px)" type="text/css" href="<?php echo $root_url; ?>/vad/vwp_mobile.css?<?php echo $version; ?>">
 </head>
@@ -264,6 +264,6 @@ $script_name = "/home/autumn35/public_html/{$_SERVER['SCRIPT_NAME']}";
   </div>
   </p>
 </div>
-<?php include "$root_path/footer.php" ?>
+<?php include "$root_path/vad/footer.php" ?>
 </body>
 </html>
