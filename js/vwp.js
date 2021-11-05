@@ -813,7 +813,7 @@ class VWP {
         this._compute_parameters();
     }
 
-    static from_server(radar_id, file_id, _delay_debug, _fail_debug) {
+    static from_server(radar_id, file_id, force, _delay_debug, _fail_debug) {
         if (_delay_debug === undefined) {
             _delay_debug = false;
         }
@@ -829,10 +829,12 @@ class VWP {
             root_url = root_url.replace('www.', '');
         }
 
-        var url = root_url + "/vad/get_radar_json.php?radar=" + radar_id + '&session_id=' + session_id;
+        var url = root_url + "/vad/get_radar_json.php?radar=" + radar_id + '&session_id=' + session_id + '&force=' + force;
         if (file_id !== null) {
             url += '&id=' + file_id;
         }
+
+        console.log(url);
 
         return (new Promise((resolve, reject) => {
             $.getJSON(url).done(resolve).fail(reject);

@@ -92,11 +92,13 @@ function get_args() {
     $radar_id = addslashes($_GET['radar']);
     $file_id = addslashes($_GET['id']);
     $session_id = addslashes($_GET['session_id']);
+    $force = addslashes($_GET['force']);
 
     $args = array(
         'radar' => $radar_id,
         'file_id' => $file_id,
         'session_id' => $session_id,
+        'force' => $force,
     );
     return $args;
 }
@@ -191,14 +193,14 @@ function _main() {
     pcntl_signal(SIGTERM, "handle_sigterm");
 
     $output = NULL;
-    $already_exists = (file_exists($json_fname) !== false);
+    $already_exists = (file_exists($json_fname) !== false && !$args['force']);
 
     if (!$already_exists) {
         while (file_exists($lock_file_name)) {
             sleep(1);
         }
 
-        $already_exists = (file_exists($json_fname) !== false);
+        $already_exists = (file_exists($json_fname) !== false && !$args['force']);
     }
 
     if (!$already_exists) {

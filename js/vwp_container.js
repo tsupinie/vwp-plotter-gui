@@ -126,7 +126,7 @@ class VWPContainer {
                 const activate_last_frame = !is_refresh || this._want_latest_frame
 
                 console.log('Downloading vwp at ' + frame['dt'].format(this._dt_format));
-                VWP.from_server(radar_id, id, false, _debug).then(vwp => {
+                VWP.from_server(radar_id, id, false, false, _debug).then(vwp => {
 //                  let frame = this.frame_list.get(file_name);
                     if (this._radar == vwp.radar_id) {
                         // Check to see if this is still the radar we're looking for (user might have changed it while we were waiting for data).
