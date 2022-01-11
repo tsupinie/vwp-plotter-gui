@@ -1049,9 +1049,15 @@ class VWP {
 
             try {
                 [altitude, wind_dir, wind_spd, rms_error] = parse_tabular_block(dataview);
+
+                if (altitude.length == 0 || wind_dir.length == 0 || wind_spd.length == 0 || rms_error.length == 0) {
+                    throw "";
+                }
+                console.log('... parsed from the tabular block');
             }
             catch (error) {
                 [altitude, wind_dir, wind_spd, rms_error] = parse_symbology_block(dataview);
+                console.log('... parsed from the symbology block');
             }
 
             const keysort = function() {
