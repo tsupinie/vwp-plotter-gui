@@ -514,6 +514,8 @@ class VWPApp {
             }
         }
 
+        $('#local').get(0).value = '';
+
         this.local_file_list.sort((a, b) => (a.name > b.name ? 1 : -1));
         this._update_local_file_list();
     }
