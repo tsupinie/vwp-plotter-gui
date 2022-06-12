@@ -868,12 +868,23 @@ class VWP {
         return blob.arrayBuffer().then(buffer => {
             let dataview = new DataView_(buffer);
 
-            const wmo_header = dataview.getUTF8String(30);
+            let header_len = 30;
+            const wmo_header = dataview.getUTF8String(header_len);
             const match = wmo_header.match(/.* (\w)\w{3} .*NVW(\w{3})/s);
             if (match === null) {
                 throw {'long': "Error parsing VWP: could not parse WMO headers. This is not a VWP data file.", 'short': "Couldn't parse WMO headers"};
             }
             const radar_id = match[1] + match[2];
+
+            try {
+                const dataview_dec = dataview.getDecompressedView();
+                header_len = 54;
+                dataview_dec.getUTF8String(header_len);
+                dataview = dataview_dec;
+            }
+            catch(e) {
+                console.log(e);
+            }
 
             const msg_code = dataview.getInt16();
             const msg_julian_date = dataview.getInt16();
@@ -913,7 +924,7 @@ class VWP {
             const offset_tabular_block = dataview.getInt32();
 
             function parse_symbology_block(dataview) {
-                dataview.seek(offset_symbology_block * 2 + 30);
+                dataview.seek(offset_symbology_block * 2 + header_len);
                 dataview.getInt16()
                 let block_id = dataview.getInt16();
 
@@ -929,13 +940,13 @@ class VWP {
                         const packet_len = dataview.getInt16();
                         let ret = {'color': dv.getInt16(), 'i': dv.getInt16(), 'j': dv.getInt16(),
                                    'drct': dv.getInt16(), 'sknt': dv.getInt16()};
-                        return ret;
+                        return [packet_len, ret];
                     },
                     8: dv => {
                         const packet_len = dataview.getInt16();
                         let ret = {'color': dv.getInt16(), 'i': dv.getInt16(), 'j': dv.getInt16(), 
                                    'str': dv.getUTF8String(packet_len - 6)};
-                        return ret;
+                        return [packet_len, ret];
                     },
                     10: dv => {
                         const packet_len = dataview.getInt16();
@@ -949,7 +960,7 @@ class VWP {
                             ret['jend'].push(dv.getInt16());
                         }
 
-                        return ret; 
+                        return [packet_len, ret];
                     }
                 }
 
@@ -958,13 +969,26 @@ class VWP {
                 for (let ilyr = 0; ilyr < num_layers; ilyr++) {
                     dataview.getInt16();
                     const layer_len = dataview.getInt32();
+                    let len_all_packets = 0;
+                    let early_exit = false;
 
-                    while (dataview.tell() < offset_tabular_block * 2 + 30) {
-                        let packet_type = dataview.getInt16();
-                        let packet = packet_readers[packet_type](dataview);
+                    while (len_all_packets < layer_len) {
+                        let packet_type, packet_len, packet;
+                        try {
+                            packet_type = dataview.getInt16();
+                            [packet_len, packet] = packet_readers[packet_type](dataview);
+                        }
+                        catch (e) {
+                            console.warn('Unexpected EOF; data may be incomplete');
+                            early_exit = true;
+                            break;
+                        }
+                        len_all_packets += (packet_len + 4);
                         packet['type'] = packet_type;
                         packets.push(packet);
                     }
+
+                    if (early_exit) break;
                 }
 
                 const j_ticks = packets[1]['jstart'].reverse();
@@ -990,7 +1014,7 @@ class VWP {
             }
 
             function parse_tabular_block(dataview) {
-                dataview.seek(offset_tabular_block * 2 + 30);
+                dataview.seek(offset_tabular_block * 2 + header_len);
 
                 dataview.getInt16();
                 const block_id = dataview.getInt16();

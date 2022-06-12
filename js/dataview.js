@@ -54,6 +54,11 @@ class DataView_ {
         this._ptr += 4;
         return val;
     }
+
+    getDecompressedView() {
+        const decompressed = pako.inflateRaw(this._dv.buffer.slice(this._ptr + 2));
+        return new DataView_(decompressed.buffer);
+    }
 }
 
 DataView_.ANCH_CUR = 0;
