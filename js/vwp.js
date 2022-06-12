@@ -866,6 +866,7 @@ class VWP {
         const zip = arys => arys[0].map((_, idx) => arys.map(ary => ary[idx]));
 
         return blob.arrayBuffer().then(buffer => {
+            let warning = "";
             let dataview = new DataView_(buffer);
 
             let header_len = 30;
@@ -883,7 +884,6 @@ class VWP {
                 dataview = dataview_dec;
             }
             catch(e) {
-                console.log(e);
             }
 
             const msg_code = dataview.getInt16();
@@ -979,6 +979,7 @@ class VWP {
                             [packet_len, packet] = packet_readers[packet_type](dataview);
                         }
                         catch (e) {
+                            warning = "Data may be incomplete";
                             console.warn('Unexpected EOF; data may be incomplete');
                             early_exit = true;
                             break;
@@ -1091,7 +1092,7 @@ class VWP {
             [altitude, wind_dir, wind_spd, rms_error] = keysort(altitude, wind_dir, wind_spd, rms_error);
 
             const vwp = new VWP(radar_id, dt, wind_dir, wind_spd, altitude, rms_error);
-            return vwp;
+            return {'warning': warning, 'vwp': vwp};
         });
     }
 }

@@ -165,7 +165,7 @@ class VWPContainer {
 
     set_local_files(local_files) {
         this.frame_list.clear();
-        local_files.filter(file => file.status == 'ok').forEach(file => {
+        local_files.filter(file => file.status == 'ok' || file.status == 'warning').forEach(file => {
             this.frame_list.set(file.name, {'status': 'loaded'});
 
             let frame = this.frame_list.get(file.name);
